@@ -5,6 +5,7 @@ import torch
 from torch import Tensor
 from torch.utils.data import Dataset
 
+from cryoet.data.augmentations.functional import random_rotate90_volume
 from cryoet.data.parsers import (
     get_volume_and_objects,
     TARGET_CLASSES,
@@ -163,12 +164,14 @@ class SlidingWindowCryoETPointDetectionDataset(CryoETPointDetectionDataset):
         study,
         mode,
         split="train",
+        random_rotate: bool = False,
     ):
 
         super().__init__(root, study, mode, split)
         self.window_size = window_size
         self.stride = stride
         self.tiles = list(compute_tiles(self.volume_data.shape, window_size, stride))
+        self.random_rotate = random_rotate
 
     def __getitem__(self, idx):
         tile = self.tiles[idx]  # tiles are z y x order
@@ -212,6 +215,9 @@ class SlidingWindowCryoETPointDetectionDataset(CryoETPointDetectionDataset):
             shape=volume.shape,
             num_classes=self.num_classes,
         )
+
+        if self.random_rotate:
+            volume, labels = random_rotate90_volume(volume, labels)
 
         data = {
             "volume": torch.from_numpy(volume).unsqueeze(0),  # C D H W

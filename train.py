@@ -57,7 +57,7 @@ def main():
     with fabric.rank_zero_first():
         data_module = PointDetectionDataModule(
             root=data_args.data_root,
-            train_modes=["denoised", "isonetcorrected", "wbp", "ctfdeconvolved"],
+            train_modes="denoised",
             valid_modes="denoised",
             window_size=96,
             stride=32,
