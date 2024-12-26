@@ -1,8 +1,14 @@
+import dataclasses
+from collections import defaultdict
 from typing import Optional, Any
 
 import lightning as L
+import numpy as np
+import pandas as pd
 import torch
 from lightning.pytorch.utilities.types import LRSchedulerTypeUnion
+from pytorch_toolbelt.utils import all_gather
+from torch import Tensor
 from torch.optim import Optimizer
 from torch.utils.tensorboard import SummaryWriter
 from pytorch_toolbelt.optimization.functional import build_optimizer_param_groups
@@ -10,6 +16,34 @@ from lightning.pytorch.loggers import TensorBoardLogger, WandbLogger
 
 from .args import MyTrainingArguments
 from cryoet.schedulers import WarmupCosineScheduler
+from ..data.parsers import CLASS_LABEL_TO_CLASS_NAME, ANGSTROMS_IN_PIXEL
+from ..data.point_detection_dataset import decoder_centers_from_heatmap
+from ..metric import score_submission
+
+
+@dataclasses.dataclass
+class AccumulatedPredictionContainer:
+    probas: Tensor
+    counter: Tensor
+
+    def accumulate(self, tile_scores, tile_offsets_zyx):
+        probas_view = self.probas[
+            :,
+            tile_offsets_zyx[0] : tile_offsets_zyx[0] + tile_scores.shape[1],
+            tile_offsets_zyx[1] : tile_offsets_zyx[1] + tile_scores.shape[2],
+            tile_offsets_zyx[2] : tile_offsets_zyx[2] + tile_scores.shape[3],
+        ]
+        counter_view = self.counter[
+            tile_offsets_zyx[0] : tile_offsets_zyx[0] + tile_scores.shape[1],
+            tile_offsets_zyx[1] : tile_offsets_zyx[1] + tile_scores.shape[2],
+            tile_offsets_zyx[2] : tile_offsets_zyx[2] + tile_scores.shape[3],
+        ]
+
+        # Crop tile_scores to the view shape
+        tile_scores = tile_scores[:, : probas_view.shape[1], : probas_view.shape[2], : probas_view.shape[3]]
+
+        probas_view += tile_scores
+        counter_view += 1
 
 
 class PointDetectionModel(L.LightningModule):
@@ -21,6 +55,7 @@ class PointDetectionModel(L.LightningModule):
         super().__init__()
         self.model = model
         self.train_args = train_args
+        self.validation_predictions = None
 
     def forward(self, volume, labels=None, **loss_kwargs):
         return self.model(
@@ -55,9 +90,99 @@ class PointDetectionModel(L.LightningModule):
         )
         return loss
 
+    def on_validation_start(self) -> None:
+        self.validation_predictions = {}
+
+    def accumulate_predictions(self, outputs, batch):
+        probas = outputs.logits.sigmoid().cpu()
+        num_classes = probas.shape[1]
+
+        for study, tile_offsets_zyx, volume_shape, tile_scores in zip(
+            batch["study"], batch["tile_offsets_zyx"], batch["volume_shape"], probas
+        ):
+            if study not in self.validation_predictions:
+                self.validation_predictions[study] = AccumulatedPredictionContainer(
+                    probas=torch.zeros((num_classes,) + tuple(volume_shape), dtype=tile_scores.dtype),
+                    counter=torch.zeros(tuple(volume_shape), dtype=tile_scores.dtype),
+                )
+
+            self.validation_predictions[study].accumulate(tile_scores, tile_offsets_zyx)
+
+    def on_validation_epoch_end(self) -> None:
+        all_validation_predictions = all_gather(self.validation_predictions)
+
+        if self.trainer.is_global_zero:
+            submission = defaultdict(list)
+
+            averaged_predictions = {}
+            for validation_predictions in all_validation_predictions:
+                for (
+                    study_name,
+                    accumulated_predictions,
+                ) in validation_predictions.items():
+                    if study_name not in averaged_predictions:
+                        averaged_predictions[study_name] = AccumulatedPredictionContainer(
+                            probas=torch.zeros_like(accumulated_predictions.probas),
+                            counter=torch.zeros_like(accumulated_predictions.counter),
+                        )
+
+                    averaged_predictions[study_name].probas += accumulated_predictions.probas
+                    averaged_predictions[study_name].counter += accumulated_predictions.counter
+
+            for study_name, accumulated_predictions in averaged_predictions.items():
+                accumulated_predictions.probas /= accumulated_predictions.counter
+                accumulated_predictions.probas.masked_fill_(accumulated_predictions.counter == 0, 0.0)
+
+                topk_scores, topk_clses, topk_coords_px = decoder_centers_from_heatmap(
+                    accumulated_predictions.probas.unsqueeze(0), top_k=512
+                )
+                topk_scores = topk_scores[0].float().cpu().numpy()
+                top_coords = topk_coords_px[0].float().cpu().numpy() * ANGSTROMS_IN_PIXEL
+                topk_clses = topk_clses[0].cpu().numpy()
+
+                for cls, coord, score in zip(topk_clses, top_coords, topk_scores):
+                    submission["experiment"].append(study_name)
+                    submission["particle_type"].append(CLASS_LABEL_TO_CLASS_NAME[int(cls)])
+                    submission["score"].append(float(score))
+                    submission["x"].append(float(coord[0]))
+                    submission["y"].append(float(coord[1]))
+                    submission["z"].append(float(coord[2]))
+
+            submission = pd.DataFrame.from_dict(submission)
+
+            score_thresholds = np.arange(0.1, 0.9, 0.05)
+            score_values = []
+            score_details = []
+
+            for score_threshold in score_thresholds:
+                keep_mask = submission["score"] > score_threshold
+                submission_filtered = submission[keep_mask]
+                s = score_submission(
+                    self.trainer.datamodule.solution.copy(), submission_filtered.copy(), "id", distance_multiplier=0.5, beta=4
+                )
+                score_values.append(s[0])
+                score_details.append(s[1])
+
+            best_score = np.argmax(score_values)
+
+            self.log_dict(
+                {
+                    "val/score": score_values[best_score],
+                    "val/threshold": score_thresholds[best_score],
+                },
+                on_step=False,
+                on_epoch=True,
+                prog_bar=True,
+                logger=True,
+                sync_dist=False,
+                rank_zero_only=True,
+            )
+
     def validation_step(self, batch, batch_idx):
         num_items_in_batch = batch["labels"].eq(1).sum().item()
         outputs = self(**batch, num_items_in_batch=num_items_in_batch)
+
+        self.accumulate_predictions(outputs, batch)
 
         val_loss = outputs.loss
         self.log(
@@ -136,9 +261,7 @@ class PointDetectionModel(L.LightningModule):
             warmup_steps = self.train_args.warmup_steps
             self.trainer.print(f"Using warmup steps: {warmup_steps}")
         elif self.train_args.warmup_ratio > 0:
-            warmup_steps = int(
-                self.train_args.warmup_ratio * self.trainer.estimated_stepping_batches
-            )
+            warmup_steps = int(self.train_args.warmup_ratio * self.trainer.estimated_stepping_batches)
             self.trainer.print(f"Using warmup steps: {warmup_steps}")
 
         scheduler = WarmupCosineScheduler(
@@ -156,9 +279,7 @@ class PointDetectionModel(L.LightningModule):
             },
         }
 
-    def lr_scheduler_step(
-        self, scheduler: LRSchedulerTypeUnion, metric: Optional[Any]
-    ) -> None:
+    def lr_scheduler_step(self, scheduler: LRSchedulerTypeUnion, metric: Optional[Any]) -> None:
         scheduler.step()
 
     def on_before_optimizer_step(self, optimizer: Optimizer) -> None:
@@ -166,11 +287,7 @@ class PointDetectionModel(L.LightningModule):
         if self.global_step % self.train_args.logging_steps == 0:
             with torch.no_grad():
                 all_grads = torch.stack(
-                    [
-                        torch.norm(p.grad)
-                        for p in self.model.parameters()
-                        if p.requires_grad and p.grad is not None
-                    ]
+                    [torch.norm(p.grad) for p in self.model.parameters() if p.requires_grad and p.grad is not None]
                 ).view(-1)
                 max_grads = torch.max(all_grads).item()
                 mean_grads = all_grads.mean()

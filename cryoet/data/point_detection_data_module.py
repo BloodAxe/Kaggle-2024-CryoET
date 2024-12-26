@@ -1,10 +1,13 @@
+from collections import defaultdict
 from pathlib import Path
 from typing import List
 
 import lightning as L
+import pandas as pd
 from torch.utils.data import ConcatDataset, DataLoader
 
 from cryoet.data.cross_validation import split_data_into_folds
+from cryoet.data.parsers import CLASS_LABEL_TO_CLASS_NAME
 from cryoet.data.point_detection_dataset import SlidingWindowCryoETPointDetectionDataset
 
 
@@ -26,12 +29,8 @@ class PointDetectionDataModule(L.LightningDataModule):
         super().__init__()
         self.root = Path(root)
         self.runs_dir = self.root / "train" / "static" / "ExperimentRuns"
-        self.train_modes = (
-            [train_modes] if isinstance(train_modes, str) else list(train_modes)
-        )
-        self.valid_modes = (
-            [valid_modes] if isinstance(valid_modes, str) else list(valid_modes)
-        )
+        self.train_modes = [train_modes] if isinstance(train_modes, str) else list(train_modes)
+        self.valid_modes = [valid_modes] if isinstance(valid_modes, str) else list(valid_modes)
         self.window_size = window_size
         self.stride = stride
         self.train_batch_size = train_batch_size
@@ -40,12 +39,11 @@ class PointDetectionDataModule(L.LightningDataModule):
         self.dataloader_pin_memory = dataloader_pin_memory
         self.dataloader_persistent_workers = dataloader_persistent_workers
 
-        self.train_studies, self.valid_studies = split_data_into_folds(self.runs_dir)[
-            fold
-        ]
+        self.train_studies, self.valid_studies = split_data_into_folds(self.runs_dir)[fold]
 
         self.train = None
         self.val = None
+        self.solution = None
 
     def setup(self, stage):
         train_datasets = []
@@ -62,22 +60,34 @@ class PointDetectionDataModule(L.LightningDataModule):
                 )
                 train_datasets.append(dataset)
 
+        solution = defaultdict(list)
+
         valid_datasets = []
-        for valid_study in self.valid_studies:
+        for study_name in self.valid_studies:
             for mode in self.valid_modes:
                 dataset = SlidingWindowCryoETPointDetectionDataset(
                     window_size=self.window_size,
                     stride=self.stride,
                     root=self.root,
-                    study=valid_study,
+                    study=study_name,
                     mode=mode,
                     split="train",
                     random_rotate=True,
                 )
                 valid_datasets.append(dataset)
 
+                for i, (center, label, radius) in enumerate(
+                    zip(dataset.object_centers, dataset.object_labels, dataset.object_radii)
+                ):
+                    solution["experiment"].append(study_name)
+                    solution["particle_type"].append(CLASS_LABEL_TO_CLASS_NAME[label])
+                    solution["x"].append(float(center[0]))
+                    solution["y"].append(float(center[1]))
+                    solution["z"].append(float(center[2]))
+
         self.train = ConcatDataset(train_datasets)
         self.val = ConcatDataset(valid_datasets)
+        self.solution = pd.DataFrame.from_dict(solution)
 
     def train_dataloader(self):
         return DataLoader(

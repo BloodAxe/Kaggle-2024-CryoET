@@ -25,9 +25,7 @@ def main():
     training_args = typing.cast(MyTrainingArguments, training_args)
 
     if training_args.output_dir is None:
-        training_args.output_dir = (
-            f"runs/swin_unetr_point_detection_fold_{data_args.fold}"
-        )
+        training_args.output_dir = f"runs/swin_unetr_point_detection_fold_{data_args.fold}"
 
     training_args.master_print(f"Training arguments: {training_args}")
 
@@ -42,14 +40,10 @@ def main():
 
     config = SwinUNETRForPointDetectionConfig()
     model = SwinUNETRForPointDetection(config)
-    backbone_sd = torch.load(
-        "pretrained/swin_unetr_btcv_segmentation/models/model.pt", weights_only=True
-    )
+    backbone_sd = torch.load("pretrained/swin_unetr_btcv_segmentation/models/model.pt", weights_only=True)
     model.backbone.load_state_dict(backbone_sd, strict=True)
 
-    training_args.master_print(
-        f"Model parameters: {count_parameters(model, human_friendly=True)}"
-    )
+    training_args.master_print(f"Model parameters: {count_parameters(model, human_friendly=True)}")
 
     # if training_args.gradient_checkpointing:
     #     model.gradient_checkpointing_enable()

@@ -34,7 +34,7 @@ def compute_metrics(reference_points, reference_radius, candidate_points):
     return tp, fp, fn
 
 
-def score(
+def score_submission(
     solution: pd.DataFrame,
     submission: pd.DataFrame,
     row_id_column_name: str,
@@ -93,14 +93,10 @@ def score(
     for experiment in split_experiments:
         for particle_type in solution["particle_type"].unique():
             reference_radius = particle_radius[particle_type]
-            select = (solution["experiment"] == experiment) & (
-                solution["particle_type"] == particle_type
-            )
+            select = (solution["experiment"] == experiment) & (solution["particle_type"] == particle_type)
             reference_points = solution.loc[select, ["x", "y", "z"]].values
 
-            select = (submission["experiment"] == experiment) & (
-                submission["particle_type"] == particle_type
-            )
+            select = (submission["experiment"] == experiment) & (submission["particle_type"] == particle_type)
             candidate_points = submission.loc[select, ["x", "y", "z"]].values
 
             if len(reference_points) == 0:
@@ -110,9 +106,7 @@ def score(
             if len(candidate_points) == 0:
                 candidate_points = np.array([])
 
-            tp, fp, fn = compute_metrics(
-                reference_points, reference_radius, candidate_points
-            )
+            tp, fp, fn = compute_metrics(reference_points, reference_radius, candidate_points)
 
             results[particle_type]["total_tp"] += tp
             results[particle_type]["total_fp"] += fp
@@ -128,11 +122,7 @@ def score(
 
         precision = tp / (tp + fp) if tp + fp > 0 else 0
         recall = tp / (tp + fn) if tp + fn > 0 else 0
-        fbeta = (
-            (1 + beta**2) * (precision * recall) / (beta**2 * precision + recall)
-            if (precision + recall) > 0
-            else 0.0
-        )
+        fbeta = (1 + beta**2) * (precision * recall) / (beta**2 * precision + recall) if (precision + recall) > 0 else 0.0
         aggregate_fbeta += fbeta * weights.get(particle_type, 1.0)
         per_particle_fbeta[particle_type] = fbeta
 

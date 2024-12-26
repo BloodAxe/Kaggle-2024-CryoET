@@ -14,7 +14,7 @@ from cryoet.data.point_detection_dataset import (
     encode_centers_to_heatmap,
     decoder_centers_from_heatmap,
 )
-from cryoet.metric import score
+from cryoet.metric import score_submission
 
 DATA_ROOT = Path(__file__).parent.parent / "data" / "czii-cryo-et-object-identification"
 TRAIN_DATA_DIR = DATA_ROOT / "train" / "static" / "ExperimentRuns"
@@ -35,9 +35,7 @@ def test_encode_decode():
     # object_radii = object_radii[:2]
 
     solution = defaultdict(list)
-    for i, (center, label, radius) in enumerate(
-        zip(object_centers, object_labels, object_radii)
-    ):
+    for i, (center, label, radius) in enumerate(zip(object_centers, object_labels, object_radii)):
         solution["id"].append(i)
         solution["experiment"].append(study_name)
         solution["particle_type"].append(CLASS_LABEL_TO_CLASS_NAME[label])
@@ -46,7 +44,7 @@ def test_encode_decode():
         solution["z"].append(float(center[2]))
 
     solution = pd.DataFrame.from_dict(solution).set_index("id")
-    print(score(solution, solution, "id", distance_multiplier=0.5, beta=4))
+    print(score_submission(solution, solution, "id", distance_multiplier=0.5, beta=4))
 
     num_classes = NUM_CLASSES
     labels = encode_centers_to_heatmap(
@@ -87,4 +85,4 @@ def test_encode_decode():
 
     print(solution.head())
     print(submission.head())
-    print(score(solution, submission, "id", distance_multiplier=0.5, beta=4))
+    print(score_submission(solution, submission, "id", distance_multiplier=0.5, beta=4))
