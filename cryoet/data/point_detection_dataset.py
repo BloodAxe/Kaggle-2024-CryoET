@@ -1,3 +1,4 @@
+import random
 from typing import Tuple, Iterable
 
 import numpy as np
@@ -8,6 +9,7 @@ from torch.utils.data import Dataset
 from cryoet.data.augmentations.functional import (
     random_rotate90_volume,
     random_flip_volume,
+    rotate_and_scale_volume,
 )
 from cryoet.data.parsers import (
     get_volume_and_objects,
@@ -30,7 +32,7 @@ class CryoETPointDetectionDataset(Dataset):
             mode=mode,
             split=split,
         )
-
+        
         self.study = study
         self.mode = mode
         self.volume_data = normalize_volume_to_unit_range(volume_data)
@@ -38,10 +40,10 @@ class CryoETPointDetectionDataset(Dataset):
         self.object_centers = object_centers
         self.object_labels = object_labels
         self.object_radii = object_radii
-
+        
         self.object_centers_px = object_centers / ANGSTROMS_IN_PIXEL
         self.object_radii_px = object_radii / ANGSTROMS_IN_PIXEL
-
+        
         self.num_classes = len(TARGET_CLASSES)
 
 
@@ -65,45 +67,45 @@ def compute_tiles(volume_shape: Tuple[int, int, int], window_size: int, stride: 
 
 def centernet_gaussian_3d(shape, sigma=1.0):
     d, m, n = [(ss - 1.0) / 2.0 for ss in shape]
-    z, y, x = np.ogrid[-d : d + 1, -m : m + 1, -n : n + 1]
-
+    z, y, x = np.ogrid[-d: d + 1, -m: m + 1, -n: n + 1]
+    
     h = np.exp(-(z * z + x * x + y * y) / (2 * sigma * sigma))
     h[h < np.finfo(h.dtype).eps * h.max()] = 0
-
+    
     # Place 1.0 in the center of the gaussian (just in case)
     h[h.shape[0] // 2, h.shape[1] // 2, h.shape[2] // 2] = 1.0
-
+    
     return h
 
 
 def encode_centers_to_heatmap(centers, labels, radii, shape, num_classes):
     heatmap = np.zeros((num_classes,) + shape, dtype=np.float32)
-
+    
     depth, height, width = shape
     centers = (centers + 0.5).astype(int)
     radii = (radii + 0.5).astype(int)
-
+    
     for center, label, radius in zip(centers, labels, radii):
         x, y, z = center
         # z, y, x = int(z + 0.5), int(y + 0.5), int(x + 0.5)
         # radius = int(radius + 0.5)
-
+        
         diameter = 2 * radius + 1
         gaussian = centernet_gaussian_3d((diameter, diameter, diameter), sigma=diameter / 6.0)
-
+        
         front, back = min(z, radius), min(depth - z, radius + 1)
         top, bottom = min(y, radius), min(height - y, radius + 1)
         left, right = min(x, radius), min(width - x, radius + 1)
-
-        masked_heatmap = heatmap[label, z - front : z + back, y - top : y + bottom, x - left : x + right]
+        
+        masked_heatmap = heatmap[label, z - front: z + back, y - top: y + bottom, x - left: x + right]
         masked_gaussian = gaussian[
-            radius - front : radius + back,
-            radius - top : radius + bottom,
-            radius - left : radius + right,
-        ]
+                          radius - front: radius + back,
+                          radius - top: radius + bottom,
+                          radius - left: radius + right,
+                          ]
         if min(masked_gaussian.shape) > 0 and min(masked_heatmap.shape) > 0:
             np.maximum(masked_heatmap, masked_gaussian, out=masked_heatmap)
-
+    
     return heatmap
 
 
@@ -118,28 +120,28 @@ def decoder_centers_from_heatmap(probas: Tensor, kernel=3, top_k=256):
         Labels [B, N]
         Coords [B, N, 3] - Coordinates of each peak
     """
-
+    
     # nms
     pad = (kernel - 1) // 2
     maxpool = torch.nn.functional.max_pool3d(probas, kernel_size=kernel, padding=pad, stride=1)
-
+    
     mask = probas == maxpool
-
+    
     peaks = probas * mask
-
+    
     batch, cat, depth, height, width = peaks.size()
-
+    
     topk_scores, topk_inds = torch.topk(peaks.view(batch, cat, -1), top_k)
-
+    
     topk_clses = torch.arange(cat, device=probas.device).view(1, -1, 1)
     topk_clses = topk_clses.expand(batch, -1, top_k)
-
+    
     topk_inds = topk_inds % (depth * height * width)
     topk_zs = topk_inds // (width * height)
     topk_inds = topk_inds % (width * height)
     topk_ys = topk_inds // width
     topk_xs = topk_inds % width
-
+    
     # Gather scores for a specific class
     # B, C, N -> B, N
     topk_scores = topk_scores.reshape(batch, -1)
@@ -147,64 +149,63 @@ def decoder_centers_from_heatmap(probas: Tensor, kernel=3, top_k=256):
     topk_ys = topk_ys.view(batch, -1)
     topk_xs = topk_xs.view(batch, -1)
     topk_zs = topk_zs.view(batch, -1)
-
+    
     return topk_scores, topk_clses, torch.stack([topk_xs, topk_ys, topk_zs], dim=-1)
 
 
 class SlidingWindowCryoETPointDetectionDataset(CryoETPointDetectionDataset):
     def __repr__(self):
         return f"{self.__class__.__name__}(window_size={self.window_size}, stride={self.stride}, study={self.study}, mode={self.mode}, split={self.split}) [{len(self)}]"
-
+    
     def __init__(
-        self,
-        window_size: int,
-        stride: int,
-        root,
-        study,
-        mode,
-        split="train",
-        random_rotate: bool = False,
+            self,
+            window_size: int,
+            stride: int,
+            root,
+            study,
+            mode,
+            split="train",
+            random_rotate: bool = False,
     ):
-
         super().__init__(root, study, mode, split)
         self.window_size = window_size
         self.stride = stride
         self.tiles = list(compute_tiles(self.volume_data.shape, window_size, stride))
         self.random_rotate = random_rotate
-
+    
     def __getitem__(self, idx):
         tile = self.tiles[idx]  # tiles are z y x order
         centers_px = self.object_centers_px  # x y z
         radii_px = self.object_radii_px
         object_labels = self.object_labels
-
+        
         # Crop the centers to the tile
         # fmt: off
         centers_x, centers_y, centers_z = centers_px[:, 0], centers_px[:, 1], centers_px[:, 2]
         keep_mask = (
-            (centers_z >= tile[0].start) & (centers_z < tile[0].stop) &
-            (centers_y >= tile[1].start) & (centers_y < tile[1].stop) &
-            (centers_x >= tile[2].start) & (centers_x < tile[2].stop)
+                (centers_z >= tile[0].start) & (centers_z < tile[0].stop) &
+                (centers_y >= tile[1].start) & (centers_y < tile[1].stop) &
+                (centers_x >= tile[2].start) & (centers_x < tile[2].stop)
         )
         # fmt: on
-
+        
         volume = self.volume_data[tile[0], tile[1], tile[2]].copy()
         centers_px = centers_px[keep_mask].copy() - np.array([tile[2].start, tile[1].start, tile[0].start]).reshape(1, 3)
         radii_px = radii_px[keep_mask].copy()
         object_labels = object_labels[keep_mask].copy()
-
+        
         # Pad the volume to the window size
         pad_z = self.window_size - volume.shape[0]
         pad_y = self.window_size - volume.shape[1]
         pad_x = self.window_size - volume.shape[2]
-
+        
         volume = np.pad(
             volume,
             ((0, pad_z), (0, pad_y), (0, pad_x)),
             mode="constant",
             constant_values=0,
         )
-
+        
         labels = encode_centers_to_heatmap(
             centers_px,
             object_labels,
@@ -212,11 +213,11 @@ class SlidingWindowCryoETPointDetectionDataset(CryoETPointDetectionDataset):
             shape=volume.shape,
             num_classes=self.num_classes,
         )
-
+        
         if self.random_rotate:
             volume, labels = random_rotate90_volume(volume, labels)
             volume, labels = random_flip_volume(volume, labels)
-
+        
         data = {
             "volume": torch.from_numpy(volume).unsqueeze(0),  # C D H W
             "labels": torch.from_numpy(labels),
@@ -226,6 +227,89 @@ class SlidingWindowCryoETPointDetectionDataset(CryoETPointDetectionDataset):
             "mode": self.mode,
         }
         return data
-
+    
     def __len__(self):
         return len(self.tiles)
+
+
+class RandomCropCryoETPointDetectionDataset(CryoETPointDetectionDataset):
+    
+    def __init__(
+            self,
+            window_size: int,
+            stride: int,
+            root,
+            study,
+            mode,
+            num_crops: int,
+            split="train",
+            random_rotate: bool = False,
+    ):
+        super().__init__(root, study, mode, split)
+        self.window_size = window_size
+        self.stride = stride
+        self.num_crops = num_crops
+        self.random_rotate = random_rotate
+    
+    def __getitem__(self, idx):
+        centers_px = self.object_centers_px  # x y z
+        radii_px = self.object_radii_px
+        object_labels = self.object_labels
+        
+        scale = 1 + (random.random() - 0.5) / 10.0
+        volume, centers_px = rotate_and_scale_volume(
+            volume=self.volume_data,
+            points=centers_px,
+            angles=(random.random() * 360, random.random() * 360, random.random() * 360),
+            scale=scale,
+            center=(
+                random.random() * self.volume_shape[2],
+                random.random() * self.volume_shape[1],
+                random.random() * self.volume_shape[0],
+            ),
+            output_shape=(self.window_size, self.window_size, self.window_size),
+        )
+        
+        radii_px = radii_px * scale
+        
+        # Crop the centers to the tile
+        # fmt: off
+        centers_x, centers_y, centers_z = centers_px[:, 0], centers_px[:, 1], centers_px[:, 2]
+        keep_mask = (
+                (centers_z >= 0) & (centers_z < self.window_size) &
+                (centers_y >= 0) & (centers_y < self.window_size) &
+                (centers_x >= 0) & (centers_x < self.window_size)
+        )
+        # fmt: on
+        
+        centers_px = centers_px[keep_mask].copy()
+        radii_px = radii_px[keep_mask].copy()
+        object_labels = object_labels[keep_mask].copy()
+        
+        labels = encode_centers_to_heatmap(
+            centers_px,
+            object_labels,
+            radii_px,
+            shape=volume.shape,
+            num_classes=self.num_classes,
+        )
+        
+        if self.random_rotate:
+            volume, labels = random_rotate90_volume(volume, labels)
+            volume, labels = random_flip_volume(volume, labels)
+        
+        data = {
+            "volume": torch.from_numpy(volume).unsqueeze(0),  # C D H W
+            "labels": torch.from_numpy(labels),
+            "tile_offsets_zyx": torch.tensor([-1, -1, -1]),
+            "volume_shape": torch.tensor(self.volume_shape),
+            "study": self.study,
+            "mode": self.mode,
+        }
+        return data
+    
+    def __len__(self):
+        return self.num_crops
+    
+    def __repr__(self):
+        return f"{self.__class__.__name__}(window_size={self.window_size}, stride={self.stride}, study={self.study}, mode={self.mode}, split={self.split}) [{len(self)}]"
