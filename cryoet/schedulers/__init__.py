@@ -1,1 +1,1 @@
-from .cosine_with_warmup import LinearWarmupCosineAnnealingLR
+from .cosine_with_warmup import WarmupCosineScheduler

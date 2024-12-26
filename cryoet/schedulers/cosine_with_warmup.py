@@ -6,134 +6,85 @@ from torch.optim import Optimizer
 from torch.optim.lr_scheduler import _LRScheduler
 
 
-class LinearWarmupCosineAnnealingLR(_LRScheduler):
-    """Sets the learning rate of each parameter group to follow a linear warmup schedule between warmup_start_lr and
-    base_lr followed by a cosine annealing schedule between base_lr and eta_min.
+class WarmupCosineScheduler(_LRScheduler):
+    """
+    PyTorch-compatible LR scheduler with warmup and cosine decay.
 
-    .. warning::
-        It is recommended to call :func:`.step()` for :class:`LinearWarmupCosineAnnealingLR`
-        after each iteration as calling it after each epoch will keep the starting lr at
-        warmup_start_lr for the first epoch which is 0 in most cases.
-
-    .. warning::
-        passing epoch to :func:`.step()` is being deprecated and comes with an EPOCH_DEPRECATION_WARNING.
-        It calls the :func:`_get_closed_form_lr()` method for this scheduler instead of
-        :func:`get_lr()`. Though this does not change the behavior of the scheduler, when passing
-        epoch param to :func:`.step()`, the user should call the :func:`.step()` function before calling
-        train and validation methods.
-
-    Example:
-        >>> import torch.nn as nn
-        >>> from torch.optim import Adam
-        >>> #
-        >>> layer = nn.Linear(10, 1)
-        >>> optimizer = Adam(layer.parameters(), lr=0.02)
-        >>> scheduler = LinearWarmupCosineAnnealingLR(optimizer, warmup_epochs=10, max_epochs=40)
-        >>> # the default case
-        >>> for epoch in range(40):
-        ...     # train(...)
-        ...     # validate(...)
-        ...     scheduler.step()
-        >>> # passing epoch param case
-        >>> for epoch in range(40):
-        ...     scheduler.step(epoch)
-        ...     # train(...)
-        ...     # validate(...)
-
+    Args:
+        optimizer (Optimizer): Wrapped optimizer.
+        warmup_steps (int): Number of warmup steps.
+        total_steps (int): Total steps for the entire schedule (warmup + decay).
+        warmup_learning_rate (float): Initial learning rate for warmup.
+            This will linearly increase to each param group’s base_lr over `warmup_steps`.
+        decay_factor (float): Final factor for learning rate at the end of decay.
+            i.e., final_lr = base_lr * decay_factor.
+        last_epoch (int, optional): The index of the last epoch. Default: -1.
+            By PyTorch convention, set to -1 on first call.
     """
 
     def __init__(
         self,
-        optimizer: Optimizer,
-        warmup_epochs: int,
-        max_epochs: int,
-        warmup_start_lr: float = 0.0,
-        eta_min: float = 0.0,
+        optimizer,
+        warmup_steps: int,
+        total_steps: int,
+        warmup_learning_rate: float,
+        decay_factor: float = 0.01,
         last_epoch: int = -1,
-    ) -> None:
-        """
-        Args:
-            optimizer (Optimizer): Wrapped optimizer.
-            warmup_epochs (int): Maximum number of iterations for linear warmup
-            max_epochs (int): Maximum number of iterations
-            warmup_start_lr (float): Learning rate to start the linear warmup. Default: 0.
-            eta_min (float): Minimum learning rate. Default: 0.
-            last_epoch (int): The index of last epoch. Default: -1.
-        """
-        self.warmup_epochs = warmup_epochs
-        self.max_epochs = max_epochs
-        self.warmup_start_lr = warmup_start_lr
-        self.eta_min = eta_min
+    ):
+
+        self.warmup_steps = warmup_steps
+        self.total_steps = total_steps
+        self.warmup_learning_rate = warmup_learning_rate
+        self.decay_factor = decay_factor
+
+        # Validate
+        if not 0 <= self.warmup_steps <= self.total_steps:
+            raise ValueError(
+                f"warmup_steps ({warmup_steps}) must be in [0, total_steps ({total_steps})]."
+            )
+        if not 0.0 <= self.decay_factor <= 1.0:
+            raise ValueError(
+                f"decay_factor ({decay_factor}) should be between [0.0, 1.0]."
+            )
+
+        # Store each param group’s base LR for reference
+        # This is what we will decay from
+        self.base_lrs = [group["lr"] for group in optimizer.param_groups]
 
         super().__init__(optimizer, last_epoch)
 
-    def get_lr(self) -> List[float]:
-        """Compute learning rate using chainable form of the scheduler."""
-        if not self._get_lr_called_within_step:
-            warnings.warn(
-                "To get the last learning rate computed by the scheduler; please use `get_last_lr()`.",
-                UserWarning,
-            )
+    def get_lr(self):
+        """
+        Compute the learning rate for each param group at step = self.last_epoch + 1.
+        self.last_epoch is incremented by PyTorch at each scheduler step call.
+        """
+        step = self.last_epoch  # 0-based step index
 
-        if self.last_epoch == 0:
-            return [self.warmup_start_lr] * len(self.base_lrs)
-        if self.last_epoch < self.warmup_epochs:
-            return [
-                group["lr"] + (base_lr - self.warmup_start_lr) / (self.warmup_epochs - 1)
-                for base_lr, group in zip(self.base_lrs, self.optimizer.param_groups)
-            ]
-        if self.last_epoch == self.warmup_epochs:
-            return self.base_lrs
-        if (self.last_epoch - 1 - self.max_epochs) % (2 * (self.max_epochs - self.warmup_epochs)) == 0:
-            return [
-                group["lr"] + (base_lr - self.eta_min) * (1 - math.cos(math.pi / (self.max_epochs - self.warmup_epochs))) / 2
-                for base_lr, group in zip(self.base_lrs, self.optimizer.param_groups)
-            ]
+        # For each param group, compute the updated LR
+        lrs = []
+        for base_lr in self.base_lrs:
+            if step < self.warmup_steps:
+                # ---- Warmup phase ----
+                # LR linearly increases from `warmup_learning_rate` to `base_lr`
+                progress = step / max(1.0, self.warmup_steps)  # avoid div-by-zero
+                lr = self.warmup_learning_rate + progress * (
+                    base_lr - self.warmup_learning_rate
+                )
+            else:
+                # ---- Cosine decay phase ----
+                # We consider steps beyond warmup_steps
+                # progress in [0.0, 1.0] for the decay phase
+                progress = (step - self.warmup_steps) / max(
+                    1, self.total_steps - self.warmup_steps
+                )
 
-        return [
-            (1 + math.cos(math.pi * (self.last_epoch - self.warmup_epochs) / (self.max_epochs - self.warmup_epochs)))
-            / (1 + math.cos(math.pi * (self.last_epoch - self.warmup_epochs - 1) / (self.max_epochs - self.warmup_epochs)))
-            * (group["lr"] - self.eta_min)
-            + self.eta_min
-            for group in self.optimizer.param_groups
-        ]
+                # Cosine decay from base_lr down to base_lr * decay_factor
+                # Formula: lr = min_lr + 0.5 * (max_lr - min_lr) * (1 + cos(pi * progress))
+                max_lr = base_lr
+                min_lr = base_lr * self.decay_factor
+                lr = min_lr + 0.5 * (max_lr - min_lr) * (
+                    1 + math.cos(math.pi * progress)
+                )
 
-    def _get_closed_form_lr(self) -> List[float]:
-        """Called when epoch is passed as a param to the `step` function of the scheduler."""
-        if self.last_epoch < self.warmup_epochs:
-            return [
-                self.warmup_start_lr + self.last_epoch * (base_lr - self.warmup_start_lr) / (self.warmup_epochs - 1)
-                for base_lr in self.base_lrs
-            ]
-
-        return [
-            self.eta_min
-            + 0.5
-            * (base_lr - self.eta_min)
-            * (1 + math.cos(math.pi * (self.last_epoch - self.warmup_epochs) / (self.max_epochs - self.warmup_epochs)))
-            for base_lr in self.base_lrs
-        ]
-
-
-# warmup + decay as a function
-def linear_warmup_decay(warmup_steps, total_steps, cosine=True, linear=False):
-    """Linear warmup for warmup_steps, optionally with cosine annealing or linear decay to 0 at total_steps."""
-    assert not (linear and cosine)
-
-    def fn(step):
-        if step < warmup_steps:
-            return float(step) / float(max(1, warmup_steps))
-
-        if not (cosine or linear):
-            # no decay
-            return 1.0
-
-        progress = float(step - warmup_steps) / float(max(1, total_steps - warmup_steps))
-        if cosine:
-            # cosine decay
-            return 0.5 * (1.0 + math.cos(math.pi * progress))
-
-        # linear decay
-        return 1.0 - progress
-
-    return fn
+            lrs.append(lr)
+        return lrs

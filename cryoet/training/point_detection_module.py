@@ -9,7 +9,7 @@ from pytorch_toolbelt.optimization.functional import build_optimizer_param_group
 from lightning.pytorch.loggers import TensorBoardLogger, WandbLogger
 
 from .args import MyTrainingArguments
-from cryoet.schedulers import LinearWarmupCosineAnnealingLR
+from cryoet.schedulers import WarmupCosineScheduler
 
 
 class PointDetectionModel(L.LightningModule):
@@ -141,10 +141,11 @@ class PointDetectionModel(L.LightningModule):
             )
             self.trainer.print(f"Using warmup steps: {warmup_steps}")
 
-        scheduler = LinearWarmupCosineAnnealingLR(
+        scheduler = WarmupCosineScheduler(
             optimizer,
-            warmup_epochs=warmup_steps,
-            max_epochs=self.trainer.estimated_stepping_batches,
+            warmup_steps=warmup_steps,
+            warmup_learning_rate=1e-7,
+            total_steps=self.trainer.estimated_stepping_batches,
         )
         return {
             "optimizer": optimizer,
