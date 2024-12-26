@@ -110,6 +110,7 @@ class PointDetectionModel(L.LightningModule):
 
     def on_validation_epoch_end(self) -> None:
         all_validation_predictions = all_gather(self.validation_predictions)
+        self.validation_predictions = None
 
         if self.trainer.is_global_zero:
             submission = defaultdict(list)
