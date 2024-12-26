@@ -2,8 +2,8 @@ import random
 
 import torch
 
-from cryoet.data.augmentations.functional import rotate_and_scale_volume, random_rotate90_volume, random_flip_volume
-from cryoet.data.point_detection_dataset import CryoETPointDetectionDataset, encode_centers_to_heatmap
+from .augmentations.functional import rotate_and_scale_volume, random_rotate90_volume, random_flip_volume
+from .point_detection_dataset import CryoETPointDetectionDataset, encode_centers_to_heatmap
 
 
 class RandomCropCryoETPointDetectionDataset(CryoETPointDetectionDataset):

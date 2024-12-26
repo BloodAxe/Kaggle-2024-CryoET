@@ -1,8 +1,8 @@
 import numpy as np
 import torch
 
-from cryoet.data.augmentations.functional import random_rotate90_volume, random_flip_volume
-from cryoet.data.point_detection_dataset import CryoETPointDetectionDataset, compute_tiles, encode_centers_to_heatmap
+from .augmentations.functional import random_rotate90_volume, random_flip_volume
+from .point_detection_dataset import CryoETPointDetectionDataset, compute_tiles, encode_centers_to_heatmap
 
 
 class SlidingWindowCryoETPointDetectionDataset(CryoETPointDetectionDataset):
