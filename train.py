@@ -66,12 +66,12 @@ def main():
     model_module = PointDetectionModel(model, training_args)
 
     checkpoint_callback = ModelCheckpoint(
-        monitor="val/loss",
-        mode="min",
+        monitor="val/score",
+        mode="max",
         save_last=True,
         auto_insert_metric_name=False,
-        save_top_k=3,
-        filename="{step:03d}-loss-{val/loss:0.4f}",
+        save_top_k=5,
+        filename="{step:03d}-score-{val/score:0.4f}-threshold-{val/threshold:0.4f}",
     )
 
     loggers = []
