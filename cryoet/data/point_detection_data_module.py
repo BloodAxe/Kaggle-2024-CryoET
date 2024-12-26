@@ -56,7 +56,7 @@ class PointDetectionDataModule(L.LightningDataModule):
                     study=train_study,
                     mode=mode,
                     split="train",
-                    random_rotate=False,
+                    random_rotate=True,
                 )
                 train_datasets.append(dataset)
 
@@ -72,7 +72,7 @@ class PointDetectionDataModule(L.LightningDataModule):
                     study=study_name,
                     mode=mode,
                     split="train",
-                    random_rotate=True,
+                    random_rotate=False,
                 )
                 valid_datasets.append(dataset)
 
