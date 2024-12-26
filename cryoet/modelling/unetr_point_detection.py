@@ -45,7 +45,7 @@ class PointDetectionHead(nn.Module):
         self.conv = nn.Conv3d(in_channels, num_classes, kernel_size=1)
 
         # torch.nn.init.zeros_(self.conv.weight)
-        torch.nn.init.constant_(self.conv.bias, -4)
+        torch.nn.init.constant_(self.conv.bias, -3)
 
     def forward(self, features, labels=None, **loss_kwargs):
         logits = self.conv(features)
