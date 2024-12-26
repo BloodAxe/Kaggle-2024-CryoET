@@ -122,80 +122,79 @@ class PointDetectionModel(L.LightningModule):
         all_validation_predictions = all_gather(self.validation_predictions)
         self.validation_predictions = None
 
-        if self.trainer.is_global_zero:
-            submission = defaultdict(list)
+        submission = defaultdict(list)
 
-            averaged_predictions = {}
-            for validation_predictions in all_validation_predictions:
-                for (
-                    study_name,
-                    accumulated_predictions,
-                ) in validation_predictions.items():
-                    if study_name not in averaged_predictions:
-                        averaged_predictions[study_name] = AccumulatedPredictionContainer(
-                            probas=torch.zeros_like(accumulated_predictions.probas),
-                            counter=torch.zeros_like(accumulated_predictions.counter),
-                        )
+        averaged_predictions = {}
+        for validation_predictions in all_validation_predictions:
+            for (
+                study_name,
+                accumulated_predictions,
+            ) in validation_predictions.items():
+                if study_name not in averaged_predictions:
+                    averaged_predictions[study_name] = AccumulatedPredictionContainer(
+                        probas=torch.zeros_like(accumulated_predictions.probas),
+                        counter=torch.zeros_like(accumulated_predictions.counter),
+                    )
 
-                    averaged_predictions[study_name].probas += accumulated_predictions.probas
-                    averaged_predictions[study_name].counter += accumulated_predictions.counter
+                averaged_predictions[study_name].probas += accumulated_predictions.probas
+                averaged_predictions[study_name].counter += accumulated_predictions.counter
 
-            for study_name, accumulated_predictions in averaged_predictions.items():
-                accumulated_predictions.probas /= accumulated_predictions.counter
-                accumulated_predictions.probas.masked_fill_(accumulated_predictions.counter == 0, 0.0)
+        for study_name, accumulated_predictions in averaged_predictions.items():
+            accumulated_predictions.probas /= accumulated_predictions.counter
+            accumulated_predictions.probas.masked_fill_(accumulated_predictions.counter == 0, 0.0)
 
-                topk_scores, topk_clses, topk_coords_px = decoder_centers_from_heatmap(
-                    accumulated_predictions.probas.unsqueeze(0), top_k=512
-                )
-                topk_scores = topk_scores[0].float().cpu().numpy()
-                top_coords = topk_coords_px[0].float().cpu().numpy() * ANGSTROMS_IN_PIXEL
-                topk_clses = topk_clses[0].cpu().numpy()
-
-                for cls, coord, score in zip(topk_clses, top_coords, topk_scores):
-                    submission["experiment"].append(study_name)
-                    submission["particle_type"].append(CLASS_LABEL_TO_CLASS_NAME[int(cls)])
-                    submission["score"].append(float(score))
-                    submission["x"].append(float(coord[0]))
-                    submission["y"].append(float(coord[1]))
-                    submission["z"].append(float(coord[2]))
-
-            submission = pd.DataFrame.from_dict(submission)
-            print(submission.sort_values(by="score", ascending=False).head(20))
-
-            score_thresholds = np.linspace(0.05, 1.0, 20) ** 2
-            score_values = []
-            score_details = []
-
-            for score_threshold in score_thresholds:
-                keep_mask = submission["score"] >= score_threshold
-                submission_filtered = submission[keep_mask]
-                s = score_submission(
-                    solution=self.trainer.datamodule.solution.copy(),
-                    submission=submission_filtered.copy(),
-                    row_id_column_name="id",
-                    distance_multiplier=0.5,
-                    beta=4,
-                )
-                score_values.append(s[0])
-                score_details.append(s[1])
-
-            best_score = np.argmax(score_values)
-
-            extra_values = dict(("val/" + k, v) for k, v in score_details[best_score].items())
-
-            self.log_dict(
-                {
-                    "val/score": score_values[best_score],
-                    "val/threshold": score_thresholds[best_score],
-                    **extra_values,
-                },
-                on_step=False,
-                on_epoch=True,
-                prog_bar=True,
-                logger=True,
-                sync_dist=False,
-                rank_zero_only=True,
+            topk_scores, topk_clses, topk_coords_px = decoder_centers_from_heatmap(
+                accumulated_predictions.probas.unsqueeze(0), top_k=512
             )
+            topk_scores = topk_scores[0].float().cpu().numpy()
+            top_coords = topk_coords_px[0].float().cpu().numpy() * ANGSTROMS_IN_PIXEL
+            topk_clses = topk_clses[0].cpu().numpy()
+
+            for cls, coord, score in zip(topk_clses, top_coords, topk_scores):
+                submission["experiment"].append(study_name)
+                submission["particle_type"].append(CLASS_LABEL_TO_CLASS_NAME[int(cls)])
+                submission["score"].append(float(score))
+                submission["x"].append(float(coord[0]))
+                submission["y"].append(float(coord[1]))
+                submission["z"].append(float(coord[2]))
+
+        submission = pd.DataFrame.from_dict(submission)
+        print(submission.sort_values(by="score", ascending=False).head(20))
+
+        score_thresholds = np.linspace(0.05, 1.0, 20) ** 2
+        score_values = []
+        score_details = []
+
+        for score_threshold in score_thresholds:
+            keep_mask = submission["score"] >= score_threshold
+            submission_filtered = submission[keep_mask]
+            s = score_submission(
+                solution=self.trainer.datamodule.solution.copy(),
+                submission=submission_filtered.copy(),
+                row_id_column_name="id",
+                distance_multiplier=0.5,
+                beta=4,
+            )
+            score_values.append(s[0])
+            score_details.append(s[1])
+
+        best_score = np.argmax(score_values)
+
+        extra_values = dict(("val/" + k, v) for k, v in score_details[best_score].items())
+
+        self.log_dict(
+            {
+                "val/score": score_values[best_score],
+                "val/threshold": score_thresholds[best_score],
+                **extra_values,
+            },
+            on_step=False,
+            on_epoch=True,
+            prog_bar=True,
+            logger=True,
+            sync_dist=False,
+            rank_zero_only=False,
+        )
 
     def validation_step(self, batch, batch_idx):
         num_items_in_batch = batch["labels"].eq(1).sum().item()
