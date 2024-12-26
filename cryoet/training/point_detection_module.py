@@ -162,7 +162,7 @@ class PointDetectionModel(L.LightningModule):
             submission = pd.DataFrame.from_dict(submission)
             print(submission.sort_values(by="score", ascending=False).head(20))
 
-            score_thresholds = np.linspace(0.05, 1.0, 20) ^ 2
+            score_thresholds = np.linspace(0.05, 1.0, 20) ** 2
             score_values = []
             score_details = []
 
