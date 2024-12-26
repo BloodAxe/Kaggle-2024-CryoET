@@ -74,7 +74,9 @@ class PointDetectionModel(L.LightningModule):
         outputs = self(**batch, num_items_in_batch=num_items_in_batch)
 
         if self.gather_num_items_in_batch:
-            loss = outputs.loss * self.fabric.world_size
+            outputs.loss.mul_(self.fabric.world_size)
+
+        loss = outputs.loss
 
         self.log(
             "train/loss",
@@ -178,10 +180,13 @@ class PointDetectionModel(L.LightningModule):
 
             best_score = np.argmax(score_values)
 
+            extra_values = dict(("val/" + k,v) for k,v in score_details[best_score].items())
+
             self.log_dict(
                 {
                     "val/score": score_values[best_score],
                     "val/threshold": score_thresholds[best_score],
+                    **extra_values,
                 },
                 on_step=False,
                 on_epoch=True,
@@ -207,16 +212,6 @@ class PointDetectionModel(L.LightningModule):
             prog_bar=True,
             logger=True,
             sync_dist=True,
-        )
-
-        self.log(
-            "val/num_items_in_batch",
-            num_items_in_batch,
-            batch_size=len(batch["volume"]),
-            on_step=True,
-            prog_bar=True,
-            logger=True,
-            sync_dist=False,
         )
         return val_loss
 
