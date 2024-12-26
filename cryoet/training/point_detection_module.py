@@ -131,11 +131,20 @@ class PointDetectionModel(L.LightningModule):
         else:
             raise KeyError(f"Unknown optimizer {self.train_args.optim}")
 
+        warmup_steps = 0
+        if self.train_args.warmup_steps > 0:
+            warmup_steps = self.train_args.warmup_steps
+            self.trainer.print(f"Using warmup steps: {warmup_steps}")
+        elif self.train_args.warmup_ratio > 0:
+            warmup_steps = int(
+                self.train_args.warmup_ratio * self.trainer.estimated_stepping_batches
+            )
+            self.trainer.print(f"Using warmup steps: {warmup_steps}")
+
         scheduler = LinearWarmupCosineAnnealingLR(
             optimizer,
-            warmup_epochs=self.train_args.warmup_steps,
-            #                      max_epochs=self.trainer.estimated_stepping_batches
-            max_epochs=1_000_000,
+            warmup_epochs=warmup_steps,
+            max_epochs=self.trainer.estimated_stepping_batches,
         )
         return {
             "optimizer": optimizer,
