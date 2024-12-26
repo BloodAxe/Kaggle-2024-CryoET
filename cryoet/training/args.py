@@ -13,8 +13,8 @@ class ModelArguments:
         default=None,
     )
 
-    model_name_from_scratch: str = field(
-        default="vgpt2",
+    pretrained_backbone_path: str = field(
+        default=None,
     )
 
 

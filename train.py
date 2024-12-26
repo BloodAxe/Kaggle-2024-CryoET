@@ -40,8 +40,10 @@ def main():
 
     config = SwinUNETRForPointDetectionConfig()
     model = SwinUNETRForPointDetection(config)
-    backbone_sd = torch.load("pretrained/swin_unetr_btcv_segmentation/models/model.pt", weights_only=True)
-    model.backbone.load_state_dict(backbone_sd, strict=True)
+    if model_args.pretrained_backbone_path is not None:
+        backbone_sd = torch.load(model_args.pretrained_backbone_path, weights_only=True)
+        model.backbone.load_state_dict(backbone_sd, strict=True)
+        training_args.master_print(f"Loaded pretrained backbone from {model_args.pretrained_backbone_path}")
 
     training_args.master_print(f"Model parameters: {count_parameters(model, human_friendly=True)}")
 
