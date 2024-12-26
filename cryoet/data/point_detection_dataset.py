@@ -1,19 +1,15 @@
-from pathlib import Path
 from typing import Tuple, Iterable
 
 import numpy as np
 import torch
 from torch import Tensor
-from torch.utils.data import Dataset, ConcatDataset, DataLoader
+from torch.utils.data import Dataset
 
 from cryoet.data.parsers import (
     get_volume_and_objects,
     TARGET_CLASSES,
     ANGSTROMS_IN_PIXEL,
 )
-
-from .cross_validation import split_data_into_folds
-import lightning as L
 
 
 class CryoETPointDetectionDataset(Dataset):
@@ -139,6 +135,9 @@ def decoder_centers_from_heatmap(logits: Tensor, kernel=3, top_k=256):
 
 
 class SlidingWindowCryoETPointDetectionDataset(CryoETPointDetectionDataset):
+    def __repr__(self):
+        return f"{self.__class__.__name__}(window_size={self.window_size}, stride={self.stride}, study={self.study}, mode={self.mode}, split={self.split}) [{len(self)}]"
+
     def __init__(
         self,
         window_size: int,
@@ -190,43 +189,14 @@ class SlidingWindowCryoETPointDetectionDataset(CryoETPointDetectionDataset):
             centers, labels, radii, shape=volume.shape, num_classes=self.num_classes
         )
 
-        return {
-            "volume": torch.from_numpy(volume),
+        data = {
+            "volume": torch.from_numpy(volume).unsqueeze(0),  # C D H W
             "labels": torch.from_numpy(labels),
             "tile_offset": (tile[0].start, tile[1].start, tile[2].start),
             "study": self.study,
             "mode": self.mode,
         }
+        return data
 
     def __len__(self):
         return len(self.tiles)
-
-
-class PointDetectionDataModule(L.LightningDataModule):
-    def __init__(
-        self,
-        root: str,
-        mode: str,
-        window_size: int,
-        stride: int,
-        fold: int,
-        batch_size: int,
-    ):
-        super().__init__()
-        self.root = Path(root)
-        self.mode = mode
-        self.window_size = window_size
-        self.stride = stride
-        self.batch_size = batch_size
-
-        self.train_studies, self.valid_studies = split_data_into_folds(self.root)[fold]
-
-    def setup(self, stage):
-        self.train = ConcatDataset()
-        self.val = ConcatDataset()
-
-    def train_dataloader(self):
-        return DataLoader(self.train, batch_size=self.train_batch_size)
-
-    def val_dataloader(self):
-        return DataLoader(self.val, batch_size=self.train_batch_size)

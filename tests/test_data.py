@@ -2,6 +2,7 @@ from pathlib import Path
 from pprint import pprint
 
 from cryoet.data.cross_validation import split_data_into_folds
+from cryoet.data.point_detection_data_module import PointDetectionDataModule
 from cryoet.data.point_detection_dataset import SlidingWindowCryoETPointDetectionDataset
 
 DATA_ROOT = Path(__file__).parent.parent / "data" / "czii-cryo-et-object-identification"
@@ -38,3 +39,27 @@ def test_dataset():
     assert "labels" in sample
     assert sample["volume"].shape == (96, 96, 96)
     assert sample["labels"].shape == (dataset.num_classes, 96, 96, 96)
+
+
+def test_data_module():
+    dm = PointDetectionDataModule(
+        root=DATA_ROOT,
+        mode="denoised",
+        window_size=96,
+        stride=64,
+        fold=0,
+        train_batch_size=2,
+        valid_batch_size=2,
+    )
+
+    dm.setup("fit")
+
+    train_loader = dm.train_dataloader()
+    print(len(train_loader))
+    for batch in train_loader:
+        pass
+
+    valid_loader = dm.val_dataloader()
+    print(len(valid_loader))
+    for batch in valid_loader:
+        pass

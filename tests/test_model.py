@@ -1,12 +1,12 @@
 import torch
 
-from cryoet.modelling.configuration import PointDetectionModelConfig
-from cryoet.modelling.unetr_point_detection import PointDetectionModel
+from cryoet.modelling.configuration import SwinUNETRForPointDetectionConfig
+from cryoet.modelling.unetr_point_detection import SwinUNETRForPointDetection
 
 
 def test_model_forward():
-    config = PointDetectionModelConfig()
-    model = PointDetectionModel(config)
+    config = SwinUNETRForPointDetectionConfig()
+    model = SwinUNETRForPointDetection(config)
 
     input = torch.randn((1, 1, 96, 96, 96))
     labels = torch.randn((1, config.num_classes, 96, 96, 96))

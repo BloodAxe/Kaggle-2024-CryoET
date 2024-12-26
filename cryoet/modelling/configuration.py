@@ -1,7 +1,7 @@
 from transformers import PretrainedConfig
 
 
-class PointDetectionModelConfig(PretrainedConfig):
+class SwinUNETRForPointDetectionConfig(PretrainedConfig):
     def __init__(
         self,
         spatial_dims=3,

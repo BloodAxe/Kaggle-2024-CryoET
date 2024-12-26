@@ -6,7 +6,7 @@ from monai.networks.nets import SwinUNETR
 from torch import nn, Tensor
 import torch.nn.functional as F
 
-from cryoet.modelling.configuration import PointDetectionModelConfig
+from cryoet.modelling.configuration import SwinUNETRForPointDetectionConfig
 
 
 @dataclasses.dataclass
@@ -50,6 +50,9 @@ class PointDetectionHead(nn.Module):
         super().__init__()
         self.conv = nn.Conv3d(in_channels, num_classes, kernel_size=1)
 
+        torch.nn.init.zeros_(self.conv.weight)
+        torch.nn.init.constant_(self.conv.bias, -4)
+
     def forward(self, features, labels=None, **loss_kwargs):
         logits = self.conv(features)
 
@@ -60,8 +63,8 @@ class PointDetectionHead(nn.Module):
         return PointDetectionOutput(logits=logits, loss=loss)
 
 
-class PointDetectionModel(nn.Module):
-    def __init__(self, config: PointDetectionModelConfig):
+class SwinUNETRForPointDetection(nn.Module):
+    def __init__(self, config: SwinUNETRForPointDetectionConfig):
         super().__init__()
 
         self.backbone = SwinUNETR(
@@ -70,6 +73,7 @@ class PointDetectionModel(nn.Module):
             in_channels=config.in_channels,
             out_channels=config.out_channels,
             feature_size=config.feature_size,
+            use_checkpoint=True,
         )
 
         self.head = PointDetectionHead(
