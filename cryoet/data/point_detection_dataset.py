@@ -217,7 +217,7 @@ class SlidingWindowCryoETPointDetectionDataset(CryoETPointDetectionDataset):
             "volume": torch.from_numpy(volume).unsqueeze(0),  # C D H W
             "labels": torch.from_numpy(labels),
             "tile_offsets_zyx": torch.tensor(
-                tile[0].start, tile[1].start, tile[2].start
+                [tile[0].start, tile[1].start, tile[2].start]
             ),
             "volume_shape": torch.tensor(self.volume_shape),
             "study": self.study,
