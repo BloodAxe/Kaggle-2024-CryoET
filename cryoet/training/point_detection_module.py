@@ -51,11 +51,13 @@ class PointDetectionModel(L.LightningModule):
         self,
         model,
         train_args: MyTrainingArguments,
+        gather_num_items_in_batch: bool = True,
     ):
         super().__init__()
         self.model = model
         self.train_args = train_args
         self.validation_predictions = None
+        self.gather_num_items_in_batch = gather_num_items_in_batch
 
     def forward(self, volume, labels=None, **loss_kwargs):
         return self.model(
@@ -65,9 +67,14 @@ class PointDetectionModel(L.LightningModule):
         )
 
     def training_step(self, batch, batch_idx):
-        num_items_in_batch = batch["labels"].eq(1).sum().item()
+        num_items_in_batch = batch["labels"].eq(1).sum()
+        if self.gather_num_items_in_batch:
+            num_items_in_batch = self.fabric.all_reduce(num_items_in_batch, reduce_op="sum")
+
         outputs = self(**batch, num_items_in_batch=num_items_in_batch)
-        loss = outputs.loss
+
+        if self.gather_num_items_in_batch:
+            loss = outputs.loss * self.fabric.world_size
 
         self.log(
             "train/loss",
@@ -150,7 +157,7 @@ class PointDetectionModel(L.LightningModule):
                     submission["z"].append(float(coord[2]))
 
             submission = pd.DataFrame.from_dict(submission)
-            print(submission.head())
+            print(submission.sort_values(by="score", ascending=False).head(20))
 
             score_thresholds = np.arange(0.1, 0.9, 0.05)
             score_values = []
