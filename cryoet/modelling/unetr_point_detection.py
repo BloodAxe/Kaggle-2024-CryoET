@@ -44,7 +44,7 @@ class PointDetectionHead(nn.Module):
         super().__init__()
         self.conv = nn.Conv3d(in_channels, num_classes, kernel_size=3, padding=1)
 
-        # torch.nn.init.zeros_(self.conv.weight)
+        torch.nn.init.zeros_(self.conv.weight)
         torch.nn.init.constant_(self.conv.bias, -3)
 
     def forward(self, features, labels=None, **loss_kwargs):
