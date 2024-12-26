@@ -5,7 +5,10 @@ import torch
 from torch import Tensor
 from torch.utils.data import Dataset
 
-from cryoet.data.augmentations.functional import random_rotate90_volume
+from cryoet.data.augmentations.functional import (
+    random_rotate90_volume,
+    random_flip_volume,
+)
 from cryoet.data.parsers import (
     get_volume_and_objects,
     TARGET_CLASSES,
@@ -218,6 +221,7 @@ class SlidingWindowCryoETPointDetectionDataset(CryoETPointDetectionDataset):
 
         if self.random_rotate:
             volume, labels = random_rotate90_volume(volume, labels)
+            volume, labels = random_flip_volume(volume, labels)
 
         data = {
             "volume": torch.from_numpy(volume).unsqueeze(0),  # C D H W

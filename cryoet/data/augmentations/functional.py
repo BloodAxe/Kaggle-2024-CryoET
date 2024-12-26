@@ -20,3 +20,23 @@ def random_rotate90_volume(volume, labels):
     labels = np.rot90(labels, k=k3, axes=(1, 3))
 
     return np.ascontiguousarray(volume), np.ascontiguousarray(labels)
+
+
+def random_flip_volume(volume, labels):
+    """Randomly flip the volume and labels.
+    :param volume: The volume to rotate. Shape: (D, H, W)
+    :param labels: The labels to rotate. Shape: (C, D, H, W)
+    """
+    if random.random() < 0.5:
+        volume = np.flip(volume, axis=0)
+        labels = np.flip(labels, axis=1)
+
+    if random.random() < 0.5:
+        volume = np.flip(volume, axis=1)
+        labels = np.flip(labels, axis=2)
+
+    if random.random() < 0.5:
+        volume = np.flip(volume, axis=2)
+        labels = np.flip(labels, axis=3)
+
+    return np.ascontiguousarray(volume), np.ascontiguousarray(labels)
