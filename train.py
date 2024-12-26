@@ -59,6 +59,9 @@ def main():
             fold=data_args.fold,
             train_batch_size=training_args.per_device_train_batch_size,
             valid_batch_size=training_args.per_device_eval_batch_size,
+            dataloader_num_workers=training_args.dataloader_num_workers,
+            dataloader_persistent_workers=training_args.dataloader_persistent_workers,
+            dataloader_pin_memory=training_args.dataloader_pin_memory,
         )
 
     model_module = PointDetectionModel(model, training_args)
