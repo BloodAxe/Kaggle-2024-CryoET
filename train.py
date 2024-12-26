@@ -25,7 +25,9 @@ def main():
     training_args = typing.cast(MyTrainingArguments, training_args)
 
     if training_args.output_dir is None:
-        training_args.output_dir = f"runs/swin-unetr-point-detection"
+        training_args.output_dir = (
+            f"runs/swin_unetr_point_detection_fold_{data_args.fold}"
+        )
 
     training_args.master_print(f"Training arguments: {training_args}")
 
