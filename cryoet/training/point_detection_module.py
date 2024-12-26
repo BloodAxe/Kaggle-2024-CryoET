@@ -51,7 +51,7 @@ class PointDetectionModel(L.LightningModule):
         self,
         model,
         train_args: MyTrainingArguments,
-        gather_num_items_in_batch: bool = True,
+        gather_num_items_in_batch: bool = False,
     ):
         super().__init__()
         self.model = model
@@ -180,7 +180,7 @@ class PointDetectionModel(L.LightningModule):
 
             best_score = np.argmax(score_values)
 
-            extra_values = dict(("val/" + k,v) for k,v in score_details[best_score].items())
+            extra_values = dict(("val/" + k, v) for k, v in score_details[best_score].items())
 
             self.log_dict(
                 {
