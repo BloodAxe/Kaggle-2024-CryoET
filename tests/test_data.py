@@ -44,7 +44,7 @@ def test_dataset():
 def test_data_module():
     dm = PointDetectionDataModule(
         root=DATA_ROOT,
-        mode="denoised",
+        train_modes="denoised",
         window_size=96,
         stride=64,
         fold=0,

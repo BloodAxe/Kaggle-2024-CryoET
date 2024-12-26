@@ -12,7 +12,8 @@ class PointDetectionDataModule(L.LightningDataModule):
     def __init__(
         self,
         root: str | Path,
-        mode: str | List,
+        train_modes: str | List,
+        valid_modes: str | List,
         window_size: int,
         stride: int,
         fold: int,
@@ -25,7 +26,12 @@ class PointDetectionDataModule(L.LightningDataModule):
         super().__init__()
         self.root = Path(root)
         self.runs_dir = self.root / "train" / "static" / "ExperimentRuns"
-        self.modes = [mode] if isinstance(mode, str) else list(mode)
+        self.train_modes = (
+            [train_modes] if isinstance(train_modes, str) else list(train_modes)
+        )
+        self.valid_modes = (
+            [valid_modes] if isinstance(valid_modes, str) else list(valid_modes)
+        )
         self.window_size = window_size
         self.stride = stride
         self.train_batch_size = train_batch_size
@@ -42,10 +48,9 @@ class PointDetectionDataModule(L.LightningDataModule):
         self.val = None
 
     def setup(self, stage):
-
         train_datasets = []
         for train_study in self.train_studies:
-            for mode in self.modes:
+            for mode in self.train_modes:
                 dataset = SlidingWindowCryoETPointDetectionDataset(
                     window_size=self.window_size,
                     stride=self.stride,
@@ -58,7 +63,7 @@ class PointDetectionDataModule(L.LightningDataModule):
 
         valid_datasets = []
         for valid_study in self.valid_studies:
-            for mode in self.modes:
+            for mode in self.valid_modes:
                 dataset = SlidingWindowCryoETPointDetectionDataset(
                     window_size=self.window_size,
                     stride=self.stride,
