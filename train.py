@@ -40,6 +40,8 @@ def main():
 
     config = SwinUNETRForPointDetectionConfig()
     model = SwinUNETRForPointDetection(config)
+    backbone_sd = torch.load("pretrained/swin_unetr_btcv_segmentation/models/model.pt")
+    model.backbone.load_state_dict(backbone_sd, strict=True)
 
     training_args.master_print(
         f"Model parameters: {count_parameters(model, human_friendly=True)}"
@@ -98,11 +100,14 @@ def main():
     if "wandb" not in training_args.report_to:
         callbacks.append(lr_monitor)
 
+    precision = infer_training_precision(training_args)
+    fabric.print(f"Training precision: {precision}")
+
     trainer = L.Trainer(
         strategy=strategy,
         max_epochs=int(training_args.num_train_epochs),
         max_steps=training_args.max_steps,
-        precision=(infer_training_precision(training_args)),
+        precision=precision,
         log_every_n_steps=training_args.logging_steps,
         default_root_dir=training_args.output_dir,
         callbacks=callbacks,

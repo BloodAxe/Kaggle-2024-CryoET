@@ -119,6 +119,8 @@ def score(
             results[particle_type]["total_fn"] += fn
 
     aggregate_fbeta = 0.0
+    per_particle_fbeta = {}
+
     for particle_type, totals in results.items():
         tp = totals["total_tp"]
         fp = totals["total_fp"]
@@ -132,9 +134,10 @@ def score(
             else 0.0
         )
         aggregate_fbeta += fbeta * weights.get(particle_type, 1.0)
+        per_particle_fbeta[particle_type] = fbeta
 
     if weights:
         aggregate_fbeta = aggregate_fbeta / sum(weights.values())
     else:
         aggregate_fbeta = aggregate_fbeta / len(results)
-    return aggregate_fbeta
+    return aggregate_fbeta, per_particle_fbeta

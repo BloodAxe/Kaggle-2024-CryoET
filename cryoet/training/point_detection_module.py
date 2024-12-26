@@ -23,13 +23,6 @@ class PointDetectionModel(L.LightningModule):
         self.train_args = train_args
 
     def forward(self, volume, labels=None, **loss_kwargs):
-        # We anyway mask out padded tokens in the loss function
-        # if labels is not None:
-        #     num_items_in_batch = labels.eq(1).sum().item()
-        #     loss_kwargs = dict(num_items_in_batch=num_items_in_batch)
-        # else:
-        #     loss_kwargs = {}
-
         return self.model(
             volume=volume,
             labels=labels,
@@ -37,8 +30,10 @@ class PointDetectionModel(L.LightningModule):
         )
 
     def training_step(self, batch, batch_idx):
-        outputs = self(**batch)
+        num_items_in_batch = batch["labels"].eq(1).sum().item()
+        outputs = self(**batch, num_items_in_batch=num_items_in_batch)
         loss = outputs.loss
+
         self.log(
             "train/loss",
             loss,
@@ -48,10 +43,22 @@ class PointDetectionModel(L.LightningModule):
             prog_bar=True,
             logger=True,
         )
+
+        self.log(
+            "train/num_items_in_batch",
+            num_items_in_batch,
+            batch_size=len(batch["volume"]),
+            on_step=True,
+            prog_bar=True,
+            logger=True,
+            sync_dist=False,
+        )
         return loss
 
     def validation_step(self, batch, batch_idx):
-        outputs = self(**batch)
+        num_items_in_batch = batch["labels"].eq(1).sum().item()
+        outputs = self(**batch, num_items_in_batch=num_items_in_batch)
+
         val_loss = outputs.loss
         self.log(
             "val/loss",
@@ -62,6 +69,16 @@ class PointDetectionModel(L.LightningModule):
             prog_bar=True,
             logger=True,
             sync_dist=True,
+        )
+
+        self.log(
+            "val/num_items_in_batch",
+            num_items_in_batch,
+            batch_size=len(batch["volume"]),
+            on_step=True,
+            prog_bar=True,
+            logger=True,
+            sync_dist=False,
         )
         return val_loss
 

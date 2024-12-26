@@ -1,16 +1,11 @@
-import numpy as np
-import matplotlib.pyplot as plt
-from matplotlib.patches import Circle
-import math
-
-
-import os
-import glob
 import json
+import math
+import os
+from pathlib import Path
+
+import matplotlib.pyplot as plt
 import numpy as np
 import zarr
-import numpy as np
-import matplotlib.pyplot as plt
 from matplotlib.patches import Circle
 
 ANGSTROMS_IN_PIXEL = 10.0
@@ -18,45 +13,43 @@ ANGSTROMS_IN_PIXEL = 10.0
 TARGET_CLASSES = (
     {
         "name": "apo-ferritin",
-        "is_particle": True,
-        "label": 1,
+        "label": 0,
         "color": [0, 117, 255],
         "radius": 60,
         "map_threshold": 0.0418,
     },
     {
         "name": "beta-galactosidase",
-        "is_particle": True,
-        "label": 2,
+        "label": 1,
         "color": [176, 0, 192],
         "radius": 90,
         "map_threshold": 0.0578,
     },
     {
         "name": "ribosome",
-        "is_particle": True,
-        "label": 3,
+        "label": 2,
         "color": [0, 92, 49],
         "radius": 150,
         "map_threshold": 0.0374,
     },
     {
         "name": "thyroglobulin",
-        "is_particle": True,
-        "label": 4,
+        "label": 3,
         "color": [43, 255, 72],
         "radius": 130,
         "map_threshold": 0.0278,
     },
     {
         "name": "virus-like-particle",
-        "is_particle": True,
-        "label": 5,
+        "label": 4,
         "color": [255, 30, 53],
         "radius": 135,
         "map_threshold": 0.201,
     },
 )
+
+NUM_CLASSES = len(TARGET_CLASSES)
+CLASS_LABEL_TO_CLASS_NAME = {c["label"]: c["name"] for c in TARGET_CLASSES}
 
 
 def get_volume(
@@ -175,7 +168,7 @@ def get_annotations(
 
 
 def get_volume_and_objects(
-    root_dir: str,
+    root_dir: str | Path,
     study_name: str,
     mode: str = "denoised",
     split: str = "train",

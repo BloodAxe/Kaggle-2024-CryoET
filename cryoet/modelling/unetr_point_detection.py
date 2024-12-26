@@ -40,8 +40,9 @@ def point_detection_loss(
 
     loss = (neg_loss + pos_loss).sum()
     if num_items_in_batch is None:
-        num_items_in_batch = pos_mask.sum().clamp_min(1)
+        num_items_in_batch = pos_mask.sum().item()
 
+    num_items_in_batch = max(num_items_in_batch, 1)
     return loss.div_(num_items_in_batch)
 
 
