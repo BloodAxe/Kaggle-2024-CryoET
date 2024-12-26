@@ -8,7 +8,7 @@ from torch.utils.data import ConcatDataset, DataLoader
 
 from cryoet.data.cross_validation import split_data_into_folds
 from cryoet.data.parsers import CLASS_LABEL_TO_CLASS_NAME
-from cryoet.data.point_detection_dataset import SlidingWindowCryoETPointDetectionDataset
+from cryoet.data.point_detection_sliding_window_dataset import SlidingWindowCryoETPointDetectionDataset
 
 
 class PointDetectionDataModule(L.LightningDataModule):
