@@ -118,6 +118,7 @@ class PointDetectionModel(L.LightningModule):
             self.validation_predictions[study].accumulate(tile_scores, tile_offsets_zyx)
 
     def on_validation_epoch_end(self) -> None:
+        torch.cuda.empty_cache()
         all_validation_predictions = all_gather(self.validation_predictions)
         self.validation_predictions = None
 
