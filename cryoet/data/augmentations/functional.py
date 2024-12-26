@@ -16,4 +16,4 @@ def random_rotate90_volume(volume, labels):
     volume = np.rot90(volume, k=k3, axes=(0, 2))
     labels = np.rot90(labels, k=k3, axes=(0, 2))
 
-    return volume, labels
+    return np.ascontiguousarray(volume), np.ascontiguousarray(labels)
