@@ -42,7 +42,7 @@ def point_detection_loss(logits, labels, num_items_in_batch=None, alpha=2, beta=
 class PointDetectionHead(nn.Module):
     def __init__(self, in_channels: int, num_classes: int):
         super().__init__()
-        self.conv = nn.Conv3d(in_channels, num_classes, kernel_size=1)
+        self.conv = nn.Conv3d(in_channels, num_classes, kernel_size=3, padding=1)
 
         # torch.nn.init.zeros_(self.conv.weight)
         torch.nn.init.constant_(self.conv.bias, -3)
