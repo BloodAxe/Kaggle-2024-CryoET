@@ -150,16 +150,21 @@ class PointDetectionModel(L.LightningModule):
                     submission["z"].append(float(coord[2]))
 
             submission = pd.DataFrame.from_dict(submission)
+            print(submission.head())
 
             score_thresholds = np.arange(0.1, 0.9, 0.05)
             score_values = []
             score_details = []
 
             for score_threshold in score_thresholds:
-                keep_mask = submission["score"] > score_threshold
+                keep_mask = submission["score"] >= score_threshold
                 submission_filtered = submission[keep_mask]
                 s = score_submission(
-                    self.trainer.datamodule.solution.copy(), submission_filtered.copy(), "id", distance_multiplier=0.5, beta=4
+                    solution=self.trainer.datamodule.solution.copy(),
+                    submission=submission_filtered.copy(),
+                    row_id_column_name="id",
+                    distance_multiplier=0.5,
+                    beta=4,
                 )
                 score_values.append(s[0])
                 score_details.append(s[1])

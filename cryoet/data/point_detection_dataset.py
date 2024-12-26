@@ -16,20 +16,24 @@ from cryoet.data.parsers import (
 )
 
 
+def normalize_volume_to_unit_range(volume):
+    volume = volume - volume.min()
+    volume = volume / volume.max()
+    return volume
+
+
 class CryoETPointDetectionDataset(Dataset):
     def __init__(self, root, study, mode, split="train"):
-        volume_data, object_centers, object_labels, object_radii = (
-            get_volume_and_objects(
-                root_dir=root,
-                study_name=study,
-                mode=mode,
-                split=split,
-            )
+        volume_data, object_centers, object_labels, object_radii = get_volume_and_objects(
+            root_dir=root,
+            study_name=study,
+            mode=mode,
+            split=split,
         )
 
         self.study = study
         self.mode = mode
-        self.volume_data = volume_data
+        self.volume_data = normalize_volume_to_unit_range(volume_data)
         self.volume_shape = volume_data.shape
         self.object_centers = object_centers
         self.object_labels = object_labels
@@ -41,9 +45,7 @@ class CryoETPointDetectionDataset(Dataset):
         self.num_classes = len(TARGET_CLASSES)
 
 
-def compute_tiles(
-    volume_shape: Tuple[int, int, int], window_size: int, stride: int
-) -> Iterable[Tuple[slice, slice, slice]]:
+def compute_tiles(volume_shape: Tuple[int, int, int], window_size: int, stride: int) -> Iterable[Tuple[slice, slice, slice]]:
     """Compute the slices for a sliding window over a volume.
     A method can output a last slice that is smaller than the window size.
     """
@@ -87,17 +89,13 @@ def encode_centers_to_heatmap(centers, labels, radii, shape, num_classes):
         # radius = int(radius + 0.5)
 
         diameter = 2 * radius + 1
-        gaussian = centernet_gaussian_3d(
-            (diameter, diameter, diameter), sigma=diameter / 6.0
-        )
+        gaussian = centernet_gaussian_3d((diameter, diameter, diameter), sigma=diameter / 6.0)
 
         front, back = min(z, radius), min(depth - z, radius + 1)
         top, bottom = min(y, radius), min(height - y, radius + 1)
         left, right = min(x, radius), min(width - x, radius + 1)
 
-        masked_heatmap = heatmap[
-            label, z - front : z + back, y - top : y + bottom, x - left : x + right
-        ]
+        masked_heatmap = heatmap[label, z - front : z + back, y - top : y + bottom, x - left : x + right]
         masked_gaussian = gaussian[
             radius - front : radius + back,
             radius - top : radius + bottom,
@@ -123,9 +121,7 @@ def decoder_centers_from_heatmap(probas: Tensor, kernel=3, top_k=256):
 
     # nms
     pad = (kernel - 1) // 2
-    maxpool = torch.nn.functional.max_pool3d(
-        probas, kernel_size=kernel, padding=pad, stride=1
-    )
+    maxpool = torch.nn.functional.max_pool3d(probas, kernel_size=kernel, padding=pad, stride=1)
 
     mask = probas == maxpool
 
@@ -193,9 +189,7 @@ class SlidingWindowCryoETPointDetectionDataset(CryoETPointDetectionDataset):
         # fmt: on
 
         volume = self.volume_data[tile[0], tile[1], tile[2]].copy()
-        centers_px = centers_px[keep_mask].copy() - np.array(
-            [tile[2].start, tile[1].start, tile[0].start]
-        ).reshape(1, 3)
+        centers_px = centers_px[keep_mask].copy() - np.array([tile[2].start, tile[1].start, tile[0].start]).reshape(1, 3)
         radii_px = radii_px[keep_mask].copy()
         object_labels = object_labels[keep_mask].copy()
 
@@ -226,9 +220,7 @@ class SlidingWindowCryoETPointDetectionDataset(CryoETPointDetectionDataset):
         data = {
             "volume": torch.from_numpy(volume).unsqueeze(0),  # C D H W
             "labels": torch.from_numpy(labels),
-            "tile_offsets_zyx": torch.tensor(
-                [tile[0].start, tile[1].start, tile[2].start]
-            ),
+            "tile_offsets_zyx": torch.tensor([tile[0].start, tile[1].start, tile[2].start]),
             "volume_shape": torch.tensor(self.volume_shape),
             "study": self.study,
             "mode": self.mode,

@@ -15,9 +15,7 @@ class PointDetectionOutput:
     loss: Optional[Tensor]
 
 
-def point_detection_loss(
-    logits, labels, num_items_in_batch=None, alpha=2, beta=4, eps=1e-6, **kwargs
-):
+def point_detection_loss(logits, labels, num_items_in_batch=None, alpha=2, beta=4, eps=1e-6, **kwargs):
     """
     Compute centernet loss for object detection
 
@@ -31,12 +29,7 @@ def point_detection_loss(
     pt = logits.sigmoid().clamp(eps, 1 - eps)
 
     pos_loss: Tensor = -torch.pow(1 - pt, alpha) * F.logsigmoid(logits) * pos_mask
-    neg_loss: Tensor = (
-        -torch.pow(1.0 - labels, beta)
-        * torch.pow(pt, alpha)
-        * F.logsigmoid(-logits)
-        * neg_mask
-    )
+    neg_loss: Tensor = -torch.pow(1.0 - labels, beta) * torch.pow(pt, alpha) * F.logsigmoid(-logits) * neg_mask
 
     loss = (neg_loss + pos_loss).sum()
     if num_items_in_batch is None:
@@ -51,7 +44,7 @@ class PointDetectionHead(nn.Module):
         super().__init__()
         self.conv = nn.Conv3d(in_channels, num_classes, kernel_size=1)
 
-        torch.nn.init.zeros_(self.conv.weight)
+        # torch.nn.init.zeros_(self.conv.weight)
         torch.nn.init.constant_(self.conv.bias, -4)
 
     def forward(self, features, labels=None, **loss_kwargs):
@@ -77,9 +70,7 @@ class SwinUNETRForPointDetection(nn.Module):
             use_checkpoint=True,
         )
 
-        self.head = PointDetectionHead(
-            in_channels=config.out_channels, num_classes=config.num_classes
-        )
+        self.head = PointDetectionHead(in_channels=config.out_channels, num_classes=config.num_classes)
 
     def forward(self, volume, labels=None, **loss_kwargs):
         features = self.backbone(volume)
