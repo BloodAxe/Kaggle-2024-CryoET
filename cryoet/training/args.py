@@ -27,6 +27,9 @@ class DataArguments:
     data_root: str = field(default_factory=data_root_default_factory)
     fold: int = field(default=0)
 
+    use_random_crops: bool = field(default=False)
+    use_instance_crops: bool = field(default=False)
+
 
 @dataclass
 class MyTrainingArguments(TrainingArguments):
@@ -37,38 +40,24 @@ class MyTrainingArguments(TrainingArguments):
     max_grad_norm: float = field(default=3.0, metadata={"help": "Max grad norm"})
 
     save_strategy: str = field(default="epoch", metadata={"help": "Save strategy"})
-    eval_strategy: str = field(
-        default="epoch", metadata={"help": "Evaluation strategy"}
-    )
+    eval_strategy: str = field(default="epoch", metadata={"help": "Evaluation strategy"})
 
     logging_steps: int = field(default=1, metadata={"help": "Logging steps"})
 
-    gradient_checkpointing: bool = field(
-        default=True, metadata={"help": "Gradient checkpointing"}
-    )
+    gradient_checkpointing: bool = field(default=True, metadata={"help": "Gradient checkpointing"})
 
-    load_best_model_at_end: bool = field(
-        default=True, metadata={"help": "Load best model at the end"}
-    )
+    load_best_model_at_end: bool = field(default=True, metadata={"help": "Load best model at the end"})
 
-    ddp_find_unused_parameters: bool = field(
-        default=False, metadata={"help": "DDP find unused parameters"}
-    )
+    ddp_find_unused_parameters: bool = field(default=False, metadata={"help": "DDP find unused parameters"})
 
-    metric_for_best_model: str = field(
-        default="eval_loss", metadata={"help": "Metric for best model"}
-    )
+    metric_for_best_model: str = field(default="eval_loss", metadata={"help": "Metric for best model"})
 
-    greater_is_better: bool = field(
-        default=False, metadata={"help": "Greater is better"}
-    )
+    greater_is_better: bool = field(default=False, metadata={"help": "Greater is better"})
 
     learning_rate: float = field(default=3e-4, metadata={"help": "Learning rate"})
     weight_decay: float = field(default=0.0001, metadata={"help": "Weight decay"})
 
-    report_to: typing.Union[str, typing.List[str]] = field(
-        default="tensorboard", metadata={"help": "Report to"}
-    )
+    report_to: typing.Union[str, typing.List[str]] = field(default="tensorboard", metadata={"help": "Report to"})
 
     optim: str = field(default="adamw_torch")
 

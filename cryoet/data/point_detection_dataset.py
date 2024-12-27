@@ -47,11 +47,20 @@ def compute_tiles(volume_shape: Tuple[int, int, int], window_size: int, stride: 
     A method can output a last slice that is smaller than the window size.
     """
     z, y, x = volume_shape
-    for z_start in range(0, z - window_size + 1, stride):
+    for z_start in range(0, z + stride, stride):
+        if z_start >= z:
+            break
+
         z_end = z_start + window_size
-        for y_start in range(0, y - window_size + 1, stride):
+        for y_start in range(0, y + stride, stride):
+            if y_start >= y:
+                break
+
             y_end = y_start + window_size
-            for x_start in range(0, x - window_size + 1, stride):
+            for x_start in range(0, x + stride, stride):
+                if x_start >= x:
+                    break
+
                 x_end = x_start + window_size
                 yield (
                     slice(z_start, z_end),

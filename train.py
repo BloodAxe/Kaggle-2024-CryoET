@@ -52,17 +52,12 @@ def main():
 
     with fabric.rank_zero_first():
         data_module = PointDetectionDataModule(
-            root=data_args.data_root,
+            data_args=data_args,
+            train_args=training_args,
             train_modes="denoised",
             valid_modes="denoised",
             window_size=96,
             stride=32,
-            fold=data_args.fold,
-            train_batch_size=training_args.per_device_train_batch_size,
-            valid_batch_size=training_args.per_device_eval_batch_size,
-            dataloader_num_workers=training_args.dataloader_num_workers,
-            dataloader_persistent_workers=training_args.dataloader_persistent_workers,
-            dataloader_pin_memory=training_args.dataloader_pin_memory,
         )
 
     model_module = PointDetectionModel(model, training_args)
