@@ -42,4 +42,4 @@ unetr_baseline_all_crops:
     --num_train_epochs=50 --warmup_steps=32 --average_tokens_across_devices=True --use_sliding_crops=True --use_instance_crops=True --use_random_crops=True
 
 
-unetr_all: unetr_baseline_use_sliding_crops unetr_baseline_use_random_crops unetr_baseline_use_instance_crops unetr_baseline_instance_and_random_crops unetr_baseline_all_crops
+unetr_all: unetr_baseline_use_random_crops unetr_baseline_use_instance_crops unetr_baseline_instance_and_random_crops unetr_baseline_all_crops
