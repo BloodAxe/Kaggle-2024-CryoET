@@ -93,6 +93,7 @@ class PointDetectionModel(L.LightningModule):
             "train/loss",
             loss,
             batch_size=len(batch["volume"]),
+            sync_dist=True,
             on_step=True,
             on_epoch=True,
             prog_bar=True,
