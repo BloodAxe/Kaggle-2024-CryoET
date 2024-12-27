@@ -24,12 +24,12 @@ from pytorch_toolbelt.utils.distributed import is_dist_avail_and_initialized
 import torch.distributed as dist
 
 
-def maybe_all_reduce(x, op=dist.ReduceOp.SUM):
+def maybe_all_reduce(x: Tensor, **kwargs):
     if not is_dist_avail_and_initialized():
         return x
 
     xc = x.clone()
-    dist.all_reduce(xc, op=op)
+    dist.all_reduce(xc, **kwargs)
     return xc
 
 
