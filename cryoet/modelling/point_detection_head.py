@@ -12,6 +12,13 @@ class PointDetectionOutput:
     loss: Optional[Tensor]
 
 
+def quality_focal_loss(logits, labels, num_items_in_batch=None, alpha=2, **kwargs):
+    bce_loss = F.binary_cross_entropy_with_logits(logits, labels, reduction="none")
+    qfl_term = (logits.sigmoid() - labels).abs().pow(alpha)
+    loss = bce_loss * qfl_term
+    return loss.mean()
+
+
 def point_detection_loss(logits, labels, num_items_in_batch=None, alpha=2, beta=4, eps=1e-6, **kwargs):
     """
     Compute centernet loss for object detection
@@ -49,6 +56,7 @@ class PointDetectionHead(nn.Module):
 
         loss = None
         if labels is not None:
-            loss = point_detection_loss(logits.float(), labels.float(), **loss_kwargs)
+            # loss = point_detection_loss(logits.float(), labels.float(), **loss_kwargs)
+            loss = quality_focal_loss(logits.float(), labels.float(), **loss_kwargs)
 
         return PointDetectionOutput(logits=logits, loss=loss)
