@@ -24,12 +24,12 @@ from pytorch_toolbelt.utils.distributed import is_dist_avail_and_initialized
 import torch.distributed as dist
 
 
-def maybe_all_reduce(x: Tensor, **kwargs):
+def maybe_all_reduce(x: Tensor, op=dist.ReduceOp.SUM):
     if not is_dist_avail_and_initialized():
         return x
 
     xc = x.clone()
-    dist.all_reduce(xc, **kwargs)
+    dist.all_reduce(xc, op=op)
     return xc
 
 
@@ -80,7 +80,7 @@ class PointDetectionModel(L.LightningModule):
     def training_step(self, batch, batch_idx):
         num_items_in_batch = batch["labels"].eq(1).sum()
         if self.gather_num_items_in_batch:
-            num_items_in_batch = maybe_all_reduce(num_items_in_batch, op="sum")
+            num_items_in_batch = maybe_all_reduce(num_items_in_batch)
 
         outputs = self(**batch, num_items_in_batch=num_items_in_batch)
 
