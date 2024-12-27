@@ -56,7 +56,7 @@ class PointDetectionHead(nn.Module):
 
         loss = None
         if labels is not None:
-            # loss = point_detection_loss(logits.float(), labels.float(), **loss_kwargs)
-            loss = quality_focal_loss(logits.float(), labels.float(), **loss_kwargs)
+            loss = point_detection_loss(logits.float(), labels.float(), **loss_kwargs)
+            # loss = quality_focal_loss(logits.float(), labels.float(), **loss_kwargs)
 
         return PointDetectionOutput(logits=logits, loss=loss)
