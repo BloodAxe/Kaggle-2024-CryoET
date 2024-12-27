@@ -1,4 +1,4 @@
-from monai.networks.nets import SwinUNETR
+from monai.networks.nets import SegResNet
 from torch import nn
 
 from .point_detection_head import PointDetectionHead
@@ -6,7 +6,7 @@ from .point_detection_head import PointDetectionHead
 from transformers import PretrainedConfig
 
 
-class SwinUNETRForPointDetectionConfig(PretrainedConfig):
+class SegResNetForPointDetectionConfig(PretrainedConfig):
     def __init__(
         self,
         spatial_dims=3,
@@ -26,17 +26,14 @@ class SwinUNETRForPointDetectionConfig(PretrainedConfig):
         self.num_classes = num_classes
 
 
-class SwinUNETRForPointDetection(nn.Module):
-    def __init__(self, config: SwinUNETRForPointDetectionConfig):
+class SegResNetForPointDetection(nn.Module):
+    def __init__(self, config: SegResNetForPointDetectionConfig):
         super().__init__()
 
-        self.backbone = SwinUNETR(
+        self.backbone = SegResNet(
             spatial_dims=config.spatial_dims,
-            img_size=config.img_size,
             in_channels=config.in_channels,
             out_channels=config.out_channels,
-            feature_size=config.feature_size,
-            use_checkpoint=True,
         )
 
         self.head = PointDetectionHead(in_channels=config.out_channels, num_classes=config.num_classes)
