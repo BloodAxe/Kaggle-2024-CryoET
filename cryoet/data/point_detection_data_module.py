@@ -39,7 +39,8 @@ class PointDetectionDataModule(L.LightningDataModule):
         self.fold = data_args.fold
 
         self.train_studies, self.valid_studies = split_data_into_folds(self.runs_dir)[self.fold]
-
+        self.data_args = data_args
+        self.train_args = train_args
         self.train = None
         self.val = None
         self.solution = None
@@ -59,27 +60,29 @@ class PointDetectionDataModule(L.LightningDataModule):
                 )
                 train_datasets.append(sliding_dataset)
 
-                random_crop_dataset = RandomCropCryoETPointDetectionDataset(
-                    num_crops=len(sliding_dataset),
-                    window_size=self.window_size,
-                    root=self.root,
-                    study=train_study,
-                    mode=mode,
-                    split="train",
-                    random_rotate=True,
-                )
-                train_datasets.append(random_crop_dataset)
+                if self.data_args.use_random_crops:
+                    random_crop_dataset = RandomCropCryoETPointDetectionDataset(
+                        num_crops=len(sliding_dataset),
+                        window_size=self.window_size,
+                        root=self.root,
+                        study=train_study,
+                        mode=mode,
+                        split="train",
+                        random_rotate=True,
+                    )
+                    train_datasets.append(random_crop_dataset)
 
-                crop_around_dataset = CropAroundObjectCryoETPointDetectionDataset(
-                    num_crops=len(sliding_dataset),
-                    window_size=self.window_size,
-                    root=self.root,
-                    study=train_study,
-                    mode=mode,
-                    split="train",
-                    random_rotate=True,
-                )
-                train_datasets.append(crop_around_dataset)
+                if self.data_args.use_instance_crops:
+                    crop_around_dataset = CropAroundObjectCryoETPointDetectionDataset(
+                        num_crops=len(sliding_dataset),
+                        window_size=self.window_size,
+                        root=self.root,
+                        study=train_study,
+                        mode=mode,
+                        split="train",
+                        random_rotate=True,
+                    )
+                    train_datasets.append(crop_around_dataset)
 
         solution = defaultdict(list)
 
