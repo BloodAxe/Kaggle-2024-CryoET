@@ -63,7 +63,7 @@ class PointDetectionDataModule(L.LightningDataModule):
 
                 if self.data_args.use_random_crops:
                     random_crop_dataset = RandomCropCryoETPointDetectionDataset(
-                        num_crops=256,
+                        num_crops=512,
                         window_size=self.window_size,
                         root=self.root,
                         study=train_study,
@@ -75,7 +75,7 @@ class PointDetectionDataModule(L.LightningDataModule):
 
                 if self.data_args.use_instance_crops:
                     crop_around_dataset = CropAroundObjectCryoETPointDetectionDataset(
-                        num_crops=256,
+                        num_crops=512,
                         window_size=self.window_size,
                         root=self.root,
                         study=train_study,
