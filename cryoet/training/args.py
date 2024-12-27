@@ -27,6 +27,7 @@ class DataArguments:
     data_root: str = field(default_factory=data_root_default_factory)
     fold: int = field(default=0)
 
+    use_sliding_crops: bool = field(default=False)
     use_random_crops: bool = field(default=False)
     use_instance_crops: bool = field(default=False)
 

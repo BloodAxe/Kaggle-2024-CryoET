@@ -24,8 +24,18 @@ def main():
     training_args, model_args, data_args = parser.parse_args_into_dataclasses()
     training_args = typing.cast(MyTrainingArguments, training_args)
 
+    data_args = typing.cast(DataArguments, data_args)
+
     if training_args.output_dir is None:
-        training_args.output_dir = f"runs/swin_unetr_point_detection_fold_{data_args.fold}"
+        output_dir_name = f"runs/swin_unetr_point_detection_fold_{data_args.fold}"
+        if data_args.use_sliding_crops:
+            output_dir_name += "_sc"
+        if data_args.use_random_crops:
+            output_dir_name += "_rc"
+        if data_args.use_instance_crops:
+            output_dir_name += "_ic"
+
+        training_args.output_dir = output_dir_name
 
     training_args.master_print(f"Training arguments: {training_args}")
 
