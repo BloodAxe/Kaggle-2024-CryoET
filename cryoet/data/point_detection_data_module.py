@@ -49,16 +49,17 @@ class PointDetectionDataModule(L.LightningDataModule):
         train_datasets = []
         for train_study in self.train_studies:
             for mode in self.train_modes:
-                sliding_dataset = SlidingWindowCryoETPointDetectionDataset(
-                    window_size=self.window_size,
-                    stride=self.stride,
-                    root=self.root,
-                    study=train_study,
-                    mode=mode,
-                    split="train",
-                    random_rotate=True,
-                )
-                train_datasets.append(sliding_dataset)
+                if self.data_args.use_sliding_crops:
+                    sliding_dataset = SlidingWindowCryoETPointDetectionDataset(
+                        window_size=self.window_size,
+                        stride=self.stride,
+                        root=self.root,
+                        study=train_study,
+                        mode=mode,
+                        split="train",
+                        random_rotate=True,
+                    )
+                    train_datasets.append(sliding_dataset)
 
                 if self.data_args.use_random_crops:
                     random_crop_dataset = RandomCropCryoETPointDetectionDataset(
