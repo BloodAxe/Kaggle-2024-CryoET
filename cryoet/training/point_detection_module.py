@@ -251,7 +251,7 @@ class PointDetectionModel(L.LightningModule):
                     tag=f"val/{study_name}",
                     img_tensor=heatmap,
                     global_step=self.global_step,
-                    dataformats="CHW",
+                    dataformats="HWC",
                 )
 
     def configure_optimizers(self):
