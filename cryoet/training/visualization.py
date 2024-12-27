@@ -6,7 +6,8 @@ from pytorch_toolbelt.utils.visualization import vstack_header, hstack_autopad, 
 
 
 def pseudo_colorize(hm):
-    return cv2.applyColorMap((hm * 255).astype(np.uint8), cv2.COLORMAP_JET)
+    img = cv2.applyColorMap((hm * 255).astype(np.uint8), cv2.COLORMAP_JET)
+    return img[..., ::-1]
 
 
 def render_heatmap(heatmap: Tensor):
