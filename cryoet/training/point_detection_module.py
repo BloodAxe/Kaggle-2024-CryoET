@@ -20,6 +20,18 @@ from ..data.parsers import CLASS_LABEL_TO_CLASS_NAME, ANGSTROMS_IN_PIXEL
 from ..data.point_detection_dataset import decoder_centers_from_heatmap
 from ..metric import score_submission
 
+from pytorch_toolbelt.utils.distributed import is_dist_avail_and_initialized
+import torch.distributed as dist
+
+
+def maybe_all_reduce(x, op=dist.ReduceOp.SUM):
+    if not is_dist_avail_and_initialized():
+        return x
+
+    xc = x.clone()
+    dist.all_reduce(xc, op=op)
+    return xc
+
 
 @dataclasses.dataclass
 class AccumulatedPredictionContainer:
@@ -51,13 +63,12 @@ class PointDetectionModel(L.LightningModule):
         self,
         model,
         train_args: MyTrainingArguments,
-        gather_num_items_in_batch: bool = False,
     ):
         super().__init__()
         self.model = model
         self.train_args = train_args
         self.validation_predictions = None
-        self.gather_num_items_in_batch = gather_num_items_in_batch
+        self.gather_num_items_in_batch = train_args.average_tokens_across_devices
 
     def forward(self, volume, labels=None, **loss_kwargs):
         return self.model(
@@ -69,12 +80,12 @@ class PointDetectionModel(L.LightningModule):
     def training_step(self, batch, batch_idx):
         num_items_in_batch = batch["labels"].eq(1).sum()
         if self.gather_num_items_in_batch:
-            num_items_in_batch = self.fabric.all_reduce(num_items_in_batch, reduce_op="sum")
+            num_items_in_batch = maybe_all_reduce(num_items_in_batch, op="sum")
 
         outputs = self(**batch, num_items_in_batch=num_items_in_batch)
 
         if self.gather_num_items_in_batch:
-            outputs.loss.mul_(self.fabric.world_size)
+            outputs.loss.mul_(self.trainer.world_size)
 
         loss = outputs.loss
 
