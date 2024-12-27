@@ -95,7 +95,7 @@ def encode_centers_to_heatmap(centers, labels, radii, shape, num_classes):
         # radius = int(radius + 0.5)
 
         diameter = 2 * radius + 1
-        gaussian = centernet_gaussian_3d((diameter, diameter, diameter), sigma=diameter / 6.0)
+        gaussian = centernet_gaussian_3d((diameter, diameter, diameter), sigma=diameter / 3.0)
 
         front, back = min(z, radius), min(depth - z, radius + 1)
         top, bottom = min(y, radius), min(height - y, radius + 1)

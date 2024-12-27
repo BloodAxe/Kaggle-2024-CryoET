@@ -1,6 +1,7 @@
 from collections import defaultdict
 from pathlib import Path
 
+import matplotlib.pyplot as plt
 import pandas as pd
 import torch
 
@@ -13,11 +14,50 @@ from cryoet.data.parsers import (
 from cryoet.data.point_detection_dataset import (
     encode_centers_to_heatmap,
     decoder_centers_from_heatmap,
+    centernet_gaussian_3d,
 )
 from cryoet.metric import score_submission
 
 DATA_ROOT = Path(__file__).parent.parent / "data" / "czii-cryo-et-object-identification"
 TRAIN_DATA_DIR = DATA_ROOT / "train" / "static" / "ExperimentRuns"
+
+
+def test_gaussian():
+    radiuses = [60, 90, 150, 130, 135]
+
+    for r in radiuses[:1]:
+        d = (r / 10.0) * 2 + 1
+        g = centernet_gaussian_3d((d, d, d), sigma=d / 6.0)
+
+        slice = g[g.shape[0] // 2]
+        plt.figure(figsize=(16, 16))
+        plt.imshow(slice)
+        plt.title(f"Radius: {r}")
+
+        # Show values
+        for i in range(slice.shape[0]):
+            for j in range(slice.shape[1]):
+                plt.text(j, i, f"{slice[i, j]:.3f}", ha="center", va="center", color="black")
+
+        plt.tight_layout()
+        plt.show()
+
+    for r in radiuses[:1]:
+        d = (r / 10.0) * 2 + 1
+        g = centernet_gaussian_3d((d, d, d), sigma=d / 3.0)
+
+        slice = g[g.shape[0] // 2]
+        plt.figure(figsize=(16, 16))
+        plt.imshow(slice)
+        plt.title(f"Radius: {r}")
+
+        # Show values
+        for i in range(slice.shape[0]):
+            for j in range(slice.shape[1]):
+                plt.text(j, i, f"{slice[i, j]:.3f}", ha="center", va="center", color="black")
+
+        plt.tight_layout()
+        plt.show()
 
 
 def test_encode_decode():
