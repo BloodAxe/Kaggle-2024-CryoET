@@ -191,6 +191,19 @@ def rotate_and_scale_volume(
     return new_volume, new_points[:, ::-1]  # Back to xyz
 
 
+def random_rotate90_volume_around_z(volume, labels):
+    """Randomly rotate the volume and labels by 90 degrees.
+    :param volume: The volume to rotate. Shape: (D, H, W)
+    :param labels: The labels to rotate. Shape: (C, D, H, W)
+    """
+    k = random.randint(0, 3)
+
+    volume = np.rot90(volume, k=k, axes=(1, 2))
+    labels = np.rot90(labels, k=k, axes=(2, 3))
+
+    return np.ascontiguousarray(volume), np.ascontiguousarray(labels)
+
+
 def random_rotate90_volume(volume, labels):
     """Randomly rotate the volume and labels by 90 degrees.
     :param volume: The volume to rotate. Shape: (D, H, W)

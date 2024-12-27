@@ -1,7 +1,7 @@
 import numpy as np
 import torch
 
-from .augmentations.functional import random_rotate90_volume, random_flip_volume
+from .augmentations.functional import random_rotate90_volume, random_flip_volume, random_rotate90_volume_around_z
 from .point_detection_dataset import CryoETPointDetectionDataset, compute_tiles, encode_centers_to_heatmap
 
 
@@ -67,7 +67,7 @@ class SlidingWindowCryoETPointDetectionDataset(CryoETPointDetectionDataset):
         )
 
         if self.random_rotate:
-            volume, labels = random_rotate90_volume(volume, labels)
+            volume, labels = random_rotate90_volume_around_z(volume, labels)
             volume, labels = random_flip_volume(volume, labels)
 
         data = {

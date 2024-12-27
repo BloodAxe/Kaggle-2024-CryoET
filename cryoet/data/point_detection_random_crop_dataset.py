@@ -36,7 +36,11 @@ class RandomCropCryoETPointDetectionDataset(CryoETPointDetectionDataset):
         volume, centers_px = rotate_and_scale_volume(
             volume=self.volume_data,
             points=centers_px,
-            angles=(random.random() * 360, random.random() * 360, random.random() * 360),
+            angles=(
+                random.random() * 360,
+                0,  # random.random() * 360,
+                0,  # random.random() * 360
+            ),
             scale=scale,
             center_zyx=(
                 random.random() * self.volume_shape[0],
@@ -64,7 +68,7 @@ class RandomCropCryoETPointDetectionDataset(CryoETPointDetectionDataset):
         )
 
         if self.random_rotate:
-            volume, labels = random_rotate90_volume(volume, labels)
+            # volume, labels = random_rotate90_volume(volume, labels)
             volume, labels = random_flip_volume(volume, labels)
 
         data = {
