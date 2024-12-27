@@ -89,8 +89,8 @@ class PointDetectionModel(L.LightningModule):
         )
 
         self.log(
-            "train/num_items_in_batch",
-            num_items_in_batch,
+            name="train/num_items_in_batch",
+            value=int(num_items_in_batch),
             batch_size=len(batch["volume"]),
             on_step=True,
             prog_bar=True,

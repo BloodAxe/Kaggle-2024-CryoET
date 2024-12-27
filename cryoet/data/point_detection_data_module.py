@@ -8,6 +8,7 @@ from torch.utils.data import ConcatDataset, DataLoader
 
 from cryoet.data.cross_validation import split_data_into_folds
 from cryoet.data.parsers import CLASS_LABEL_TO_CLASS_NAME
+from cryoet.data.point_detection_random_crop_dataset import RandomCropCryoETPointDetectionDataset
 from cryoet.data.point_detection_sliding_window_dataset import SlidingWindowCryoETPointDetectionDataset
 
 
@@ -49,7 +50,7 @@ class PointDetectionDataModule(L.LightningDataModule):
         train_datasets = []
         for train_study in self.train_studies:
             for mode in self.train_modes:
-                dataset = SlidingWindowCryoETPointDetectionDataset(
+                sliding_dataset = SlidingWindowCryoETPointDetectionDataset(
                     window_size=self.window_size,
                     stride=self.stride,
                     root=self.root,
@@ -58,7 +59,18 @@ class PointDetectionDataModule(L.LightningDataModule):
                     split="train",
                     random_rotate=True,
                 )
-                train_datasets.append(dataset)
+                train_datasets.append(sliding_dataset)
+
+                random_crop_dataset = RandomCropCryoETPointDetectionDataset(
+                    num_crops=len(sliding_dataset),
+                    window_size=self.window_size,
+                    root=self.root,
+                    study=train_study,
+                    mode=mode,
+                    split="train",
+                    random_rotate=True,
+                )
+                train_datasets.append(random_crop_dataset)
 
         solution = defaultdict(list)
 

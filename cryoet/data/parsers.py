@@ -117,15 +117,10 @@ def get_annotations(
     """
 
     # Build a quick lookup from object "name" -> (label, radius, …)
-    class_dict = {
-        c["name"]: {"label": c.get("label", -1), "radius": c.get("radius", 0)}
-        for c in TARGET_CLASSES
-    }
+    class_dict = {c["name"]: {"label": c.get("label", -1), "radius": c.get("radius", 0)} for c in TARGET_CLASSES}
 
     # e.g., /.../train/overlay/ExperimentRuns/TS_5_4/Picks/
-    picks_dir = os.path.join(
-        root_dir, split, "overlay", "ExperimentRuns", study_name, "Picks"
-    )
+    picks_dir = os.path.join(root_dir, split, "overlay", "ExperimentRuns", study_name, "Picks")
 
     # Collect data
     centers = []
@@ -251,14 +246,14 @@ def visualize_slices_grid(
 
     # If slices_to_show is not provided, gather from the annotation Z-coords
     if slices_to_show is None:
-        slices_to_show = sorted(set(z_voxels.tolist()))
+        slices_to_show = np.arange(volume.shape[0])
 
     # If only_slices_with_objects, then filter out any slice not containing an object
     if only_slices_with_objects:
         slices_with_objects = sorted(set(z_voxels.tolist()))
         slices_to_show = [s for s in slices_to_show if s in slices_with_objects]
 
-    if not slices_to_show:
+    if len(slices_to_show) == 0:
         print("No slices to display. Returning None.")
         return None
 
@@ -301,9 +296,7 @@ def visualize_slices_grid(
 
                 # Get the object label and corresponding color
                 lbl = labels[idx_obj]
-                color_rgba = label_to_color.get(
-                    lbl, (1.0, 0.0, 0.0, 1.0)
-                )  # default: red if not found
+                color_rgba = label_to_color.get(lbl, (1.0, 0.0, 0.0, 1.0))  # default: red if not found
 
                 circ = Circle(
                     (x_vox, y_vox),
