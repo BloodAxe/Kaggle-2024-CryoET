@@ -16,6 +16,7 @@ from lightning.pytorch.loggers import TensorBoardLogger, WandbLogger
 
 from .args import MyTrainingArguments
 from cryoet.schedulers import WarmupCosineScheduler
+from .visualization import render_heatmap
 from ..data.parsers import CLASS_LABEL_TO_CLASS_NAME, ANGSTROMS_IN_PIXEL
 from ..data.point_detection_dataset import decoder_centers_from_heatmap
 from ..metric import score_submission
@@ -155,6 +156,8 @@ class PointDetectionModel(L.LightningModule):
             accumulated_predictions.probas /= accumulated_predictions.counter
             accumulated_predictions.probas.masked_fill_(accumulated_predictions.counter == 0, 0.0)
 
+            self.log_heatmaps(study_name, accumulated_predictions.probas)
+
             topk_scores, topk_clses, topk_coords_px = decoder_centers_from_heatmap(
                 accumulated_predictions.probas.unsqueeze(0), top_k=512
             )
@@ -237,6 +240,19 @@ class PointDetectionModel(L.LightningModule):
         if tb_logger is not None:
             return tb_logger.experiment
         return None
+
+    def log_heatmaps(self, study_name: str, heatmap: Tensor):
+        if self.trainer.is_global_zero:
+            tb_logger = self._get_tb_logger(self.trainer)
+            heatmap = render_heatmap(heatmap)
+
+            if tb_logger is not None:
+                tb_logger.add_images(
+                    tag=f"val/{study_name}",
+                    img_tensor=heatmap,
+                    global_step=self.global_step,
+                    dataformats="CHW",
+                )
 
     def configure_optimizers(self):
         param_groups, optimizer_kwargs = build_optimizer_param_groups(
