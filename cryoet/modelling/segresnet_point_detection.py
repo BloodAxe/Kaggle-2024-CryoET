@@ -10,19 +10,23 @@ class SegResNetForPointDetectionConfig(PretrainedConfig):
     def __init__(
         self,
         spatial_dims=3,
-        img_size=96,
         in_channels=1,
-        out_channels=14,
-        feature_size=48,
+        out_channels=105,
+        init_filters=32,
+        blocks_down=(1, 2, 2, 4),
+        blocks_up=(1, 1, 1),
+        dropout_prob=0.2,
         num_classes=5,
         **kwargs,
     ):
         super().__init__(**kwargs)
         self.spatial_dims = spatial_dims
-        self.img_size = img_size
         self.in_channels = in_channels
         self.out_channels = out_channels
-        self.feature_size = feature_size
+        self.init_filters = init_filters
+        self.blocks_down = blocks_down
+        self.blocks_up = blocks_up
+        self.dropout_prob = dropout_prob
         self.num_classes = num_classes
 
 
@@ -34,6 +38,10 @@ class SegResNetForPointDetection(nn.Module):
             spatial_dims=config.spatial_dims,
             in_channels=config.in_channels,
             out_channels=config.out_channels,
+            init_filters=config.init_filters,
+            blocks_down=config.blocks_down,
+            blocks_up=config.blocks_up,
+            dropout_prob=config.dropout_prob,
         )
 
         self.head = PointDetectionHead(in_channels=config.out_channels, num_classes=config.num_classes)
