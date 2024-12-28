@@ -54,6 +54,9 @@ class PointDetectionHead(nn.Module):
     def forward(self, features, labels=None, **loss_kwargs):
         logits = self.conv(features)
 
+        if torch.jit.is_tracing():
+            return logits
+
         loss = None
         if labels is not None:
             loss = point_detection_loss(logits.float(), labels.float(), **loss_kwargs)

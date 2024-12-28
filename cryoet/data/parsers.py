@@ -53,7 +53,7 @@ CLASS_LABEL_TO_CLASS_NAME = {c["label"]: c["name"] for c in TARGET_CLASSES}
 
 
 def get_volume(
-    root_dir: str,
+    root_dir: str | Path,
     study_name: str,
     mode: str = "denoised",
     split: str = "train",
@@ -73,7 +73,7 @@ def get_volume(
     # Example path:
     #   /.../train/static/ExperimentRuns/TS_5_4/VoxelSpacing10.000/denoised.zarr
     zarr_path = os.path.join(
-        root_dir,
+        str(root_dir),
         split,
         "static",
         "ExperimentRuns",

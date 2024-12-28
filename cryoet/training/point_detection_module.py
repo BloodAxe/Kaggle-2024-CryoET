@@ -39,6 +39,11 @@ class AccumulatedPredictionContainer:
     probas: Tensor
     counter: Tensor
 
+    @classmethod
+    def from_shape(cls, shape, num_classes, device="cpu"):
+        shape = tuple(shape)
+        return cls(probas=torch.zeros((num_classes,) + shape, device=device), counter=torch.zeros(shape, device=device))
+
     def accumulate(self, tile_scores, tile_offsets_zyx):
         probas_view = self.probas[
             :,
