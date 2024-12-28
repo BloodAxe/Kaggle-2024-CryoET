@@ -27,7 +27,7 @@ def main():
     data_args = typing.cast(DataArguments, data_args)
 
     if training_args.output_dir is None:
-        output_dir_name = f"runs/swin_unetr_point_detection_fold_{data_args.fold}"
+        output_dir_name = f"runs/{model_args.model_name}_fold_{data_args.fold}"
         if data_args.use_sliding_crops:
             output_dir_name += "_sc"
         if data_args.use_random_crops:
