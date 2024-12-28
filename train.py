@@ -103,13 +103,7 @@ def main():
     if len(loggers) == 1:
         loggers = loggers[0]
 
-    if fabric.world_size > 1:
-        if training_args.ddp_find_unused_parameters:
-            strategy = "ddp_find_unused_parameters_true"
-        else:
-            strategy = "ddp"
-    else:
-        strategy = "auto"
+    strategy = infer_strategy(training_args, fabric)
 
     callbacks = [checkpoint_callback]
     lr_monitor = LearningRateMonitor(logging_interval="step")
@@ -122,6 +116,8 @@ def main():
     if training_args.ema:
         callbacks.append(EMACallback(decay=BetaDecay(max_decay=training_args.ema_decay, beta=training_args.ema_beta)))
         fabric.print(f"Using EMA with decay={training_args.ema_decay} and beta={training_args.ema_beta}")
+
+    fabric.print("Batch Size:", training_args.per_device_train_batch_size, training_args.per_device_eval_batch_size)
 
     trainer = L.Trainer(
         strategy=strategy,
@@ -137,6 +133,17 @@ def main():
     )
 
     trainer.fit(model_module, datamodule=data_module)
+
+
+def infer_strategy(training_args, fabric):
+    if fabric.world_size > 1:
+        if training_args.ddp_find_unused_parameters:
+            strategy = "ddp_find_unused_parameters_true"
+        else:
+            strategy = "ddp"
+    else:
+        strategy = "auto"
+    return strategy
 
 
 def infer_training_precision(training_args):

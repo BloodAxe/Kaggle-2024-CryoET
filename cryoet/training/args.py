@@ -9,7 +9,7 @@ from transformers import TrainingArguments
 @dataclass
 class ModelArguments:
     model_name: str = field(
-        default="swin-unetr",
+        default="segresnet",
     )
     pretrained_model_name_or_path: str = field(
         default=None,

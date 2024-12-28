@@ -1,9 +1,13 @@
 import copy
 import collections
+from typing import Any
+
 import numpy as np
 import torch
+from lightning.pytorch.utilities.types import STEP_OUTPUT
 from torch import nn
-from pytorch_lightning import Callback, Trainer, LightningModule
+from lightning import Callback, Trainer, LightningModule
+from torch.optim import Optimizer
 
 
 # -------------------------------------------------------------------------
@@ -166,12 +170,7 @@ class EMACallback(Callback):
             pl_module.load_state_dict(self.non_ema_state_dict)
             self.non_ema_state_dict = None
 
-    def on_after_optimizer_step(
-        self,
-        trainer: Trainer,
-        pl_module: LightningModule,
-        optimizer,
-    ) -> None:
+    def on_train_batch_end(self, trainer: Trainer, pl_module: LightningModule, outputs, batch: Any, batch_idx: int) -> None:
         """
         Called after each optimizer step (i.e., gradient update).
         We compute the “decay” fraction and update the EMA.
