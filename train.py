@@ -15,6 +15,7 @@ from cryoet.data.point_detection_data_module import PointDetectionDataModule
 from cryoet.modelling.segresnet_point_detection import SegResNetForPointDetection, SegResNetForPointDetectionConfig
 from cryoet.modelling.unetr_point_detection import SwinUNETRForPointDetection, SwinUNETRForPointDetectionConfig
 from cryoet.training.args import MyTrainingArguments, ModelArguments, DataArguments
+from cryoet.training.ema import BetaDecay, EMACallback
 from cryoet.training.point_detection_module import PointDetectionModel
 
 
@@ -117,6 +118,10 @@ def main():
 
     precision = infer_training_precision(training_args)
     fabric.print(f"Training precision: {precision}")
+
+    if training_args.ema:
+        callbacks.append(EMACallback(decay=BetaDecay(max_decay=training_args.ema_decay, beta=training_args.ema_beta)))
+        fabric.print(f"Using EMA with decay={training_args.ema_decay} and beta={training_args.ema_beta}")
 
     trainer = L.Trainer(
         strategy=strategy,

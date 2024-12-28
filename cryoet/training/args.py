@@ -74,6 +74,10 @@ class MyTrainingArguments(TrainingArguments):
 
     sanity_checking: bool = field(default=False, metadata={"help": "Sanity checking"})
 
+    ema: bool = field(default=False, metadata={"help": "Exponential moving average"})
+    ema_decay: float = field(default=0.995, metadata={"help": "Exponential moving average decay"})
+    ema_beta: float = field(default=10, metadata={"help": "Exponential moving average beta"})
+
     def master_print(self, *args):
         if self.process_index == 0:
             print(*args)
