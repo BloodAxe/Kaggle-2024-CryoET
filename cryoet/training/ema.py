@@ -190,7 +190,7 @@ class EMACallback(Callback):
         # (Optional) log or track the decay
         pl_module.log("train/ema", decay, on_step=True, on_epoch=False)
 
-    def on_train_epoch_end(self, trainer: Trainer, pl_module: LightningModule, outputs) -> None:
+    def on_train_epoch_end(self, trainer: Trainer, pl_module: LightningModule) -> None:
         """
         Called after each training epoch ends.
         Save the normal model weights into a private storage so we can safely swap to EMA
