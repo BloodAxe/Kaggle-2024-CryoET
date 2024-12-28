@@ -22,15 +22,8 @@ segresnet_baseline_instance_and_random_crops_fold_1:
     --num_train_epochs=50 --warmup_steps=32 --average_tokens_across_devices=True --use_instance_crops=True --use_random_crops=True \
     --fold=1
 
-segresnet_baseline_instance_and_random_crops_fold_2:
-	torchrun --standalone --nproc-per-node=4 train.py \
-    --model_name=segresnet \
-    --pretrained_backbone_path=pretrained/wholeBody_ct_segmentation/models/model.pt \
-    --per_device_train_batch_size=4 --learning_rate=1e-5 \
-    --adam_beta1=0.95 --adam_beta2=0.99 \
-    --dataloader_num_workers=4 --dataloader_persistent_workers=True --dataloader_pin_memory=True \
-    --num_train_epochs=50 --warmup_steps=32 --average_tokens_across_devices=True --use_instance_crops=True --use_random_crops=True \
-    --fold=2
+segresnet_baseline_instance_and_random_crops_fold_2_grid_search:
+
 
 segresnet_all_modes_instance_and_random_crops_fold_2:
 	torchrun --standalone --nproc-per-node=2 train.py \
