@@ -35,6 +35,8 @@ def main():
         if data_args.use_instance_crops:
             output_dir_name += "_ic"
 
+        output_dir_name += "_" + data_args.train_modes.replace(",", "_")
+
         training_args.output_dir = output_dir_name
 
     training_args.master_print(f"Training arguments: {training_args}")
@@ -70,8 +72,6 @@ def main():
         data_module = PointDetectionDataModule(
             data_args=data_args,
             train_args=training_args,
-            train_modes="denoised",
-            valid_modes="denoised",
             window_size=96,
             stride=32,
         )

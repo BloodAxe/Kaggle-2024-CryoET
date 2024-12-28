@@ -33,6 +33,9 @@ class DataArguments:
     use_random_crops: bool = field(default=False)
     use_instance_crops: bool = field(default=False)
 
+    train_modes: str = field(default="denoised")
+    valid_modes: str = field(default="denoised")
+
 
 @dataclass
 class MyTrainingArguments(TrainingArguments):

@@ -19,16 +19,18 @@ class PointDetectionDataModule(L.LightningDataModule):
         self,
         train_args: MyTrainingArguments,
         data_args: DataArguments,
-        train_modes: str | List,
-        valid_modes: str | List,
         window_size: int,
         stride: int,
     ):
         super().__init__()
+
+        train_modes = data_args.train_modes
+        valid_modes = data_args.valid_modes
+
         self.root = Path(data_args.data_root)
         self.runs_dir = self.root / "train" / "static" / "ExperimentRuns"
-        self.train_modes = [train_modes] if isinstance(train_modes, str) else list(train_modes)
-        self.valid_modes = [valid_modes] if isinstance(valid_modes, str) else list(valid_modes)
+        self.train_modes = train_modes.split(",") if isinstance(train_modes, str) else list(train_modes)
+        self.valid_modes = valid_modes.split(",") if isinstance(valid_modes, str) else list(valid_modes)
         self.window_size = window_size
         self.stride = stride
         self.train_batch_size = train_args.per_device_train_batch_size
