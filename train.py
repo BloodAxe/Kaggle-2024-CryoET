@@ -52,7 +52,7 @@ def main():
     training_args.master_print(f"Model kwargs: {model_kwargs}")
 
     if model_args.model_name == "segresnet":
-        config = SegResNetForPointDetectionConfig()
+        config = SegResNetForPointDetectionConfig(use_qfl_loss=model_args.use_qfl_loss)
         model = SegResNetForPointDetection(config)
     elif model_args.model_name == "swin-unetr":
         config = SwinUNETRForPointDetectionConfig()

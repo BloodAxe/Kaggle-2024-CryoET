@@ -17,6 +17,7 @@ class SegResNetForPointDetectionConfig(PretrainedConfig):
         blocks_up=(1, 1, 1),
         dropout_prob=0.2,
         num_classes=5,
+        use_qfl_loss: bool = False,
         **kwargs,
     ):
         super().__init__(**kwargs)
@@ -28,6 +29,7 @@ class SegResNetForPointDetectionConfig(PretrainedConfig):
         self.blocks_up = blocks_up
         self.dropout_prob = dropout_prob
         self.num_classes = num_classes
+        self.use_qfl_loss = use_qfl_loss
 
 
 class SegResNetForPointDetection(nn.Module):
@@ -44,7 +46,9 @@ class SegResNetForPointDetection(nn.Module):
             dropout_prob=config.dropout_prob,
         )
 
-        self.head = PointDetectionHead(in_channels=config.out_channels, num_classes=config.num_classes)
+        self.head = PointDetectionHead(
+            in_channels=config.out_channels, num_classes=config.num_classes, use_qfl_loss=config.use_qfl_loss
+        )
 
     def forward(self, volume, labels=None, **loss_kwargs):
         features = self.backbone(volume)

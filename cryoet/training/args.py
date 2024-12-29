@@ -19,6 +19,8 @@ class ModelArguments:
         default=None,
     )
 
+    use_qfl_loss: bool = field(default=False)
+
 
 def data_root_default_factory():
     return os.environ.get("CRYOET_DATA_ROOT", None)

@@ -12,11 +12,17 @@ class PointDetectionOutput:
     loss: Optional[Tensor]
 
 
-def quality_focal_loss(logits, labels, num_items_in_batch=None, alpha=2, **kwargs):
+def quality_focal_loss(logits, labels, num_items_in_batch=None, alpha=4, **kwargs):
     bce_loss = F.binary_cross_entropy_with_logits(logits, labels, reduction="none")
     qfl_term = (logits.sigmoid() - labels).abs().pow(alpha)
     loss = bce_loss * qfl_term
-    return loss.mean()
+
+    loss = loss.sum()
+    if num_items_in_batch is None:
+        num_items_in_batch = labels.eq(1).sum().item()
+
+    num_items_in_batch = max(num_items_in_batch, 1)
+    return loss.div_(num_items_in_batch)
 
 
 def point_detection_loss(logits, labels, num_items_in_batch=None, alpha=2, beta=4, eps=1e-6, **kwargs):
@@ -44,10 +50,10 @@ def point_detection_loss(logits, labels, num_items_in_batch=None, alpha=2, beta=
 
 
 class PointDetectionHead(nn.Module):
-    def __init__(self, in_channels: int, num_classes: int):
+    def __init__(self, in_channels: int, num_classes: int, use_qfl_loss: bool = False):
         super().__init__()
         self.conv = nn.Conv3d(in_channels, num_classes, kernel_size=3, padding=1)
-
+        self.use_qfl_loss = use_qfl_loss
         torch.nn.init.zeros_(self.conv.weight)
         torch.nn.init.constant_(self.conv.bias, -3)
 
@@ -59,7 +65,9 @@ class PointDetectionHead(nn.Module):
 
         loss = None
         if labels is not None:
-            loss = point_detection_loss(logits.float(), labels.float(), **loss_kwargs)
-            # loss = quality_focal_loss(logits.float(), labels.float(), **loss_kwargs)
+            if self.use_qfl_loss:
+                loss = quality_focal_loss(logits.float(), labels.float(), **loss_kwargs)
+            else:
+                loss = point_detection_loss(logits.float(), labels.float(), **loss_kwargs)
 
         return PointDetectionOutput(logits=logits, loss=loss)
