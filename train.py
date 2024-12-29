@@ -4,7 +4,7 @@ import lightning as L
 import torch
 from dotenv import load_dotenv
 from lightning.fabric import Fabric
-from lightning.pytorch.callbacks import ModelCheckpoint, LearningRateMonitor
+from lightning.pytorch.callbacks import ModelCheckpoint, LearningRateMonitor, EarlyStopping
 from lightning.pytorch.loggers import TensorBoardLogger, WandbLogger
 from pytorch_toolbelt.utils import count_parameters
 from transformers import (
@@ -107,6 +107,10 @@ def main():
     strategy = infer_strategy(training_args, fabric)
 
     callbacks = [checkpoint_callback]
+
+    if training_args.early_stopping > 0:
+        callbacks.append(EarlyStopping(monitor="val/score", min_delta=0.001, patience=training_args.early_stopping, mode="max"))
+
     lr_monitor = LearningRateMonitor(logging_interval="step")
     if "wandb" not in training_args.report_to:
         callbacks.append(lr_monitor)

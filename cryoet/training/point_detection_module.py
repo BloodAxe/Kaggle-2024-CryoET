@@ -294,6 +294,8 @@ class PointDetectionModel(L.LightningModule):
                 betas=(self.train_args.adam_beta1, self.train_args.adam_beta2),
                 **optimizer_kwargs,
             )
+        elif self.train_args.optim == "sgd":
+            optimizer = torch.optim.SGD(param_groups, momentum=0.9, nesterov=True, **optimizer_kwargs)
         else:
             raise KeyError(f"Unknown optimizer {self.train_args.optim}")
 

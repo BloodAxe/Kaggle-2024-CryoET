@@ -78,6 +78,8 @@ class MyTrainingArguments(TrainingArguments):
     ema_decay: float = field(default=0.995, metadata={"help": "Exponential moving average decay"})
     ema_beta: float = field(default=10, metadata={"help": "Exponential moving average beta"})
 
+    early_stopping: int = field(default=0, metadata={"help": "Early stopping"})
+
     def master_print(self, *args):
         if self.process_index == 0:
             print(*args)
