@@ -40,6 +40,8 @@ class DataArguments:
     train_modes: str = field(default="denoised")
     valid_modes: str = field(default="denoised")
 
+    num_crops_per_study: int = field(default=256)
+
 
 @dataclass
 class MyTrainingArguments(TrainingArguments):
