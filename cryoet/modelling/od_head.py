@@ -63,12 +63,12 @@ def batch_pairwise_keypoints_iou(
     :return iou:           OKS between gt_keypoints and pred_keypoints with the shape [B, M1, M2]
     """
 
-    centers2 = true_keypoints[:, :, None, :]  # [B, M1, 1, 3]
-    centers1 = pred_keypoints[:, None, :, :]  # [B, 1, M2, 3]
+    centers1 = pred_keypoints[:, :, None, :]  # [B, 1, M2, 3]
+    centers2 = true_keypoints[:, None, :, :]  # [B, M1, 1, 3]
 
     d = ((centers1 - centers2) ** 2).sum(dim=-1, keepdim=False)  # [B, M1, M2]
 
-    sigmas = true_sigmas[:, None, :]  # [B, 1, M2]
+    sigmas = true_sigmas[:, None, :]  # [B, M1, M2]
 
     e: Tensor = d / (2 * sigmas**2)
     iou = torch.exp(-e)  # [B, M1, M2]
@@ -85,12 +85,66 @@ def object_detection_loss(logits, offsets, labels, num_items_in_batch=None, alph
     :param labels: Target labels encoded as Bx5xN where N is the number of objects and 5 is x,y,z,class,sigma
     :return: Single scalar loss
     """
+    # 1) Decode predictions
     pred_logits, pred_centers = decode_detections(logits, offsets, stride=32)
+    # shapes:
+    # pred_logits:  [B, C, M]
+    # pred_centers: [B, 3, M]
 
-    true_centers, true_labels, true_sigmas = labels[:, :3], labels[:, 3], labels[:, 4]  # Bx3xN, BxN, BxN
-    ignore_mask = true_labels.eq(-100)
+    # 2) Extract GT: [B, 5, N] => [B, 3, N], [B, N], [B, N]
+    #    labels = (x, y, z, class, sigma)
+    true_centers = labels[:, :3, :]  # [B, 3, N]
+    true_labels = labels[:, 3, :]  # [B, N]
+    true_sigmas = labels[:, 4, :]  # [B, N]
 
-    iou_scores = batch_pairwise_keypoints_iou(pred_centers, true_centers, true_sigmas)
+    # 3) Compute IoU (OKS) = batch_pairwise_keypoints_iou
+    #    We want pred_centers => shape [B, M, 3], so permute
+    pred_centers_perm = pred_centers.permute(0, 2, 1).contiguous()  # [B, M, 3]
+    true_centers_perm = true_centers.permute(0, 2, 1).contiguous()  # [B, N, 3]
+    iou_scores = batch_pairwise_keypoints_iou(
+        pred_centers_perm,  # [B, M, 3]
+        true_centers_perm,  # [B, N, 3]
+        true_sigmas,  # [B, N]
+    )  # -> [B, M, N]
+
+    # 4) Perform dynamic anchor assignment
+    ignore_mask = true_labels.eq(-100)  # [B, N]
+    assigned_labels, matched_gt_idx = dynamic_anchor_assignment(
+        iou_scores,  # [B, M, N]
+        true_labels,  # [B, N]
+        ignore_mask,
+        pred_logits,  # [B, C, M]
+    )
+    # assigned_labels: [B, M] => in [-1..C-1]
+    # matched_gt_idx:  [B, M] => index of GT matched or -1
+
+    # 5) Classification loss: focal
+    #    Use assigned_labels for each anchor
+    #    Typically alpha=0.25, gamma=2.0 in standard focal;
+    #    The user gave alpha=2.0 => that might be "gamma". So let's do:
+    cls_loss = focal_loss(
+        pred_logits, assigned_labels, alpha=0.25, gamma=alpha, eps=eps  # or your choice  # pass alpha=2.0 as focal gamma
+    )
+
+    # 6) Regression (OKS) loss for matched predictions
+    #    matched_gt_idx[b, m] is the GT index or -1 if unmatched
+    #    Let’s define the regression loss as:  reg_loss = sum(1 - iou_scores[b,m, idx]) for matched
+    # shape of iou_scores: [B, M, N], so iou_scores[b,m, matched_gt_idx[b,m]]
+    reg_mask = matched_gt_idx >= 0  # [B, M] => True if matched
+    b_idx = torch.arange(reg_mask.size(0), device=reg_mask.device).unsqueeze(-1)
+    m_idx = torch.arange(reg_mask.size(1), device=reg_mask.device).unsqueeze(0)
+
+    # Gather the iou_score for matched entries
+    matched_iou = iou_scores[b_idx, m_idx, matched_gt_idx.clamp_min(0)]
+    # Zero out where not matched
+    matched_iou = matched_iou * reg_mask
+
+    # define regression loss
+    reg_loss = (1.0 - matched_iou).sum() / (reg_mask.sum().clamp_min(1.0))
+
+    # 7) Combine losses
+    total_loss = cls_loss + reg_loss
+    return total_loss
 
 
 class ObjectDetectionHead(nn.Module):
