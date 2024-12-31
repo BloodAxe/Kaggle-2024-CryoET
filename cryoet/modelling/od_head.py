@@ -12,37 +12,23 @@ from .task_aligned_assigner import TaskAlignedAssigner
 class ObjectDetectionOutput:
     logits: Tensor
     offsets: Tensor
+    anchors: Tensor
 
     loss: Optional[Tensor]
 
 
-def decode_detections(logits, offsets, stride):
+def decode_detections(logits, offsets, anchors):
     """
     Decode detections from logits and offsets
     :param logits: Predicted logits B C D H W
     :param offsets: Predicted offsets B 3 D H W
-    :param stride: Stride of the network
+    :param anchors: Stride of the network
 
     :return: Tuple of probas and centers:
              probas - B N C
              centers - B N 3
 
     """
-    anchors = (
-        torch.stack(
-            torch.meshgrid(
-                torch.arange(logits.size(-3), device=logits.device),
-                torch.arange(logits.size(-2), device=logits.device),
-                torch.arange(logits.size(-1), device=logits.device),
-                indexing="ij",
-            )
-        )
-        .add_(0.5)
-        .float()
-        .mul_(stride)
-    )
-    anchors = anchors[None, ...].repeat(logits.size(0), 1, 1, 1, 1)
-
     centers = anchors + offsets
 
     logits = einops.rearrange(logits, "B C D H W -> B (D H W) C")
@@ -58,19 +44,33 @@ def varifocal_loss(pred_logits: Tensor, gt_score: Tensor, label: Tensor, alpha=0
     return loss.sum()
 
 
-def object_detection_loss(logits, offsets, labels, num_items_in_batch=None, alpha=2, stride: int = 32, eps=1e-6, **kwargs):
+def iou_loss(pred_centers, assigned_centers, assigned_scores, mask_positive):
+    d = ((pred_centers - assigned_centers) ** 2).sum(dim=-1, keepdim=False)  # [B, L]
+
+    sigmas = true_sigmas[:, None, :]  # [B, M1, M2]
+    weight = assigned_scores.sum(-1)
+
+    e: Tensor = d / (2 * sigmas**2)
+    iou = torch.exp(-e)  # [B, M1, M2]
+    loss = (1 - iou) * weight
+
+    return torch.masked_fill(loss, ~mask_positive, 0).sum()
+
+
+def object_detection_loss(logits, offsets, anchors, labels, num_items_in_batch=None, alpha=2, eps=1e-6, **kwargs):
     """
     Compute the detection loss adapted for 3D data
     It uses keypoint-like IOU loss (negative exponent of mse) to assign the objectness score to the center of the object
 
-    :param logits: Predicted headmap logits BxCxDxHxW
+    :param logits:  Predicted headmap logits BxCxDxHxW
     :param offsets: Predicted offsets Bx3xDxHxW
-    :param labels: Target labels encoded as BxNx5 where N is the number of objects and 5 is x,y,z,class,sigma
-    :return: Single scalar loss
+    :param anchors: Anchor points Bx3xDxHxW
+    :param labels:  Target labels encoded as BxNx5 where N is the number of objects and 5 is x,y,z,class,sigma
+    :return:        Single scalar loss
     """
 
     # 1) Decode predictions
-    pred_logits, pred_centers, anchor_points = decode_detections(logits, offsets, stride=stride)
+    pred_logits, pred_centers, anchor_points = decode_detections(logits, offsets, anchors)
     # shapes:
     # pred_logits:  [B, L, C]
     # pred_centers: [B, L, 3]
@@ -88,8 +88,9 @@ def object_detection_loss(logits, offsets, labels, num_items_in_batch=None, alph
         pred_scores=pred_logits,  # [B, C, L]
         pred_centers=pred_centers,  # [B, L, 3]
         anchor_points=anchor_points,
-        gt_labels=true_labels,
-        gt_centers=true_centers,
+        true_labels=true_labels,
+        true_centers=true_centers,
+        true_sigmas=true_sigmas,
         pad_gt_mask=true_labels.eq(-100),
         bg_index=num_classes,
     )
@@ -105,7 +106,13 @@ def object_detection_loss(logits, offsets, labels, num_items_in_batch=None, alph
         one_hot_label,
     )
 
-    # 7) Combine losses
+    reg_loss = iou_loss(
+        pred_centers,
+        assigned_centers,
+        assigned_scores,
+        assigned_labels,
+    )
+
     total_loss = cls_loss + reg_loss
 
     return total_loss / num_items_in_batch
@@ -128,8 +135,28 @@ class ObjectDetectionHead(nn.Module):
         if torch.jit.is_tracing():
             return logits, offsets
 
+        anchors = anchors_for_offsets_feature_map(offsets, self.stride)
+
         loss = None
         if labels is not None:
             loss = object_detection_loss(logits, offsets, labels, **loss_kwargs)
 
-        return ObjectDetectionOutput(logits=logits, offsets=offsets, loss=loss)
+        return ObjectDetectionOutput(logits=logits, offsets=offsets, anchors=anchors, loss=loss)
+
+
+def anchors_for_offsets_feature_map(offsets, stride):
+    anchors = (
+        torch.stack(
+            torch.meshgrid(
+                torch.arange(offsets.size(-3), device=offsets.device),
+                torch.arange(offsets.size(-2), device=offsets.device),
+                torch.arange(offsets.size(-1), device=offsets.device),
+                indexing="ij",
+            )
+        )
+        .add_(0.5)
+        .float()
+        .mul_(stride)
+    )
+    anchors = anchors[None, ...].repeat(offsets.size(0), 1, 1, 1, 1)
+    return anchors
