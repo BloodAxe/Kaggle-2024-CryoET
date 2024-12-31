@@ -4,6 +4,7 @@ from typing import Optional
 import torch
 from torch import nn, Tensor
 import torch.nn.functional as F
+from pytorch_toolbelt.losses.functional import focal_loss_with_logits
 
 
 @dataclasses.dataclass
@@ -75,9 +76,81 @@ def batch_pairwise_keypoints_iou(
     return iou
 
 
-def object_detection_loss(logits, offsets, labels, num_items_in_batch=None, alpha=2, beta=4, eps=1e-6, **kwargs):
+def dynamic_anchor_assignment(
+    iou_scores: Tensor,
+    true_labels: Tensor,
+    ignore_mask: Tensor,
+    pred_logits: Tensor,
+):
     """
-    Compute the Yolo-NAS Detection loss adapted for 3D data
+    Simple example of dynamic anchor assignment:
+      - For each GT in the batch (that is not -100), pick the single best anchor
+        with highest iou_score.
+      - Ties are broken by simply taking the max idx.
+      - If no iou is > 0, you might choose to ignore that GT as well (depends on threshold).
+
+    :param iou_scores:  [B, M_pred, M_gt]
+    :param true_labels: [B, M_gt]   (class label)
+    :param ignore_mask: [B, M_gt]   (bool) True => ignore
+    :param pred_logits: [B, C, M_pred]
+    :return assigned_labels:  [B, M_pred] in [-1..C-1], -1 for background/unmatched
+            matched_gt_idx:   [B, M_pred] which GT index is matched, or -1
+    """
+    B, M_pred, M_gt = iou_scores.shape
+    C = pred_logits.size(1)
+
+    # Initialize everything to -1 => background
+    assigned_labels = iou_scores.new_full((B, M_pred), -1, dtype=torch.long)
+    matched_gt_idx = iou_scores.new_full((B, M_pred), -1, dtype=torch.long)
+
+    # We will do it "per batch" to avoid for loops over M_gt
+    # 1) Invalidate iou_scores for GTs that are ignored
+    #    iou_scores[b, :, j] = -1 if ignore_mask[b, j] == True
+    iou_scores = iou_scores.clone()
+    # broadcast ignore_mask => [B, 1, M_gt]
+    iou_scores[ignore_mask[:, None, :].expand_as(iou_scores)] = -1.0
+
+    # 2) For each GT, find the best anchor
+    #    best_pred = argmax over dimension=1 => shape [B, M_gt]
+    iou_scores_t = iou_scores.transpose(1, 2)  # shape [B, M_gt, M_pred]
+    best_pred_idx = iou_scores_t.argmax(dim=-1)  # [B, M_gt]
+    best_pred_vals = iou_scores_t.max(dim=-1).values  # [B, M_gt]
+
+    # (optional) Could filter out GTs with best iou < some threshold if desired
+    # threshold = 0.1
+    # valid_gt_mask = best_pred_vals > threshold
+    # but let's keep them as-is for simplicity
+
+    # 3) Assign each GT to that best anchor
+    #    Because multiple GTs can select the same anchor, the last GT might overwrite the first.
+    #    For true "dynamic matching", you'd do a Hungarian or top-k approach.
+    b_idx = torch.arange(B, device=iou_scores.device).unsqueeze(-1)  # [B,1]
+    gt_idx = torch.arange(M_gt, device=iou_scores.device).unsqueeze(0)  # [1,M_gt]
+
+    anchor_idx_for_gt = best_pred_idx  # [B, M_gt]
+    # We also get the class from true_labels
+    class_for_gt = true_labels.clone()  # [B, M_gt]
+    # Some might be -100, we ignore them => we won't assign
+
+    # flatten out (B, M_gt) => (B*M_gt,) for indexing
+    # or we do a scatter_ approach:
+    # assigned_labels[b, anchor_idx_for_gt[b, j]] = class_for_gt[b, j], for each j
+    # matched_gt_idx[b, anchor_idx_for_gt[b, j]] = j
+    for b in range(B):
+        for j in range(M_gt):
+            cl = class_for_gt[b, j].item()
+            if cl == -100:
+                continue  # ignore
+            a = anchor_idx_for_gt[b, j].item()
+            assigned_labels[b, a] = cl
+            matched_gt_idx[b, a] = j
+
+    return assigned_labels, matched_gt_idx
+
+
+def object_detection_loss(logits, offsets, labels, num_items_in_batch=None, alpha=2, stride: int = 32, eps=1e-6, **kwargs):
+    """
+    Compute the detection loss adapted for 3D data
     It uses keypoint-like IOU loss (negative exponent of mse) to assign the objectness score to the center of the object
 
     :param logits: Predicted headmap logits BxCxDxHxW
@@ -86,7 +159,7 @@ def object_detection_loss(logits, offsets, labels, num_items_in_batch=None, alph
     :return: Single scalar loss
     """
     # 1) Decode predictions
-    pred_logits, pred_centers = decode_detections(logits, offsets, stride=32)
+    pred_logits, pred_centers = decode_detections(logits, offsets, stride=stride)
     # shapes:
     # pred_logits:  [B, C, M]
     # pred_centers: [B, 3, M]
@@ -122,9 +195,7 @@ def object_detection_loss(logits, offsets, labels, num_items_in_batch=None, alph
     #    Use assigned_labels for each anchor
     #    Typically alpha=0.25, gamma=2.0 in standard focal;
     #    The user gave alpha=2.0 => that might be "gamma". So let's do:
-    cls_loss = focal_loss(
-        pred_logits, assigned_labels, alpha=0.25, gamma=alpha, eps=eps  # or your choice  # pass alpha=2.0 as focal gamma
-    )
+    cls_loss = focal_loss_with_logits(pred_logits, assigned_labels, gamma=alpha, eps=eps, reduction="none")
 
     # 6) Regression (OKS) loss for matched predictions
     #    matched_gt_idx[b, m] is the GT index or -1 if unmatched
@@ -137,14 +208,12 @@ def object_detection_loss(logits, offsets, labels, num_items_in_batch=None, alph
     # Gather the iou_score for matched entries
     matched_iou = iou_scores[b_idx, m_idx, matched_gt_idx.clamp_min(0)]
     # Zero out where not matched
-    matched_iou = matched_iou * reg_mask
-
-    # define regression loss
-    reg_loss = (1.0 - matched_iou).sum() / (reg_mask.sum().clamp_min(1.0))
+    reg_loss = torch.masked_fill(1.0 - matched_iou, reg_mask, 0).sum()
 
     # 7) Combine losses
     total_loss = cls_loss + reg_loss
-    return total_loss
+
+    return total_loss / num_items_in_batch
 
 
 class ObjectDetectionHead(nn.Module):
@@ -161,18 +230,11 @@ class ObjectDetectionHead(nn.Module):
         logits = self.conv(features)
         offsets = self.offset_head(features)
 
-        centers = torch.meshgrid(
-            torch.arange(logits.size(-3), device=logits.device),
-            torch.arange(logits.size(-2), device=logits.device),
-            torch.arange(logits.size(-1), device=logits.device),
-        )
-
         if torch.jit.is_tracing():
             return logits, offsets
 
         loss = None
         if labels is not None:
-            # loss = point_detection_loss(logits.float(), labels.float(), **loss_kwargs)
-            loss = quality_focal_loss(logits.float(), labels.float(), **loss_kwargs)
+            loss = object_detection_loss(logits, offsets, labels, **loss_kwargs)
 
-        return PointDetectionOutput(logits=logits, loss=loss)
+        return ObjectDetectionOutput(logits=logits, offsets=offsets, loss=loss)
