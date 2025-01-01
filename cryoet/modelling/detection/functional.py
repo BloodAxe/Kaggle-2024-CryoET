@@ -56,6 +56,11 @@ def object_detection_loss(logits, offsets, anchors, labels, eps=1e-6, **kwargs):
     :return:        Single scalar loss
     """
 
+    if not torch.isfinite(logits).all():
+        print("Logits are not finite")
+    if not torch.isfinite(offsets).all():
+        print("Offsets are not finite")
+
     # 1) Decode predictions
     pred_logits, pred_centers, anchor_points = decode_detections(logits, offsets, anchors)
     # shapes:
@@ -81,6 +86,8 @@ def object_detection_loss(logits, offsets, anchors, labels, eps=1e-6, **kwargs):
         pad_gt_mask=true_labels.eq(-100),
         bg_index=num_classes,
     )
+    if not torch.isfinite(assigned_scores).all():
+        print("Assigned scores are not finite")
 
     # 5) Classification loss: focal
     #    Use assigned_labels for each anchor
@@ -92,6 +99,8 @@ def object_detection_loss(logits, offsets, anchors, labels, eps=1e-6, **kwargs):
         assigned_scores,
         one_hot_label,
     )
+    if not torch.isfinite(cls_loss).all():
+        print("Classification loss is not finite")
 
     reg_loss = iou_loss(
         pred_centers=pred_centers,
@@ -100,6 +109,9 @@ def object_detection_loss(logits, offsets, anchors, labels, eps=1e-6, **kwargs):
         assigned_sigmas=assigned_sigmas,
         mask_positive=assigned_labels != num_classes,
     )
+
+    if not torch.isfinite(reg_loss).all():
+        print("Regression loss is not finite")
 
     total_loss = cls_loss + reg_loss
     divisor = assigned_scores.sum().clamp_min(1)
