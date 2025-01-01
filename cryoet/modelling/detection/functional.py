@@ -143,7 +143,7 @@ def anchors_for_offsets_feature_map(offsets, stride):
                 torch.arange(offsets.size(-3), device=offsets.device),
                 torch.arange(offsets.size(-2), device=offsets.device),
                 torch.arange(offsets.size(-1), device=offsets.device),
-                indexing="ij",
+                indexing="xy",
             )
         )
         .float()
