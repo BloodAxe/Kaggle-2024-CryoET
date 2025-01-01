@@ -1,6 +1,6 @@
 import torch
 
-from cryoet.modelling.detection.od_head import ObjectDetectionHead
+from cryoet.modelling.detection.detection_head import ObjectDetectionHead
 from cryoet.modelling.detection.task_aligned_assigner import batch_pairwise_keypoints_iou
 
 

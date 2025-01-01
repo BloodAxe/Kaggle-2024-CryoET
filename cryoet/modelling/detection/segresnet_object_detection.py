@@ -1,7 +1,7 @@
 from monai.networks.nets import SegResNet
 from torch import nn
 
-from .od_head import ObjectDetectionHead
+from .detection_head import ObjectDetectionHead
 
 from transformers import PretrainedConfig
 
