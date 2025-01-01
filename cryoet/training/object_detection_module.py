@@ -174,7 +174,7 @@ class ObjectDetectionModel(L.LightningModule):
             accumulated_predictions.centers /= accumulated_predictions.counter.unsqueeze(0)
             accumulated_predictions.centers.masked_fill_(accumulated_predictions.counter == 0, 0.0)
 
-            # self.log_heatmaps(study_name, accumulated_predictions.scores)
+            self.log_heatmaps(study_name, accumulated_predictions.scores)
 
             topk_coords_px, topk_clses, topk_scores = decode_detections_with_nms(
                 accumulated_predictions.scores,
@@ -196,7 +196,8 @@ class ObjectDetectionModel(L.LightningModule):
                 submission["z"].append(float(coord[2]))
 
         submission = pd.DataFrame.from_dict(submission)
-        # print(submission.sort_values(by="score", ascending=False).head(20))
+
+        print(submission.sort_values(by="score", ascending=False).head(20))
 
         score_thresholds = np.linspace(0.05, 1.0, 20) ** 2
         score_values = []
