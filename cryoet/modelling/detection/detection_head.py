@@ -50,7 +50,7 @@ class ObjectDetectionHead(nn.Module):
 
     def forward(self, features, labels=None, **loss_kwargs):
         logits = self.cls_head(self.cls_stem(features))
-        offsets = self.offset_head(self.offset_stem(features)).tanh()
+        offsets = self.offset_head(self.offset_stem(features)).tanh() * 0
 
         if torch.jit.is_tracing():
             return logits, offsets
