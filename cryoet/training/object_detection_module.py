@@ -59,11 +59,6 @@ class AccumulatedObjectDetectionPredictionContainer:
             tile_offsets_zyx[2] : tile_offsets_zyx[2] + tile_scores.shape[3],
         ]
 
-        # Crop tile_scores to the view shape
-        tile_scores = tile_scores[:, : probas_view.shape[1], : probas_view.shape[2], : probas_view.shape[3]]
-        pred_centers = pred_centers[:, : centers_view.shape[1], : centers_view.shape[2], : centers_view.shape[3]]
-
-        probas_view += tile_scores.to(probas_view.device)
         tile_offsets_xyz = torch.tensor(
             [
                 tile_offsets_zyx[2],
@@ -73,6 +68,11 @@ class AccumulatedObjectDetectionPredictionContainer:
             device=probas_view.device,
         ).view(3, 1, 1, 1)
 
+        # Crop tile_scores to the view shape
+        tile_scores = tile_scores[:, : probas_view.shape[1], : probas_view.shape[2], : probas_view.shape[3]]
+        pred_centers = pred_centers[:, : centers_view.shape[1], : centers_view.shape[2], : centers_view.shape[3]]
+
+        probas_view += tile_scores.to(probas_view.device)
         centers_view += (pred_centers + tile_offsets_xyz).to(centers_view.device)
         counter_view += 1
 
