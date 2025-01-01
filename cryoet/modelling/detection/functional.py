@@ -129,8 +129,8 @@ def object_detection_loss(logits, offsets, anchors, labels, average_tokens_acros
         assigned_scores,
         one_hot_label,
     )
-    if not torch.isfinite(cls_loss).all():
-        print("Classification loss is not finite")
+    # if not torch.isfinite(cls_loss).all():
+    #     print("Classification loss is not finite")
 
     reg_loss = iou_loss(
         pred_centers=pred_centers,
@@ -140,12 +140,13 @@ def object_detection_loss(logits, offsets, anchors, labels, average_tokens_acros
         mask_positive=assigned_labels != num_classes,
     )
 
-    if not torch.isfinite(reg_loss).all():
-        print("Regression loss is not finite")
+    # if not torch.isfinite(reg_loss).all():
+    #     print("Regression loss is not finite")
 
     total_loss = cls_loss + reg_loss
     divisor = assigned_scores.sum()
-    print("Total loss", total_loss, "Divisor", divisor, flush=True)
+    present_labels = true_labels.numel() - true_labels.eq(-100).sum()
+    print("Total loss", total_loss, "Divisor", divisor, "present_labels", present_labels, flush=True)
     if average_tokens_across_devices and is_dist_avail_and_initialized():
         total_loss = maybe_all_reduce(total_loss)
         divisor = maybe_all_reduce(divisor.detach())
