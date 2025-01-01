@@ -134,7 +134,7 @@ class ObjectDetectionModel(L.LightningModule):
 
         submission = defaultdict(list)
 
-        for study_name in self.trainer.data_module.valid_studies:
+        for study_name in self.trainer.datamodule.valid_studies:
             preds = self.validation_predictions.get(study_name, None)
             preds = all_gather(preds)
             preds = [p for p in preds if p is not None]
