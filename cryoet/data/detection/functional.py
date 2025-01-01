@@ -3,6 +3,15 @@ import torch
 from typing import List, Tuple
 
 
+def centernet_heatmap_nms(scores, kernel=3):
+    pad = (kernel - 1) // 2
+    maxpool = torch.nn.functional.max_pool3d(scores, kernel_size=kernel, padding=pad, stride=1)
+
+    mask = scores == maxpool
+    peaks = scores * mask
+    return peaks
+
+
 def decode_detections_with_nms(
     scores: torch.Tensor, centers: torch.Tensor, min_score: float, class_sigmas: List[float], iou_threshold: float = 0.25
 ) -> Tuple[torch.Tensor, torch.Tensor, torch.Tensor]:
@@ -26,6 +35,7 @@ def decode_detections_with_nms(
     num_classes = scores.shape[0]  # the 'C' dimension
 
     # Flatten spatial dimensions so that scores.shape becomes (C, -1)
+    scores = centernet_heatmap_nms(scores)
     scores = einops.rearrange(scores, "C D H W -> (D H W) C")
     centers = einops.rearrange(centers, "C D H W -> (D H W) C")
 
