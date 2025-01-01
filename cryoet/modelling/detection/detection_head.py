@@ -42,10 +42,10 @@ class ObjectDetectionHead(nn.Module):
 
         self.stride = stride
 
-        # torch.nn.init.zeros_(self.offset_head.weight)
+        torch.nn.init.zeros_(self.offset_head.weight)
         torch.nn.init.constant_(self.offset_head.bias, 0)
 
-        # torch.nn.init.zeros_(self.cls_head.weight)
+        torch.nn.init.zeros_(self.cls_head.weight)
         torch.nn.init.constant_(self.cls_head.bias, -3)
 
     def forward(self, features, labels=None, **loss_kwargs):
