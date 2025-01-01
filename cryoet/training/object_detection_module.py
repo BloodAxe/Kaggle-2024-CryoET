@@ -217,6 +217,7 @@ class ObjectDetectionModel(L.LightningModule):
             score_details.append(s[1])
 
         best_score = np.argmax(score_values)
+        print("Scores", list(zip(score_values, score_thresholds)))
 
         extra_values = dict(("val/" + k, v) for k, v in score_details[best_score].items())
 
