@@ -3,6 +3,8 @@ import torch
 from torch import Tensor
 
 from .task_aligned_assigner import TaskAlignedAssigner
+from pytorch_toolbelt.utils.distributed import is_dist_avail_and_initialized, get_world_size
+import torch.distributed as dist
 
 
 def decode_detections(logits, offsets, anchors):
@@ -32,13 +34,22 @@ def varifocal_loss(pred_logits: Tensor, gt_score: Tensor, label: Tensor, alpha=0
     return loss.sum()
 
 
+def keypoint_similarity(pts1, pts2, sigmas):
+    """
+    Compute similarity between two sets of keypoints
+    :param pts1: ...x3
+    :param pts2: ...x3
+    """
+    d = ((pts1 - pts2) ** 2).sum(dim=-1, keepdim=False)  # []
+    e: Tensor = d / (2 * sigmas**2)
+    iou = torch.exp(-e)
+    return iou
+
+
 def iou_loss(pred_centers, assigned_centers, assigned_scores, assigned_sigmas, mask_positive):
     weight = assigned_scores.sum(-1)
 
-    d = ((pred_centers - assigned_centers) ** 2).sum(dim=-1, keepdim=False)  # [B, L]
-
-    e: Tensor = d / (2 * assigned_sigmas**2)
-    iou = torch.exp(-e)  # [B, M1, M2]
+    iou = keypoint_similarity(pred_centers, assigned_centers, assigned_sigmas)
     loss2 = (1 - iou) * weight
 
     loss_reduced_iou = torch.masked_fill(loss2, ~mask_positive, 0).sum()
@@ -52,10 +63,6 @@ def iou_loss(pred_centers, assigned_centers, assigned_scores, assigned_sigmas, m
 
     # loss_reduced = torch.masked_fill(loss, ~mask_positive, 0).sum()
     # return loss_reduced
-
-
-from pytorch_toolbelt.utils.distributed import is_dist_avail_and_initialized, get_world_size
-import torch.distributed as dist
 
 
 def maybe_all_reduce(x: Tensor, op=dist.ReduceOp.SUM):

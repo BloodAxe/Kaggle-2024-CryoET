@@ -1,7 +1,27 @@
+import math
+
+import einops
+import numpy as np
 import torch
 
 from cryoet.modelling.detection.detection_head import ObjectDetectionHead
+from cryoet.modelling.detection.functional import anchors_for_offsets_feature_map, iou_loss, keypoint_similarity
 from cryoet.modelling.detection.task_aligned_assigner import batch_pairwise_keypoints_iou
+
+
+def test_loss():
+    offsets = torch.zeros(1, 3, 96, 96, 96)
+
+    anchors = anchors_for_offsets_feature_map(offsets, stride=1)
+
+    gt = torch.tensor([[[40, 77, 11]]])
+
+    anchors = einops.rearrange(anchors, "B C D H W -> B (D H W) C")
+    iou = keypoint_similarity(anchors, gt, torch.tensor([5]))
+    print(iou.max(), iou.min())
+    # amax = iou.argmax()
+    # print(np.unravel_index(amax, iou.shape))
+    # print(anchors[0, amax])
 
 
 def test_od_head():

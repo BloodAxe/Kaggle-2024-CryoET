@@ -1,3 +1,4 @@
+import einops
 import torch
 from typing import List, Tuple
 
@@ -8,11 +9,8 @@ def decode_detections_with_nms(
     """
     Decode detections from scores and centers with NMS
 
-    :param scores: Predicted scores of shape (B, C, D, H, W) or (C, D, H, W).
-                   For simplicity, below we assume shape (C, D, H, W) and we flatten
-                   in the first dimension: (C, -1).
-    :param centers: Predicted centers of shape (B, D, H, W, 3) or (D, H, W, 3).
-                    For simplicity, below we assume (D, H, W, 3) and flatten: (-1, 3).
+    :param scores: Predicted scores of shape (C, D, H, W)
+    :param centers: Predicted centers of shape (3, D, H, W)
     :param min_score: Minimum score to consider a detection
     :param class_sigmas: Class sigmas (class radius for NMS), length = number of classes
     :param iou_threshold: Threshold above which detections are suppressed
@@ -28,11 +26,8 @@ def decode_detections_with_nms(
     num_classes = scores.shape[0]  # the 'C' dimension
 
     # Flatten spatial dimensions so that scores.shape becomes (C, -1)
-    scores = torch.flatten(scores, start_dim=1)  # shape: (C, D*H*W)
-    scores = torch.transpose(scores, 0, 1)  # shape: (D*H*W, C)
-
-    centers = torch.flatten(centers, start_dim=1)  # shape: (3, D*H*W)
-    centers = torch.transpose(centers, 0, 1)  # shape: (D*H*W, 3)
+    scores = einops.rearrange(scores, "C D H W -> (D H W) C")
+    centers = einops.rearrange(centers, "C D H W -> (D H W) C")
 
     # max_scores: shape [D*H*W], class_labels: shape [D*H*W]
     max_scores = scores.max(dim=1)
