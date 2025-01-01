@@ -133,6 +133,8 @@ def object_detection_loss(logits, offsets, anchors, labels, eps=1e-6, **kwargs):
         total_loss = maybe_all_reduce(total_loss)
         divisor = maybe_all_reduce(divisor)
 
+    divisor = divisor.clamp_min(1)
+
     return total_loss / divisor, divisor
 
 
