@@ -138,6 +138,8 @@ class ObjectDetectionModel(L.LightningModule):
             preds = self.validation_predictions.get(study_name, None)
             preds = all_gather(preds)
             preds = [p for p in preds if p is not None]
+            if len(preds) == 0:
+                continue
 
             accumulated_predictions = preds[0]
             for p in preds[1:]:
