@@ -341,7 +341,7 @@ class ObjectDetectionModel(L.LightningModule):
                 ).view(-1)
 
                 grads_nan = [
-                    n for n, p in self.model.named_parameters() if p.grad is not None and not torch.isfinite(n.grad).all()
+                    n for n, p in self.model.named_parameters() if p.grad is not None and not torch.isfinite(p.grad).all()
                 ]
                 if len(grads_nan) > 0:
                     self.trainer.print(f"Found NaN gradients in {grads_nan}")
