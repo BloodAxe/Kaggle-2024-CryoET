@@ -106,7 +106,16 @@ class ObjectDetectionModel(L.LightningModule):
             prog_bar=True,
             logger=True,
         )
-
+        self.log(
+            "train/num_items_in_batch",
+            outputs.num_items_in_batch,
+            batch_size=len(batch["volume"]),
+            sync_dist=True,
+            on_step=True,
+            on_epoch=True,
+            prog_bar=True,
+            logger=True,
+        )
         return loss
 
     def on_train_epoch_start(self) -> None:

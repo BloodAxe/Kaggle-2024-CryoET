@@ -85,7 +85,7 @@ def object_detection_loss(logits, offsets, anchors, labels, eps=1e-6, **kwargs):
     # 4) Perform dynamic anchor assignment
     assigner = TaskAlignedAssigner()
     assigned_labels, assigned_centers, assigned_scores, assigned_sigmas = assigner(
-        pred_scores=pred_logits.detach().sigmoid(),  # [B, C, L]
+        pred_scores=pred_logits.detach().sigmoid(),
         pred_centers=pred_centers,  # [B, L, 3]
         anchor_points=anchor_points,
         true_labels=torch.masked_fill(true_labels, true_labels.eq(-100), 0),
