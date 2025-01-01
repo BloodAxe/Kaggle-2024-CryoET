@@ -339,6 +339,13 @@ class ObjectDetectionModel(L.LightningModule):
                 all_grads = torch.stack(
                     [torch.norm(p.grad) for p in self.model.parameters() if p.requires_grad and p.grad is not None]
                 ).view(-1)
+
+                grads_nan = [
+                    n for n, p in self.model.named_parameters() if p.grad is not None and not torch.isfinite(n.grad).all()
+                ]
+                if len(grads_nan) > 0:
+                    self.trainer.print(f"Found NaN gradients in {grads_nan}")
+
                 max_grads = torch.max(all_grads).item()
                 mean_grads = all_grads.mean()
                 self.log(
