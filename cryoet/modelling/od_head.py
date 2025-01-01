@@ -44,13 +44,12 @@ def varifocal_loss(pred_logits: Tensor, gt_score: Tensor, label: Tensor, alpha=0
     return loss.sum()
 
 
-def iou_loss(pred_centers, assigned_centers, assigned_scores, mask_positive):
+def iou_loss(pred_centers, assigned_centers, assigned_scores, assigned_sigmas, mask_positive):
     d = ((pred_centers - assigned_centers) ** 2).sum(dim=-1, keepdim=False)  # [B, L]
 
-    sigmas = true_sigmas[:, None, :]  # [B, M1, M2]
     weight = assigned_scores.sum(-1)
 
-    e: Tensor = d / (2 * sigmas**2)
+    e: Tensor = d / (2 * assigned_sigmas**2)
     iou = torch.exp(-e)  # [B, M1, M2]
     loss = (1 - iou) * weight
 
@@ -74,21 +73,21 @@ def object_detection_loss(logits, offsets, anchors, labels, num_items_in_batch=N
     # shapes:
     # pred_logits:  [B, L, C]
     # pred_centers: [B, L, 3]
-    batch_size, num_classes, num_anchors = logits.size()
+    batch_size, num_anchors, num_classes = pred_logits.size()
 
     # 2) Extract GT: [B, 5, N] => [B, 3, N], [B, N], [B, N]
     #    labels = (x, y, z, class, sigma)
-    true_centers = labels[:, :3, :]  # [B, n, 3]
-    true_labels = labels[:, 3:4, :]  # [B, n, 1]
-    true_sigmas = labels[:, 4:5, :]  # [B, n, 1]
+    true_centers = labels[:, :, :3]  # [B, n, 3]
+    true_labels = labels[:, :, 3:4]  # [B, n, 1]
+    true_sigmas = labels[:, :, 4:5]  # [B, n, 1]
 
     # 4) Perform dynamic anchor assignment
     assigner = TaskAlignedAssigner()
-    assigned_labels, assigned_centers, assigned_scores = assigner.forward(
+    assigned_labels, assigned_centers, assigned_scores, assigned_sigmas = assigner.forward(
         pred_scores=pred_logits,  # [B, C, L]
         pred_centers=pred_centers,  # [B, L, 3]
         anchor_points=anchor_points,
-        true_labels=true_labels,
+        true_labels=torch.masked_fill(true_labels, true_labels.eq(-100), 0),
         true_centers=true_centers,
         true_sigmas=true_sigmas,
         pad_gt_mask=true_labels.eq(-100),
@@ -107,15 +106,17 @@ def object_detection_loss(logits, offsets, anchors, labels, num_items_in_batch=N
     )
 
     reg_loss = iou_loss(
-        pred_centers,
-        assigned_centers,
-        assigned_scores,
-        assigned_labels,
+        pred_centers=pred_centers,
+        assigned_centers=assigned_centers,
+        assigned_scores=assigned_scores,
+        assigned_sigmas=assigned_sigmas,
+        mask_positive=assigned_labels != num_classes,
     )
 
     total_loss = cls_loss + reg_loss
+    divisor = assigned_scores.sum()
 
-    return total_loss / num_items_in_batch
+    return total_loss / divisor
 
 
 class ObjectDetectionHead(nn.Module):
@@ -125,11 +126,14 @@ class ObjectDetectionHead(nn.Module):
         self.offset_head = nn.Conv3d(in_channels, 3, kernel_size=3, padding=1)
         self.stride = stride
 
-        torch.nn.init.zeros_(self.conv.weight)
-        torch.nn.init.constant_(self.conv.bias, -3)
+        torch.nn.init.zeros_(self.offset_head.weight)
+        torch.nn.init.constant_(self.offset_head.bias, 0)
+
+        # torch.nn.init.zeros_(self.conv.weight)
+        # torch.nn.init.constant_(self.conv.bias, -3)
 
     def forward(self, features, labels=None, **loss_kwargs):
-        logits = self.conv(features)
+        logits = self.cls_head(features)
         offsets = self.offset_head(features)
 
         if torch.jit.is_tracing():
@@ -139,7 +143,7 @@ class ObjectDetectionHead(nn.Module):
 
         loss = None
         if labels is not None:
-            loss = object_detection_loss(logits, offsets, labels, **loss_kwargs)
+            loss = object_detection_loss(logits, offsets, anchors, labels, **loss_kwargs)
 
         return ObjectDetectionOutput(logits=logits, offsets=offsets, anchors=anchors, loss=loss)
 
@@ -154,8 +158,8 @@ def anchors_for_offsets_feature_map(offsets, stride):
                 indexing="ij",
             )
         )
-        .add_(0.5)
         .float()
+        .add_(0.5)
         .mul_(stride)
     )
     anchors = anchors[None, ...].repeat(offsets.size(0), 1, 1, 1, 1)

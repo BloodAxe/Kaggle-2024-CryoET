@@ -1,6 +1,34 @@
 import torch
 
-from cryoet.modelling.od_head import batch_pairwise_keypoints_iou
+from cryoet.modelling.od_head import ObjectDetectionHead
+from cryoet.modelling.task_aligned_assigner import batch_pairwise_keypoints_iou
+
+
+def test_od_head():
+    head = ObjectDetectionHead(
+        in_channels=128,
+        num_classes=5,
+        stride=4,
+    )
+
+    gt = torch.tensor(
+        [
+            [
+                [10, 20, 30, 0, 5],
+                [50, 5, 25, 1, 6],
+                [-100, -100, -100, -100, -100],
+            ],
+            [
+                [30, 40, 50, 2, 6],
+                [60, 70, 80, 3, 6],
+                [69, 69, 69, 4, 6],
+            ],
+        ]
+    )
+
+    fm = torch.randn(2, 128, 32, 32, 32)
+    output = head(fm, labels=gt)
+    print(output.loss)
 
 
 def test_batch_pairwise_keypoints_iou():
@@ -23,7 +51,7 @@ def test_batch_pairwise_keypoints_iou():
     )
 
     sim = batch_pairwise_keypoints_iou(pred_pt, true_pt, sigmas)
-    assert sim.shape[1] == pred_pt.shape[1]
-    assert sim.shape[2] == true_pt.shape[1]
+    assert sim.shape[1] == true_pt.shape[1]
+    assert sim.shape[2] == pred_pt.shape[1]
     sim_np = sim.detach().numpy()
     print(sim_np)

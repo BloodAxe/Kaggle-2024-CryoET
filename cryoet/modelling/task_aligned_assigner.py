@@ -15,18 +15,18 @@ def batch_pairwise_keypoints_iou(
     :param pred_keypoints: Centers with the shape [B, M1, 3]
     :param true_keypoints: Centers with the shape [B, M2, 3]
     :param true_sigmas:    Sigmas with the shape [B, M2]
-    :return iou:           OKS between gt_keypoints and pred_keypoints with the shape [B, M1, M2]
+    :return iou:           OKS between gt_keypoints and pred_keypoints with the shape [B, M2, M1]
     """
 
-    centers1 = pred_keypoints[:, :, None, :]  # [B, 1, M2, 3]
-    centers2 = true_keypoints[:, None, :, :]  # [B, M1, 1, 3]
+    centers1 = pred_keypoints[:, None, :, :]  # [B, M2, 1, 3]
+    centers2 = true_keypoints[:, :, None, :]  # [B, 1, M1, 3]
 
     d = ((centers1 - centers2) ** 2).sum(dim=-1, keepdim=False)  # [B, M1, M2]
 
-    sigmas = true_sigmas[:, None, :]  # [B, M1, M2]
+    sigmas = true_sigmas.reshape(true_keypoints.size(0), true_keypoints.size(1), 1)  # [B, M2, 1]
 
     e: Tensor = d / (2 * sigmas**2)
-    iou = torch.exp(-e)  # [B, M1, M2]
+    iou = torch.exp(-e)  # [B, M2, M1]
     return iou
 
 
@@ -102,9 +102,9 @@ class TaskAlignedAssigner(nn.Module):
         pred_scores: Tensor,
         pred_centers: Tensor,
         anchor_points: Tensor,
-        gt_labels: Tensor,
-        gt_centers: Tensor,
-        gt_sigmas: Tensor,
+        true_labels: Tensor,
+        true_centers: Tensor,
+        true_sigmas: Tensor,
         pad_gt_mask: Tensor,
         bg_index: int,
     ):
@@ -120,10 +120,10 @@ class TaskAlignedAssigner(nn.Module):
            highest iou will be selected.
 
         :param pred_scores: Tensor (float32): predicted class probability, shape(B, L, C)
-        :param pred_centers: Tensor (float32): predicted bounding boxes, shape(B, L, 4)
+        :param pred_centers: Tensor (float32): predicted bounding boxes, shape(B, L, 3)
         :param anchor_points: Tensor (float32): pre-defined anchors, shape(L, 2), "cxcy" format
-        :param gt_labels: Tensor (int64|int32): Label of gt_bboxes, shape(B, n, 1)
-        :param gt_centers: Tensor (float32): Ground truth bboxes, shape(B, n, 4)
+        :param true_labels: Tensor (int64|int32): Label of gt_bboxes, shape(B, n, 1)
+        :param true_centers: Tensor (float32): Ground truth bboxes, shape(B, n, 3)
         :param pad_gt_mask: Tensor (float32): 1 means bbox, 0 means no bbox, shape(B, n, 1).
                             Can be None, which means all gt_bboxes are valid.
         :param bg_index: int ( background index
@@ -133,30 +133,31 @@ class TaskAlignedAssigner(nn.Module):
             - assigned_scores, Tensor of shape (B, L, C)
         """
         assert pred_scores.ndim == pred_centers.ndim
-        assert gt_labels.ndim == gt_centers.ndim and gt_centers.ndim == 3
+        assert true_labels.ndim == true_centers.ndim and true_centers.ndim == 3
 
         batch_size, num_anchors, num_classes = pred_scores.shape
-        _, num_max_boxes, _ = gt_centers.shape
+        _, num_max_boxes, _ = true_centers.shape
 
         # negative batch
         if num_max_boxes == 0:
-            assigned_labels = torch.full([batch_size, num_anchors], bg_index, dtype=torch.long, device=gt_labels.device)
-            assigned_points = torch.zeros([batch_size, num_anchors, 4], device=gt_labels.device)
-            assigned_scores = torch.zeros([batch_size, num_anchors, num_classes], device=gt_labels.device)
-            return assigned_labels, assigned_points, assigned_scores
+            assigned_labels = torch.full([batch_size, num_anchors], bg_index, dtype=torch.long, device=true_labels.device)
+            assigned_points = torch.zeros([batch_size, num_anchors, 3], device=true_labels.device)
+            assigned_scores = torch.zeros([batch_size, num_anchors, num_classes], device=true_labels.device)
+            assigned_sigmas = torch.zeros([batch_size, num_anchors], device=true_labels.device)
+            return assigned_labels, assigned_points, assigned_scores, assigned_sigmas
 
         # compute iou between gt and pred bbox, [B, n, L]
         # ious = batch_iou_similarity(gt_bboxes, pred_bboxes)
         ious = batch_pairwise_keypoints_iou(
             pred_centers,  # [B, M, 3]
-            gt_centers,  # [B, N, 3]
-            gt_sigmas,  # [B, N]
+            true_centers,  # [B, N, 3]
+            true_sigmas,  # [B, N]
         )  # -> [B, M, N]
 
         # gather pred bboxes class score
         pred_scores = torch.permute(pred_scores, [0, 2, 1])
-        batch_ind = torch.arange(end=batch_size, dtype=gt_labels.dtype, device=gt_labels.device).unsqueeze(-1)
-        gt_labels_ind = torch.stack([batch_ind.tile([1, num_max_boxes]), gt_labels.squeeze(-1)], dim=-1)
+        batch_ind = torch.arange(end=batch_size, dtype=true_labels.dtype, device=true_labels.device).unsqueeze(-1)
+        gt_labels_ind = torch.stack([batch_ind.tile([1, num_max_boxes]), true_labels.squeeze(-1)], dim=-1)
 
         bbox_cls_scores = pred_scores[gt_labels_ind[..., 0], gt_labels_ind[..., 1]]
 
@@ -164,7 +165,7 @@ class TaskAlignedAssigner(nn.Module):
         alignment_metrics = bbox_cls_scores.pow(self.alpha) * ious.pow(self.beta)
 
         # check the positive sample's center in gt, [B, n, L]
-        is_in_gts = check_points_inside_bboxes(anchor_points, gt_centers, gt_sigmas)
+        is_in_gts = check_points_inside_bboxes(anchor_points, true_centers, true_sigmas)
 
         # select topk largest alignment metrics pred bbox as candidates
         # for each gt, [B, n, L]
@@ -185,12 +186,15 @@ class TaskAlignedAssigner(nn.Module):
 
         # assigned target
         assigned_gt_index = assigned_gt_index + batch_ind * num_max_boxes
-        assigned_labels = torch.gather(gt_labels.flatten(), index=assigned_gt_index.flatten(), dim=0)
+        assigned_labels = torch.gather(true_labels.flatten(), index=assigned_gt_index.flatten(), dim=0)
         assigned_labels = assigned_labels.reshape([batch_size, num_anchors])
         assigned_labels = torch.where(mask_positive_sum > 0, assigned_labels, torch.full_like(assigned_labels, bg_index))
 
-        assigned_points = gt_centers.reshape([-1, 3])[assigned_gt_index.flatten(), :]
+        assigned_points = true_centers.reshape([-1, 3])[assigned_gt_index.flatten(), :]
         assigned_points = assigned_points.reshape([batch_size, num_anchors, 3])
+
+        assigned_sigmas = true_sigmas.reshape([-1])[assigned_gt_index.flatten()]
+        assigned_sigmas = assigned_sigmas.reshape([batch_size, num_anchors])
 
         assigned_scores = torch.nn.functional.one_hot(assigned_labels, num_classes + 1)
         ind = list(range(num_classes + 1))
@@ -206,4 +210,4 @@ class TaskAlignedAssigner(nn.Module):
         alignment_metrics = alignment_metrics.max(dim=-2).values.unsqueeze(-1)
         assigned_scores = assigned_scores * alignment_metrics
 
-        return assigned_labels, assigned_points, assigned_scores
+        return assigned_labels, assigned_points, assigned_scores, assigned_sigmas
