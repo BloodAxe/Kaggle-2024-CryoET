@@ -131,29 +131,20 @@ class ObjectDetectionModel(L.LightningModule):
 
     def on_validation_epoch_end(self) -> None:
         torch.cuda.empty_cache()
-        all_validation_predictions = all_gather(self.validation_predictions)
-        self.validation_predictions = None
 
         submission = defaultdict(list)
 
-        averaged_predictions = {}
-        for validation_predictions in all_validation_predictions:
-            for (
-                study_name,
-                accumulated_predictions,
-            ) in validation_predictions.items():
-                if study_name not in averaged_predictions:
-                    averaged_predictions[study_name] = AccumulatedObjectDetectionPredictionContainer(
-                        scores=torch.zeros_like(accumulated_predictions.scores),
-                        centers=torch.zeros_like(accumulated_predictions.centers),
-                        counter=torch.zeros_like(accumulated_predictions.counter),
-                    )
+        for study_name in self.trainer.data_module.valid_studies:
+            preds = self.validation_predictions.get(study_name, None)
+            preds = all_gather(preds)
+            preds = [p for p in preds if p is not None]
 
-                averaged_predictions[study_name].scores += accumulated_predictions.scores
-                averaged_predictions[study_name].centers += accumulated_predictions.centers
-                averaged_predictions[study_name].counter += accumulated_predictions.counter
+            accumulated_predictions = preds[0]
+            for p in preds[1:]:
+                accumulated_predictions.scores += p.scores
+                accumulated_predictions.centers += p.centers
+                accumulated_predictions.counter += p.counter
 
-        for study_name, accumulated_predictions in averaged_predictions.items():
             accumulated_predictions.scores /= accumulated_predictions.counter
             accumulated_predictions.scores.masked_fill_(accumulated_predictions.counter == 0, 0.0)
 
