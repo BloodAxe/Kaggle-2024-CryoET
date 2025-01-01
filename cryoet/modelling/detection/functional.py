@@ -157,18 +157,14 @@ def object_detection_loss(logits, offsets, anchors, labels, average_tokens_acros
 
 
 def anchors_for_offsets_feature_map(offsets, stride):
-    anchors = (
-        torch.stack(
-            torch.meshgrid(
-                torch.arange(offsets.size(-3), device=offsets.device),
-                torch.arange(offsets.size(-2), device=offsets.device),
-                torch.arange(offsets.size(-1), device=offsets.device),
-                indexing="xy",
-            )
-        )
-        .float()
-        .add_(0.5)
-        .mul_(stride)
+    z, y, x = torch.meshgrid(
+        torch.arange(offsets.size(-3), device=offsets.device),
+        torch.arange(offsets.size(-2), device=offsets.device),
+        torch.arange(offsets.size(-1), device=offsets.device),
+        indexing="ij",
     )
+    anchors = torch.stack([x, y, z], dim=0)
+    anchors = anchors.float().add_(0.5).mul_(stride)
+
     anchors = anchors[None, ...].repeat(offsets.size(0), 1, 1, 1, 1)
     return anchors

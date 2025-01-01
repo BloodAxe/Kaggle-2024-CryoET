@@ -9,6 +9,15 @@ from cryoet.modelling.detection.functional import anchors_for_offsets_feature_ma
 from cryoet.modelling.detection.task_aligned_assigner import batch_pairwise_keypoints_iou
 
 
+def test_anchors_for_offsets_feature_map():
+    offsets = torch.zeros(1, 3, 12, 34, 56)
+
+    anchors = anchors_for_offsets_feature_map(offsets, stride=1)
+    print(anchors[0, :, -1, 0, 0])
+    print(anchors[0, :, 0, -1, 0])
+    print(anchors[0, :, 0, 0, -1])
+
+
 def test_loss():
     offsets = torch.zeros(1, 3, 96, 96, 96)
 
