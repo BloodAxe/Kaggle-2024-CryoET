@@ -1,6 +1,3 @@
-import dataclasses
-from typing import Optional
-
 import einops
 import torch
 from torch import Tensor

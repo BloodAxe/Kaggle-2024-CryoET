@@ -20,7 +20,7 @@ from .visualization import render_heatmap
 from ..data.detection.functional import decode_detections_with_nms
 from ..data.parsers import CLASS_LABEL_TO_CLASS_NAME, ANGSTROMS_IN_PIXEL, TARGET_SIGMAS
 from ..metric import score_submission
-from cryoet.modelling.detection.functional import ObjectDetectionOutput
+from cryoet.modelling.detection.detection_head import ObjectDetectionOutput
 
 
 @dataclasses.dataclass
