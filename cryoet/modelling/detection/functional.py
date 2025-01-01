@@ -44,6 +44,19 @@ def iou_loss(pred_centers, assigned_centers, assigned_scores, assigned_sigmas, m
     return torch.masked_fill(loss, ~mask_positive, 0).sum()
 
 
+from pytorch_toolbelt.utils.distributed import is_dist_avail_and_initialized, get_world_size
+import torch.distributed as dist
+
+
+def maybe_all_reduce(x: Tensor, op=dist.ReduceOp.SUM):
+    if not is_dist_avail_and_initialized():
+        return x
+
+    xc = x.clone()
+    dist.all_reduce(xc, op=op)
+    return xc
+
+
 def object_detection_loss(logits, offsets, anchors, labels, eps=1e-6, **kwargs):
     """
     Compute the detection loss adapted for 3D data
@@ -114,7 +127,11 @@ def object_detection_loss(logits, offsets, anchors, labels, eps=1e-6, **kwargs):
         print("Regression loss is not finite")
 
     total_loss = cls_loss + reg_loss
-    divisor = assigned_scores.sum().clamp_min(1)
+    divisor = assigned_scores.sum()
+
+    if is_dist_avail_and_initialized():
+        total_loss = maybe_all_reduce(total_loss)
+        divisor = maybe_all_reduce(divisor)
 
     return total_loss / divisor, divisor
 
