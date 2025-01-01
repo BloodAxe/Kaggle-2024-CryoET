@@ -30,12 +30,12 @@ class AccumulatedObjectDetectionPredictionContainer:
     counter: Tensor
 
     @classmethod
-    def from_shape(cls, shape, num_classes, device="cpu"):
+    def from_shape(cls, shape, num_classes, device="cpu", dtype=torch.float32):
         shape = tuple(shape)
         return cls(
-            scores=torch.zeros((num_classes,) + shape, device=device),
-            centers=torch.zeros((3,) + shape, device=device),
-            counter=torch.zeros(shape, device=device),
+            scores=torch.zeros((num_classes,) + shape, device=device, dtype=dtype),
+            centers=torch.zeros((3,) + shape, device=device, dtype=dtype),
+            counter=torch.zeros(shape, device=device, dtype=dtype),
         )
 
     def accumulate(self, tile_scores, pred_centers, tile_offsets_zyx):
@@ -63,8 +63,8 @@ class AccumulatedObjectDetectionPredictionContainer:
         tile_scores = tile_scores[:, : probas_view.shape[1], : probas_view.shape[2], : probas_view.shape[3]]
         pred_centers = pred_centers[:, : centers_view.shape[1], : centers_view.shape[2], : centers_view.shape[3]]
 
-        probas_view += tile_scores
-        centers_view += pred_centers + tile_offsets_zyx.view(3, 1, 1, 1)
+        probas_view += tile_scores.to(probas_view.device)
+        centers_view += (pred_centers + tile_offsets_zyx.view(3, 1, 1, 1)).to(centers_view.device)
         counter_view += 1
 
 
@@ -124,7 +124,7 @@ class ObjectDetectionModel(L.LightningModule):
         ):
             if study not in self.validation_predictions:
                 self.validation_predictions[study] = AccumulatedObjectDetectionPredictionContainer.from_shape(
-                    volume_shape, num_classes, device="cpu"
+                    volume_shape, num_classes, device="cpu", dtype=torch.float16
                 )
 
             self.validation_predictions[study].accumulate(tile_scores, tile_centers, tile_offsets)
