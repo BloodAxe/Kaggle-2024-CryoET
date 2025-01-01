@@ -98,10 +98,6 @@ class ObjectDetectionModel(L.LightningModule):
 
     def training_step(self, batch, batch_idx):
         outputs = self(**batch, average_tokens_across_devices=self.average_tokens_across_devices)
-        # num_items_in_batch = maybe_all_reduce(num_items_in_batch)
-        #
-        # if self.gather_num_items_in_batch:
-        #     outputs.loss.mul_(self.trainer.world_size)
 
         loss = outputs.loss
 
