@@ -12,13 +12,13 @@ from torch import Tensor
 from torch.optim import Optimizer
 from torch.utils.tensorboard import SummaryWriter
 from pytorch_toolbelt.optimization.functional import build_optimizer_param_groups
-from lightning.pytorch.loggers import TensorBoardLogger, WandbLogger
+from lightning.pytorch.loggers import TensorBoardLogger
 
 from .args import MyTrainingArguments
 from cryoet.schedulers import WarmupCosineScheduler
 from .visualization import render_heatmap
 from ..data.parsers import CLASS_LABEL_TO_CLASS_NAME, ANGSTROMS_IN_PIXEL
-from ..data.point_detection_dataset import decoder_centers_from_heatmap
+from cryoet.data.heatmap.point_detection_dataset import decoder_centers_from_heatmap
 from ..metric import score_submission
 
 from pytorch_toolbelt.utils.distributed import is_dist_avail_and_initialized

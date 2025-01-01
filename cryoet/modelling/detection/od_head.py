@@ -5,7 +5,7 @@ import einops
 import torch
 from torch import nn, Tensor
 
-from .task_aligned_assigner import TaskAlignedAssigner
+from cryoet.modelling.detection.task_aligned_assigner import TaskAlignedAssigner
 
 
 @dataclasses.dataclass
@@ -15,6 +15,7 @@ class ObjectDetectionOutput:
     anchors: Tensor
 
     loss: Optional[Tensor]
+    num_items_in_batch: Optional[Tensor]
 
 
 def decode_detections(logits, offsets, anchors):
@@ -56,7 +57,7 @@ def iou_loss(pred_centers, assigned_centers, assigned_scores, assigned_sigmas, m
     return torch.masked_fill(loss, ~mask_positive, 0).sum()
 
 
-def object_detection_loss(logits, offsets, anchors, labels, num_items_in_batch=None, alpha=2, eps=1e-6, **kwargs):
+def object_detection_loss(logits, offsets, anchors, labels, eps=1e-6, **kwargs):
     """
     Compute the detection loss adapted for 3D data
     It uses keypoint-like IOU loss (negative exponent of mse) to assign the objectness score to the center of the object
@@ -78,13 +79,13 @@ def object_detection_loss(logits, offsets, anchors, labels, num_items_in_batch=N
     # 2) Extract GT: [B, 5, N] => [B, 3, N], [B, N], [B, N]
     #    labels = (x, y, z, class, sigma)
     true_centers = labels[:, :, :3]  # [B, n, 3]
-    true_labels = labels[:, :, 3:4]  # [B, n, 1]
+    true_labels = labels[:, :, 3:4].long()  # [B, n, 1]
     true_sigmas = labels[:, :, 4:5]  # [B, n, 1]
 
     # 4) Perform dynamic anchor assignment
     assigner = TaskAlignedAssigner()
-    assigned_labels, assigned_centers, assigned_scores, assigned_sigmas = assigner.forward(
-        pred_scores=pred_logits,  # [B, C, L]
+    assigned_labels, assigned_centers, assigned_scores, assigned_sigmas = assigner(
+        pred_scores=pred_logits.detach().sigmoid(),  # [B, C, L]
         pred_centers=pred_centers,  # [B, L, 3]
         anchor_points=anchor_points,
         true_labels=torch.masked_fill(true_labels, true_labels.eq(-100), 0),
@@ -114,9 +115,9 @@ def object_detection_loss(logits, offsets, anchors, labels, num_items_in_batch=N
     )
 
     total_loss = cls_loss + reg_loss
-    divisor = assigned_scores.sum()
+    divisor = assigned_scores.sum().clamp_min(1)
 
-    return total_loss / divisor
+    return total_loss / divisor, divisor
 
 
 class ObjectDetectionHead(nn.Module):
@@ -129,8 +130,8 @@ class ObjectDetectionHead(nn.Module):
         torch.nn.init.zeros_(self.offset_head.weight)
         torch.nn.init.constant_(self.offset_head.bias, 0)
 
-        # torch.nn.init.zeros_(self.conv.weight)
-        # torch.nn.init.constant_(self.conv.bias, -3)
+        torch.nn.init.zeros_(self.cls_head.weight)
+        torch.nn.init.constant_(self.cls_head.bias, -3)
 
     def forward(self, features, labels=None, **loss_kwargs):
         logits = self.cls_head(features)
@@ -142,10 +143,13 @@ class ObjectDetectionHead(nn.Module):
         anchors = anchors_for_offsets_feature_map(offsets, self.stride)
 
         loss = None
+        num_items_in_batch = None
         if labels is not None:
-            loss = object_detection_loss(logits, offsets, anchors, labels, **loss_kwargs)
+            loss, num_items_in_batch = object_detection_loss(logits, offsets, anchors, labels, **loss_kwargs)
 
-        return ObjectDetectionOutput(logits=logits, offsets=offsets, anchors=anchors, loss=loss)
+        return ObjectDetectionOutput(
+            logits=logits, offsets=offsets, anchors=anchors, loss=loss, num_items_in_batch=num_items_in_batch
+        )
 
 
 def anchors_for_offsets_feature_map(offsets, stride):

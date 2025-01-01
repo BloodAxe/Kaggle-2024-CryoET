@@ -1,8 +1,9 @@
 import random
 
 import torch
+from sklearn.utils import compute_sample_weight
 
-from .augmentations.functional import (
+from cryoet.data.augmentations.functional import (
     rotate_and_scale_volume,
     random_rotate90_volume,
     random_flip_volume,
@@ -11,7 +12,7 @@ from .augmentations.functional import (
 from .point_detection_dataset import CryoETPointDetectionDataset, encode_centers_to_heatmap
 
 
-class RandomCropCryoETPointDetectionDataset(CryoETPointDetectionDataset):
+class CropAroundObjectCryoETPointDetectionDataset(CryoETPointDetectionDataset):
     def __init__(
         self,
         window_size: int,
@@ -20,17 +21,29 @@ class RandomCropCryoETPointDetectionDataset(CryoETPointDetectionDataset):
         mode,
         num_crops: int,
         split="train",
-        random_rotate: bool = False,
+        random_rotate: bool = True,
+        balance_classes: bool = True,
     ):
         super().__init__(root=root, study=study, mode=mode, split=split)
         self.window_size = window_size
         self.num_crops = num_crops
         self.random_rotate = random_rotate
+        self.balance_classes = balance_classes
+        if balance_classes:
+            self.weights = compute_sample_weight("balanced", self.object_labels)
+        else:
+            self.weights = None
 
     def __getitem__(self, idx):
         centers_px = self.object_centers_px  # x y z
         radii_px = self.object_radii_px
         object_labels = self.object_labels
+
+        if self.balance_classes:
+            idx = random.choices(range(len(centers_px)), weights=self.weights, k=1)[0]
+            center = centers_px[idx]
+        else:
+            center = random.choice(centers_px)
 
         scale = 1 + (random.random() - 0.5) / 10.0
         volume, centers_px = rotate_and_scale_volume(
@@ -43,9 +56,9 @@ class RandomCropCryoETPointDetectionDataset(CryoETPointDetectionDataset):
             ),
             scale=scale,
             center_zyx=(
-                random.random() * self.volume_shape[0],
-                random.random() * self.volume_shape[1],
-                random.random() * self.volume_shape[2],
+                center[2] + (random.random() - 0.5) * self.window_size / 5,
+                center[1] + (random.random() - 0.5) * self.window_size / 5,
+                center[0] + (random.random() - 0.5) * self.window_size / 5,
             ),
             output_shape=(self.window_size, self.window_size, self.window_size),
         )

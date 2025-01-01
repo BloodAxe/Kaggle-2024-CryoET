@@ -12,10 +12,10 @@ from transformers import (
 )
 
 from cryoet.data.detection.detection_data_module import ObjectDetectionDataModule
-from cryoet.modelling.segresnet_object_detection import SegResNetForObjectDetection, SegResNetForObjectDetectionConfig
+from cryoet.modelling.detection.segresnet_object_detection import SegResNetForObjectDetection, SegResNetForObjectDetectionConfig
 from cryoet.training.args import MyTrainingArguments, ModelArguments, DataArguments
 from cryoet.training.ema import BetaDecay, EMACallback
-from cryoet.training.point_detection_module import PointDetectionModel
+from cryoet.training.object_detection_module import ObjectDetectionModel
 
 
 def main():
@@ -74,7 +74,7 @@ def main():
             stride=32,
         )
 
-    model_module = PointDetectionModel(model, training_args)
+    model_module = ObjectDetectionModel(model, training_args)
 
     checkpoint_callback = ModelCheckpoint(
         monitor="val/score",

@@ -2,7 +2,7 @@ from pathlib import Path
 from pprint import pprint
 
 from cryoet.data.cross_validation import split_data_into_folds
-from cryoet.data.point_detection_data_module import PointDetectionDataModule
+from cryoet.data.heatmap.point_detection_data_module import PointDetectionDataModule
 from cryoet.data.sliding_window_dataset import SlidingWindowCryoETPointDetectionDataset
 
 DATA_ROOT = Path(__file__).parent.parent / "data" / "czii-cryo-et-object-identification"

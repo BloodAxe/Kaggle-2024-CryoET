@@ -8,7 +8,11 @@ import torch.jit
 from tqdm import tqdm
 
 from cryoet.data.parsers import ANGSTROMS_IN_PIXEL, CLASS_LABEL_TO_CLASS_NAME, get_volume, NUM_CLASSES
-from cryoet.data.point_detection_dataset import compute_tiles, normalize_volume_to_unit_range, decoder_centers_from_heatmap
+from cryoet.data.heatmap.point_detection_dataset import (
+    compute_tiles,
+    normalize_volume_to_unit_range,
+    decoder_centers_from_heatmap,
+)
 from cryoet.training.point_detection_module import AccumulatedPredictionContainer
 
 

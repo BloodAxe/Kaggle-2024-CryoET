@@ -6,48 +6,35 @@ import lightning as L
 import numpy as np
 import pandas as pd
 import torch
+from lightning.pytorch.loggers import TensorBoardLogger
 from lightning.pytorch.utilities.types import LRSchedulerTypeUnion
+from pytorch_toolbelt.optimization.functional import build_optimizer_param_groups
 from pytorch_toolbelt.utils import all_gather
 from torch import Tensor
 from torch.optim import Optimizer
 from torch.utils.tensorboard import SummaryWriter
-from pytorch_toolbelt.optimization.functional import build_optimizer_param_groups
-from lightning.pytorch.loggers import TensorBoardLogger, WandbLogger
 
-from .args import MyTrainingArguments
 from cryoet.schedulers import WarmupCosineScheduler
+from .args import MyTrainingArguments
 from .visualization import render_heatmap
-from ..data.parsers import CLASS_LABEL_TO_CLASS_NAME, ANGSTROMS_IN_PIXEL
-from ..data.point_detection_dataset import decoder_centers_from_heatmap
+from ..data.detection.functional import decode_detections_with_nms
+from ..data.parsers import CLASS_LABEL_TO_CLASS_NAME, ANGSTROMS_IN_PIXEL, TARGET_SIGMAS
 from ..metric import score_submission
-
-from pytorch_toolbelt.utils.distributed import is_dist_avail_and_initialized
-import torch.distributed as dist
-
-from ..modelling.od_head import ObjectDetectionOutput
-
-
-def maybe_all_reduce(x: Tensor, op=dist.ReduceOp.SUM):
-    if not is_dist_avail_and_initialized():
-        return x
-
-    xc = x.clone()
-    dist.all_reduce(xc, op=op)
-    return xc
+from cryoet.modelling.detection.od_head import ObjectDetectionOutput
 
 
 @dataclasses.dataclass
 class AccumulatedObjectDetectionPredictionContainer:
     scores: Tensor
-    offsets: Tensor
+    centers: Tensor
     counter: Tensor
 
     @classmethod
     def from_shape(cls, shape, num_classes, device="cpu"):
         shape = tuple(shape)
         return cls(
-            probas=torch.zeros((num_classes,) + shape, device=device),
-            offsets=torch.zeros((3,) + shape, device=device),
+            scores=torch.zeros((num_classes,) + shape, device=device),
+            centers=torch.zeros((3,) + shape, device=device),
             counter=torch.zeros(shape, device=device),
         )
 
@@ -59,12 +46,13 @@ class AccumulatedObjectDetectionPredictionContainer:
             tile_offsets_zyx[2] : tile_offsets_zyx[2] + tile_scores.shape[3],
         ]
 
-        offsets_view = self.offsets[
+        centers_view = self.centers[
             :,
             tile_offsets_zyx[0] : tile_offsets_zyx[0] + tile_scores.shape[1],
             tile_offsets_zyx[1] : tile_offsets_zyx[1] + tile_scores.shape[2],
             tile_offsets_zyx[2] : tile_offsets_zyx[2] + tile_scores.shape[3],
         ]
+
         counter_view = self.counter[
             tile_offsets_zyx[0] : tile_offsets_zyx[0] + tile_scores.shape[1],
             tile_offsets_zyx[1] : tile_offsets_zyx[1] + tile_scores.shape[2],
@@ -73,9 +61,10 @@ class AccumulatedObjectDetectionPredictionContainer:
 
         # Crop tile_scores to the view shape
         tile_scores = tile_scores[:, : probas_view.shape[1], : probas_view.shape[2], : probas_view.shape[3]]
+        pred_centers = pred_centers[:, : centers_view.shape[1], : centers_view.shape[2], : centers_view.shape[3]]
 
         probas_view += tile_scores
-        offsets_view += pred_centers
+        centers_view += pred_centers + tile_offsets_zyx.view(3, 1, 1, 1)
         counter_view += 1
 
 
@@ -89,7 +78,7 @@ class ObjectDetectionModel(L.LightningModule):
         self.model = model
         self.train_args = train_args
         self.validation_predictions = None
-        self.gather_num_items_in_batch = train_args.average_tokens_across_devices
+        self.average_tokens_across_devices = train_args.average_tokens_across_devices
 
     def forward(self, volume, labels=None, **loss_kwargs):
         return self.model(
@@ -99,14 +88,11 @@ class ObjectDetectionModel(L.LightningModule):
         )
 
     def training_step(self, batch, batch_idx):
-        num_items_in_batch = batch["labels"].eq(1).sum()
-        if self.gather_num_items_in_batch:
-            num_items_in_batch = maybe_all_reduce(num_items_in_batch)
-
-        outputs = self(**batch, num_items_in_batch=num_items_in_batch)
-
-        if self.gather_num_items_in_batch:
-            outputs.loss.mul_(self.trainer.world_size)
+        outputs = self(**batch, average_tokens_across_devices=self.average_tokens_across_devices)
+        # num_items_in_batch = maybe_all_reduce(num_items_in_batch)
+        #
+        # if self.gather_num_items_in_batch:
+        #     outputs.loss.mul_(self.trainer.world_size)
 
         loss = outputs.loss
 
@@ -121,34 +107,27 @@ class ObjectDetectionModel(L.LightningModule):
             logger=True,
         )
 
-        self.log(
-            name="train/num_items_in_batch",
-            value=int(num_items_in_batch),
-            batch_size=len(batch["volume"]),
-            on_step=True,
-            prog_bar=True,
-            logger=True,
-            sync_dist=False,
-        )
         return loss
 
     def on_validation_start(self) -> None:
         self.validation_predictions = {}
 
     def accumulate_predictions(self, outputs: ObjectDetectionOutput, batch):
-        probas = outputs.logits.sigmoid().cpu()
-        num_classes = probas.shape[1]
+        pred_scores = outputs.logits.sigmoid().cpu()
+        pred_centers = (outputs.offsets + outputs.anchors).cpu()
+        num_classes = pred_scores.shape[1]
 
-        for study, tile_offsets_zyx, volume_shape, tile_scores in zip(
-            batch["study"], batch["tile_offsets_zyx"], batch["volume_shape"], probas
+        tile_offsets_zyx = batch["tile_offsets_zyx"].cpu()
+
+        for study, tile_offsets, volume_shape, tile_scores, tile_centers in zip(
+            batch["study"], tile_offsets_zyx, batch["volume_shape"], pred_scores, pred_centers
         ):
             if study not in self.validation_predictions:
-                self.validation_predictions[study] = AccumulatedPredictionContainer(
-                    probas=torch.zeros((num_classes,) + tuple(volume_shape), dtype=tile_scores.dtype),
-                    counter=torch.zeros(tuple(volume_shape), dtype=tile_scores.dtype),
+                self.validation_predictions[study] = AccumulatedObjectDetectionPredictionContainer.from_shape(
+                    volume_shape, num_classes, device="cpu"
                 )
 
-            self.validation_predictions[study].accumulate(tile_scores, tile_offsets_zyx)
+            self.validation_predictions[study].accumulate(tile_scores, tile_centers, tile_offsets)
 
     def on_validation_epoch_end(self) -> None:
         torch.cuda.empty_cache()
@@ -164,26 +143,35 @@ class ObjectDetectionModel(L.LightningModule):
                 accumulated_predictions,
             ) in validation_predictions.items():
                 if study_name not in averaged_predictions:
-                    averaged_predictions[study_name] = AccumulatedPredictionContainer(
-                        probas=torch.zeros_like(accumulated_predictions.probas),
+                    averaged_predictions[study_name] = AccumulatedObjectDetectionPredictionContainer(
+                        scores=torch.zeros_like(accumulated_predictions.scores),
+                        centers=torch.zeros_like(accumulated_predictions.centers),
                         counter=torch.zeros_like(accumulated_predictions.counter),
                     )
 
-                averaged_predictions[study_name].probas += accumulated_predictions.probas
+                averaged_predictions[study_name].scores += accumulated_predictions.scores
+                averaged_predictions[study_name].centers += accumulated_predictions.centers
                 averaged_predictions[study_name].counter += accumulated_predictions.counter
 
         for study_name, accumulated_predictions in averaged_predictions.items():
-            accumulated_predictions.probas /= accumulated_predictions.counter
-            accumulated_predictions.probas.masked_fill_(accumulated_predictions.counter == 0, 0.0)
+            accumulated_predictions.scores /= accumulated_predictions.counter
+            accumulated_predictions.scores.masked_fill_(accumulated_predictions.counter == 0, 0.0)
 
-            self.log_heatmaps(study_name, accumulated_predictions.probas)
+            accumulated_predictions.centers /= accumulated_predictions.counter.unsqueeze(0)
+            accumulated_predictions.centers.masked_fill_(accumulated_predictions.counter == 0, 0.0)
 
-            topk_scores, topk_clses, topk_coords_px = decoder_centers_from_heatmap(
-                accumulated_predictions.probas.unsqueeze(0), top_k=512
+            # self.log_heatmaps(study_name, accumulated_predictions.scores)
+
+            topk_coords_px, topk_clses, topk_scores = decode_detections_with_nms(
+                accumulated_predictions.scores,
+                accumulated_predictions.centers,
+                class_sigmas=TARGET_SIGMAS,
+                min_score=0.01,
+                iou_threshold=0.25,
             )
-            topk_scores = topk_scores[0].float().cpu().numpy()
-            top_coords = topk_coords_px[0].float().cpu().numpy() * ANGSTROMS_IN_PIXEL
-            topk_clses = topk_clses[0].cpu().numpy()
+            topk_scores = topk_scores.float().cpu().numpy()
+            top_coords = topk_coords_px.float().cpu().numpy() * ANGSTROMS_IN_PIXEL
+            topk_clses = topk_clses.cpu().numpy()
 
             for cls, coord, score in zip(topk_clses, top_coords, topk_scores):
                 submission["experiment"].append(study_name)
@@ -232,8 +220,7 @@ class ObjectDetectionModel(L.LightningModule):
         )
 
     def validation_step(self, batch, batch_idx):
-        num_items_in_batch = batch["labels"].eq(1).sum().item()
-        outputs = self(**batch, num_items_in_batch=num_items_in_batch)
+        outputs = self(**batch)
 
         self.accumulate_predictions(outputs, batch)
 

@@ -50,6 +50,7 @@ TARGET_CLASSES = (
 
 NUM_CLASSES = len(TARGET_CLASSES)
 CLASS_LABEL_TO_CLASS_NAME = {c["label"]: c["name"] for c in TARGET_CLASSES}
+TARGET_SIGMAS = [c["radius"] / ANGSTROMS_IN_PIXEL for c in TARGET_CLASSES]
 
 
 def get_volume(

@@ -11,7 +11,7 @@ from cryoet.data.parsers import (
     NUM_CLASSES,
     CLASS_LABEL_TO_CLASS_NAME,
 )
-from cryoet.data.point_detection_dataset import (
+from cryoet.data.heatmap.point_detection_dataset import (
     encode_centers_to_heatmap,
     decoder_centers_from_heatmap,
     centernet_gaussian_3d,

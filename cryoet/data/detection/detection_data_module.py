@@ -148,7 +148,7 @@ class ObjectDetectionCollate:
         num_items_in_batch = sum(len(l) for l in labels)
         labels = pad_sequence(labels, batch_first=True, padding_value=-100)
 
-        all_but_labels = {k: [sample[k] for sample in samples] for k in samples[0].keys() if k != "labels"}
+        all_but_labels: List[Dict] = [{k: v for k, v in sample.items() if k != "labels"} for sample in samples]
         batch = default_collate(all_but_labels)
 
         return {**batch, "labels": labels, "num_items_in_batch": torch.tensor(num_items_in_batch)}

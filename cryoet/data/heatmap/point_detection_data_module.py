@@ -1,6 +1,5 @@
 from collections import defaultdict
 from pathlib import Path
-from typing import List
 
 import lightning as L
 import pandas as pd
@@ -8,9 +7,9 @@ from torch.utils.data import ConcatDataset, DataLoader
 
 from cryoet.data.cross_validation import split_data_into_folds
 from cryoet.data.parsers import CLASS_LABEL_TO_CLASS_NAME
-from cryoet.data.point_detection_crop_around_dataset import CropAroundObjectCryoETPointDetectionDataset
-from cryoet.data.point_detection_random_crop_dataset import RandomCropCryoETPointDetectionDataset
-from cryoet.data.point_detection_sliding_window_dataset import SlidingWindowCryoETPointDetectionDataset
+from cryoet.data.heatmap.point_detection_crop_around_dataset import CropAroundObjectCryoETPointDetectionDataset
+from cryoet.data.heatmap.point_detection_random_crop_dataset import RandomCropCryoETPointDetectionDataset
+from cryoet.data.heatmap.point_detection_sliding_window_dataset import SlidingWindowCryoETPointDetectionDataset
 from cryoet.training.args import DataArguments, MyTrainingArguments
 
 

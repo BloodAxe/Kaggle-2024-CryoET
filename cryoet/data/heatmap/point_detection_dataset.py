@@ -5,17 +5,12 @@ import torch
 from torch import Tensor
 from torch.utils.data import Dataset
 
+from cryoet.data.functional import normalize_volume_to_unit_range
 from cryoet.data.parsers import (
     get_volume_and_objects,
     TARGET_CLASSES,
     ANGSTROMS_IN_PIXEL,
 )
-
-
-def normalize_volume_to_unit_range(volume):
-    volume = volume - volume.min()
-    volume = volume / volume.max()
-    return volume
 
 
 class CryoETPointDetectionDataset(Dataset):

@@ -1,4 +1,4 @@
-from cryoet.data.point_detection_dataset import compute_tiles
+from cryoet.data.heatmap.point_detection_dataset import compute_tiles
 
 
 def test_tiling():
