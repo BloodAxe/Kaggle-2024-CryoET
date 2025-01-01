@@ -109,6 +109,9 @@ class ObjectDetectionModel(L.LightningModule):
 
         return loss
 
+    def on_train_epoch_start(self) -> None:
+        torch.cuda.empty_cache()
+
     def on_validation_start(self) -> None:
         self.validation_predictions = {}
 
