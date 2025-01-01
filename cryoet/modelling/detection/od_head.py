@@ -132,8 +132,6 @@ class ObjectDetectionHead(nn.Module):
             nn.InstanceNorm3d(64),
         )
 
-        self.cls_head = nn.Conv3d(64, num_classes, kernel_size=3, padding=1)
-
         self.offset_stem = nn.Sequential(
             nn.Conv3d(in_channels, 64, kernel_size=3, padding=1),
             nn.SiLU(inplace=True),
@@ -142,7 +140,10 @@ class ObjectDetectionHead(nn.Module):
             nn.SiLU(inplace=True),
             nn.InstanceNorm3d(64),
         )
+
+        self.cls_head = nn.Conv3d(64, num_classes, kernel_size=3, padding=1)
         self.offset_head = nn.Conv3d(64, 3, kernel_size=3, padding=1)
+
         self.stride = stride
 
         torch.nn.init.zeros_(self.offset_head.weight)
@@ -153,7 +154,7 @@ class ObjectDetectionHead(nn.Module):
 
     def forward(self, features, labels=None, **loss_kwargs):
         logits = self.cls_head(self.cls_stem(features))
-        offsets = self.offset_head(self.offset_head(features))
+        offsets = self.offset_head(self.offset_stem(features))
 
         if torch.jit.is_tracing():
             return logits, offsets
