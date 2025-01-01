@@ -33,15 +33,25 @@ def varifocal_loss(pred_logits: Tensor, gt_score: Tensor, label: Tensor, alpha=0
 
 
 def iou_loss(pred_centers, assigned_centers, assigned_scores, assigned_sigmas, mask_positive):
-    d = ((pred_centers - assigned_centers) ** 2).sum(dim=-1, keepdim=False)  # [B, L]
-
     weight = assigned_scores.sum(-1)
+
+    d = ((pred_centers - assigned_centers) ** 2).sum(dim=-1, keepdim=False)  # [B, L]
 
     e: Tensor = d / (2 * assigned_sigmas**2)
     iou = torch.exp(-e)  # [B, M1, M2]
-    loss = (1 - iou) * weight
+    loss2 = (1 - iou) * weight
 
-    return torch.masked_fill(loss, ~mask_positive, 0).sum()
+    loss_reduced_iou = torch.masked_fill(loss2, ~mask_positive, 0).sum()
+    return loss_reduced_iou
+
+    # loss = (
+    #     torch.nn.functional.smooth_l1_loss(pred_centers, assigned_centers, reduction="none")
+    #     .sum(dim=-1, keepdim=False)
+    #     .mul(weight)
+    # )
+
+    # loss_reduced = torch.masked_fill(loss, ~mask_positive, 0).sum()
+    # return loss_reduced
 
 
 from pytorch_toolbelt.utils.distributed import is_dist_avail_and_initialized, get_world_size
