@@ -137,6 +137,7 @@ class ObjectDetectionModel(L.LightningModule):
         torch.cuda.empty_cache()
 
         submission = defaultdict(list)
+        score_thresholds = np.linspace(0.05, 1.0, 20, endpoint=False) ** 2
 
         for study_name in self.trainer.datamodule.valid_studies:
             preds = self.validation_predictions.get(study_name, None)
@@ -163,7 +164,7 @@ class ObjectDetectionModel(L.LightningModule):
                 accumulated_predictions.scores,
                 accumulated_predictions.centers,
                 class_sigmas=TARGET_SIGMAS,
-                min_score=0.01,
+                min_score=score_thresholds.min(),
                 iou_threshold=0.25,
             )
             topk_scores = topk_scores.float().cpu().numpy()
@@ -182,7 +183,6 @@ class ObjectDetectionModel(L.LightningModule):
 
         print(submission.sort_values(by="score", ascending=False).head(20))
 
-        score_thresholds = np.linspace(0.05, 1.0, 20, endpoint=False) ** 2
         score_values = []
         score_details = []
 

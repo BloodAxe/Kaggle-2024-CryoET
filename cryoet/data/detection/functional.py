@@ -36,6 +36,7 @@ def decode_detections_with_nms(
 
     # Flatten spatial dimensions so that scores.shape becomes (C, -1)
     scores = centernet_heatmap_nms(scores)
+
     scores = einops.rearrange(scores, "C D H W -> (D H W) C")
     centers = einops.rearrange(centers, "C D H W -> (D H W) C")
 
