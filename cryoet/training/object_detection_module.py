@@ -188,7 +188,7 @@ class ObjectDetectionModel(L.LightningModule):
 
         submission = pd.DataFrame.from_dict(submission)
 
-        print(submission.sort_values(by="score", ascending=False).head(20))
+        self.trainer.print(submission.sort_values(by="score", ascending=False).head(20))
 
         score_values = []
         score_details = []
