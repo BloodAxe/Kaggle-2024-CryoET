@@ -46,7 +46,7 @@ class ObjectDetectionHead(nn.Module):
         torch.nn.init.constant_(self.offset_head.bias, 0)
 
         torch.nn.init.zeros_(self.cls_head.weight)
-        torch.nn.init.constant_(self.cls_head.bias, -3)
+        torch.nn.init.constant_(self.cls_head.bias, -4)
 
     def forward(self, features, labels=None, **loss_kwargs):
         logits = self.cls_head(self.cls_stem(features))

@@ -137,7 +137,7 @@ class ObjectDetectionModel(L.LightningModule):
         torch.cuda.empty_cache()
 
         submission = defaultdict(list)
-        score_thresholds = np.linspace(0.05, 1.0, 20, endpoint=False) ** 2
+        score_thresholds = np.linspace(0.05, 1.0, 20, endpoint=False)
 
         for study_name in self.trainer.datamodule.valid_studies:
             preds = self.validation_predictions.get(study_name, None)
