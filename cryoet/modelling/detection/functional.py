@@ -47,22 +47,19 @@ def keypoint_similarity(pts1, pts2, sigmas):
 
 
 def iou_loss(pred_centers, assigned_centers, assigned_scores, assigned_sigmas, mask_positive):
-    weight = assigned_scores.sum(-1)
+    num_pos = mask_positive.sum()
+    if num_pos > 0:
+        weight = assigned_scores.sum(-1)
 
-    iou = keypoint_similarity(pred_centers, assigned_centers, assigned_sigmas)
-    loss2 = (1 - iou) * weight
+        iou = keypoint_similarity(pred_centers, assigned_centers, assigned_sigmas)
+        loss2 = (1 - iou) * weight
 
-    loss_reduced_iou = torch.masked_fill(loss2, ~mask_positive, 0).sum()
+        loss_reduced_iou = torch.masked_fill(loss2, ~mask_positive, 0).sum()
+        return loss_reduced_iou
+    else:
+        loss_reduced_iou = torch.zeros([], device=pred_centers.device)
+
     return loss_reduced_iou
-
-    # loss = (
-    #     torch.nn.functional.smooth_l1_loss(pred_centers, assigned_centers, reduction="none")
-    #     .sum(dim=-1, keepdim=False)
-    #     .mul(weight)
-    # )
-
-    # loss_reduced = torch.masked_fill(loss, ~mask_positive, 0).sum()
-    # return loss_reduced
 
 
 def maybe_all_reduce(x: Tensor, op=dist.ReduceOp.SUM):
