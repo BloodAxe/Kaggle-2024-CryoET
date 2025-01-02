@@ -39,6 +39,10 @@ class AccumulatedObjectDetectionPredictionContainer:
             counter=torch.zeros(shape, device=device, dtype=dtype),
         )
 
+    def accumulate_batch(self, batch_probas, batch_centers, batch_tile_offsets):
+        for tile_scores, tile_centers, tile_offsets in zip(batch_probas, batch_centers, batch_tile_offsets):
+            self.accumulate(tile_scores, tile_centers, tile_offsets)
+
     def accumulate(self, tile_scores, pred_centers, tile_offsets_zyx):
         probas_view = self.scores[
             :,
@@ -76,6 +80,15 @@ class AccumulatedObjectDetectionPredictionContainer:
         probas_view += tile_scores.to(probas_view.device)
         centers_view += (pred_centers + tile_offsets_xyz).to(centers_view.device)
         counter_view += 1
+
+    def merge_(self):
+        self.scores /= self.counter.unsqueeze(0)
+        self.scores.masked_fill_(self.counter == 0, 0.0)
+
+        self.centers /= self.counter.unsqueeze(0)
+        self.centers.masked_fill_(self.counter == 0, 0.0)
+
+        return self.scores, self.centers
 
 
 class ObjectDetectionModel(L.LightningModule):
