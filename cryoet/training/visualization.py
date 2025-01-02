@@ -17,9 +17,13 @@ def render_heatmap(heatmap: Tensor):
     heatmap = heatmap.float().cpu().numpy()
 
     # Make 3 slices in HW, DH, DW planes (middle slices)
-    slice_hw = heatmap[:, heatmap.shape[1] // 2, :, :]
-    slice_dh = heatmap[:, :, heatmap.shape[2] // 2, :]
-    slice_dw = heatmap[:, :, :, heatmap.shape[3] // 2]
+    # slice_hw = heatmap[:, heatmap.shape[1] // 2, :, :]
+    # slice_dh = heatmap[:, :, heatmap.shape[2] // 2, :]
+    # slice_dw = heatmap[:, :, :, heatmap.shape[3] // 2]
+
+    slice_hw = heatmap.max(axis=1)
+    slice_dh = heatmap.max(axis=2)
+    slice_dw = heatmap.max(axis=3)
 
     slice_hw = hstack_autopad(
         [vstack_header(pseudo_colorize(x), f"min={x.min():.3f} max={x.max():.3f}") for x in slice_hw], spacing=2
