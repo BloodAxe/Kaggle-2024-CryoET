@@ -156,5 +156,5 @@ if __name__ == "__main__":
     load_dotenv()
     torch.multiprocessing.set_sharing_strategy("file_system")
     torch.set_float32_matmul_precision("high")
-    # torch.autograd.set_detect_anomaly(True)
+    torch.backends.cudnn.benchmark = True
     main()
