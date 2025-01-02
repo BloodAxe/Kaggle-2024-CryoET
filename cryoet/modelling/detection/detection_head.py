@@ -37,8 +37,8 @@ class ObjectDetectionHead(nn.Module):
             nn.InstanceNorm3d(64),
         )
 
-        self.cls_head = nn.Conv3d(64, num_classes, kernel_size=1, padding=1)
-        self.offset_head = nn.Conv3d(64, 3, kernel_size=1, padding=1)
+        self.cls_head = nn.Conv3d(64, num_classes, kernel_size=1, padding=0)
+        self.offset_head = nn.Conv3d(64, 3, kernel_size=1, padding=0)
 
         self.stride = stride
 
