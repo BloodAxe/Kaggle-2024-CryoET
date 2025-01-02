@@ -136,7 +136,14 @@ class ObjectDetectionModel(L.LightningModule):
     def on_validation_epoch_end(self) -> None:
         torch.cuda.empty_cache()
 
-        submission = defaultdict(list)
+        submission = dict(
+            experiment=[],
+            particle_type=[],
+            score=[],
+            x=[],
+            y=[],
+            z=[],
+        )
         score_thresholds = np.linspace(0.05, 1.0, 20, endpoint=False)
 
         for study_name in self.trainer.datamodule.valid_studies:
