@@ -5,8 +5,56 @@ import numpy as np
 import torch
 
 from cryoet.modelling.detection.detection_head import ObjectDetectionHead
-from cryoet.modelling.detection.functional import anchors_for_offsets_feature_map, iou_loss, keypoint_similarity
-from cryoet.modelling.detection.task_aligned_assigner import batch_pairwise_keypoints_iou
+from cryoet.modelling.detection.functional import (
+    anchors_for_offsets_feature_map,
+    iou_loss,
+    keypoint_similarity,
+    decode_detections,
+)
+from cryoet.modelling.detection.task_aligned_assigner import batch_pairwise_keypoints_iou, TaskAlignedAssigner
+
+
+def test_assigner():
+    offsets = torch.zeros(1, 3, 7, 8, 9)
+    anchors = anchors_for_offsets_feature_map(offsets, stride=1)
+    print(anchors[0, :, -1, 0, 0])
+    print(anchors[0, :, 0, -1, 0])
+    print(anchors[0, :, 0, 0, -1])
+
+    labels = torch.tensor(
+        [
+            [
+                [3, 4, 5, 0, 5],
+                [6, 7, 8, 1, 5],
+            ]
+        ]
+    )
+
+    num_classes = 2
+    logits = torch.randn((1, num_classes, 7, 8, 9))
+
+    pred_logits, pred_centers, anchor_points = decode_detections(logits, offsets, anchors)
+
+    true_centers = labels[:, :, :3]  # [B, n, 3]
+    true_labels = labels[:, :, 3:4].long()  # [B, n, 1]
+    true_sigmas = labels[:, :, 4:5]  # [B, n, 1]
+
+    assigner = TaskAlignedAssigner()
+    assigned_labels, assigned_centers, assigned_scores, assigned_sigmas = assigner(
+        pred_scores=pred_logits.detach().sigmoid(),
+        pred_centers=pred_centers,
+        anchor_points=anchor_points,
+        true_labels=torch.masked_fill(true_labels, true_labels.eq(-100), 0),
+        true_centers=true_centers,
+        true_sigmas=true_sigmas,
+        pad_gt_mask=true_labels.ne(-100),
+        bg_index=num_classes,
+    )
+
+    print(assigned_labels)
+    print(assigned_centers)
+    print(assigned_scores)
+    print(assigned_sigmas)
 
 
 def test_anchors_for_offsets_feature_map():

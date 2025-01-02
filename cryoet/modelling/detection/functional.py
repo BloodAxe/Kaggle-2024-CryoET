@@ -113,7 +113,7 @@ def object_detection_loss(logits, offsets, anchors, labels, average_tokens_acros
         true_labels=torch.masked_fill(true_labels, true_labels.eq(-100), 0),
         true_centers=true_centers,
         true_sigmas=true_sigmas,
-        pad_gt_mask=true_labels.eq(-100),
+        pad_gt_mask=true_labels.ne(-100),
         bg_index=num_classes,
     )
     # if not torch.isfinite(assigned_scores).all():
