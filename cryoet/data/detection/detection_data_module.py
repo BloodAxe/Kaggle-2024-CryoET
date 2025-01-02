@@ -12,6 +12,7 @@ from cryoet.data.cross_validation import split_data_into_folds
 from cryoet.data.parsers import CLASS_LABEL_TO_CLASS_NAME
 from cryoet.training.args import DataArguments, MyTrainingArguments
 from .instance_crop_dataset import InstanceCropDatasetForPointDetection
+from .random_crop_dataset import RandomCropForPointDetectionDataset
 
 from .sliding_window_dataset import SlidingWindowCryoETObjectDetectionDataset
 
@@ -65,18 +66,18 @@ class ObjectDetectionDataModule(L.LightningDataModule):
                     )
                     train_datasets.append(sliding_dataset)
 
-                # if self.data_args.use_random_crops:
-                #     random_crop_dataset = RandomCropCryoETPointDetectionDataset(
-                #         num_crops=self.data_args.num_crops_per_study,
-                #         window_size=self.window_size,
-                #         root=self.root,
-                #         study=train_study,
-                #         mode=mode,
-                #         split="train",
-                #         random_rotate=True,
-                #     )
-                #     train_datasets.append(random_crop_dataset)
-                #
+                if self.data_args.use_random_crops:
+                    random_crop_dataset = RandomCropForPointDetectionDataset(
+                        num_crops=self.data_args.num_crops_per_study,
+                        window_size=self.window_size,
+                        root=self.root,
+                        study=train_study,
+                        mode=mode,
+                        split="train",
+                        random_rotate=True,
+                    )
+                    train_datasets.append(random_crop_dataset)
+
                 if self.data_args.use_instance_crops:
                     crop_around_dataset = InstanceCropDatasetForPointDetection(
                         num_crops=self.data_args.num_crops_per_study,

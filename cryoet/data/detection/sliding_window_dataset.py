@@ -1,6 +1,7 @@
 import numpy as np
 
-from .detection_dataset import CryoETObjectDetectionDataset, ObjectDetectionMixin
+from .detection_dataset import CryoETObjectDetectionDataset
+from .mixin import ObjectDetectionMixin
 from ..functional import compute_tiles
 
 
