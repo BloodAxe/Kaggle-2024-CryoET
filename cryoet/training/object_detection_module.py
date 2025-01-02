@@ -145,7 +145,7 @@ class ObjectDetectionModel(L.LightningModule):
             y=[],
             z=[],
         )
-        score_thresholds = np.linspace(0.05, 1.0, 20, endpoint=False)
+        score_thresholds = np.linspace(0.05, 1.0, 20, endpoint=False) ** 2
 
         for study_name in self.trainer.datamodule.valid_studies:
             preds = self.validation_predictions.get(study_name, None)
