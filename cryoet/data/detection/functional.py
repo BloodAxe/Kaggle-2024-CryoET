@@ -35,7 +35,9 @@ def decode_detections_with_nms(
     num_classes = scores.shape[0]  # the 'C' dimension
 
     # Flatten spatial dimensions so that scores.shape becomes (C, -1)
+    print("Predictions above treshold before centernet nms:", torch.count_nonzero(scores > min_score).item())
     scores = centernet_heatmap_nms(scores)
+    print("Predictions after centernet nms:", torch.count_nonzero(scores > min_score).item())
 
     scores = einops.rearrange(scores, "C D H W -> (D H W) C")
     centers = einops.rearrange(centers, "C D H W -> (D H W) C")
@@ -78,6 +80,8 @@ def decode_detections_with_nms(
         keep_indices = []
         suppressed = torch.zeros_like(class_scores, dtype=torch.bool)  # track suppressed
 
+        print(f"Predictions for class {class_index}: ", torch.count_nonzero(class_mask).item())
+
         for i in range(class_scores.size(0)):
             if suppressed[i]:
                 continue
@@ -92,8 +96,10 @@ def decode_detections_with_nms(
             e = d / (2 * sigma_value**2)
             iou = torch.exp(-e)  # shape: [Nc, Nc]
 
-            high_iou_mask = iou[i] > iou_threshold
+            high_iou_mask = iou > iou_threshold
             suppressed |= high_iou_mask
+
+        print(f"Predictions for class {class_index} after NMS", len(keep_indices))
 
         # Gather kept detections for this class
         keep_indices = torch.as_tensor(keep_indices, dtype=torch.long)

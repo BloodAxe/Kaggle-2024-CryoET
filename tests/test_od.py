@@ -4,6 +4,7 @@ import einops
 import numpy as np
 import torch
 
+from cryoet.data.detection.functional import decode_detections_with_nms
 from cryoet.modelling.detection.detection_head import ObjectDetectionHead
 from cryoet.modelling.detection.functional import (
     anchors_for_offsets_feature_map,
@@ -12,6 +13,35 @@ from cryoet.modelling.detection.functional import (
     decode_detections,
 )
 from cryoet.modelling.detection.task_aligned_assigner import batch_pairwise_keypoints_iou, TaskAlignedAssigner
+
+
+def test_nms():
+    offsets = torch.zeros(1, 3, 7, 8, 9).float()
+    anchors = anchors_for_offsets_feature_map(offsets, stride=1)
+
+    scores = torch.zeros(1, 5, 7, 8, 9).float()
+    centers = offsets + anchors
+    TARGET_SIGMAS = [5, 5, 6]
+
+    scores[0, 0, 3, 4, 5] = 1.0
+    scores[0, 0, 5, 6, 0] = 1.0
+
+    scores[0, 1, 6, 6, 6] = 1.0
+    scores[0, 1, 4, 4, 4] = 0.990
+
+    scores[0, 2, 2, 2, 2] = 0.999
+
+    topk_coords_px, topk_clses, topk_scores = decode_detections_with_nms(
+        scores[0],
+        centers[0],
+        class_sigmas=TARGET_SIGMAS,
+        min_score=0.01,
+        iou_threshold=0.75,
+    )
+
+    print(topk_coords_px)
+    print(topk_clses)
+    print(topk_scores)
 
 
 def test_assigner():
