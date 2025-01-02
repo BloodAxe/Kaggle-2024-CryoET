@@ -4,13 +4,13 @@ import einops
 import numpy as np
 import torch
 
-from cryoet.data.detection.functional import decode_detections_with_nms
 from cryoet.modelling.detection.detection_head import ObjectDetectionHead
 from cryoet.modelling.detection.functional import (
     anchors_for_offsets_feature_map,
     iou_loss,
     keypoint_similarity,
     decode_detections,
+    decode_detections_with_nms,
 )
 from cryoet.modelling.detection.task_aligned_assigner import batch_pairwise_keypoints_iou, TaskAlignedAssigner
 

@@ -6,22 +6,38 @@ def test_tiling():
 
     print()
 
-    tiles = compute_tiles(volume_shape, window_size=(96, 128 + 32, 128 + 32), stride=(92, 128 - 8, 128 - 8))
-    tiles = list(tiles)
-    print(len(tiles), tiles[-1])
-
-    tiles = compute_tiles(volume_shape, window_size=(96, 128 + 32, 128 + 32), stride=(92, 128 + 16, 128 + 16))
-    tiles = list(tiles)
-    print(len(tiles), tiles[-1])
-
-    tiles = compute_tiles(volume_shape, window_size=(96, 128 + 32, 128 + 32), stride=(92, 128 + 8, 128 + 8))
-    tiles = list(tiles)
-    print(len(tiles), tiles[-1])
-
     tiles = compute_tiles(volume_shape, window_size=(96, 96, 96), stride=(92, 92, 92))
     tiles = list(tiles)
     print(len(tiles), tiles[-1])
 
-    tiles = compute_tiles(volume_shape, window_size=(96, 96, 96), stride=(92, 80, 80))
+    tiles = compute_tiles(volume_shape, window_size=(96, 96, 96), stride=(64, 72, 72))
     tiles = list(tiles)
     print(len(tiles), tiles[-1])
+
+    tiles = compute_tiles(volume_shape, window_size=(96, 96, 96), stride=(64, 71, 71))
+    tiles = list(tiles)
+    print(len(tiles), tiles[-1])
+
+    tiles = compute_tiles(volume_shape, window_size=(96, 96, 96), stride=(64, 70, 70))
+    tiles = list(tiles)
+    print(len(tiles), tiles[-1])
+
+    tiles = compute_tiles(volume_shape, window_size=(96, 96, 96), stride=(62, 60, 60))
+    tiles = list(tiles)
+    print(len(tiles), tiles[-1])
+
+    # tiles = compute_tiles(volume_shape, window_size=(96, 96, 96), stride=(64, 67, 67))
+    # tiles = list(tiles)
+    # print(len(tiles), tiles[-1])
+    #
+    # tiles = compute_tiles(volume_shape, window_size=(96, 96, 96), stride=(64, 66, 66))
+    # tiles = list(tiles)
+    # print(len(tiles), tiles[-1])
+    #
+    # tiles = compute_tiles(volume_shape, window_size=(96, 96, 96), stride=(64, 65, 65))
+    # tiles = list(tiles)
+    # print(len(tiles), tiles[-1])
+    #
+    # tiles = compute_tiles(volume_shape, window_size=(96, 96, 96), stride=(64, 64, 64))
+    # tiles = list(tiles)
+    # print(len(tiles), tiles[-1])

@@ -8,6 +8,7 @@ import pandas as pd
 import torch
 from lightning.pytorch.loggers import TensorBoardLogger
 from lightning.pytorch.utilities.types import LRSchedulerTypeUnion
+from matplotlib import pyplot as plt
 from pytorch_toolbelt.optimization.functional import build_optimizer_param_groups
 from pytorch_toolbelt.utils import all_gather
 from torch import Tensor
@@ -17,7 +18,7 @@ from torch.utils.tensorboard import SummaryWriter
 from cryoet.schedulers import WarmupCosineScheduler
 from .args import MyTrainingArguments
 from .visualization import render_heatmap
-from ..data.detection.functional import decode_detections_with_nms
+from ..modelling.detection.functional import decode_detections_with_nms
 from ..data.parsers import CLASS_LABEL_TO_CLASS_NAME, ANGSTROMS_IN_PIXEL, TARGET_SIGMAS
 from ..metric import score_submission
 from cryoet.modelling.detection.detection_head import ObjectDetectionOutput
@@ -211,6 +212,8 @@ class ObjectDetectionModel(L.LightningModule):
 
         extra_values = dict(("val/" + k, v) for k, v in score_details[best_score].items())
 
+        self.log_plot(score_thresholds, score_values, "Threshold", "Score")
+
         self.log_dict(
             {
                 "val/score": score_values[best_score],
@@ -224,6 +227,21 @@ class ObjectDetectionModel(L.LightningModule):
             sync_dist=False,
             rank_zero_only=False,
         )
+
+    def log_plot(self, x, y, x_title, y_title):
+        if self.trainer.is_global_zero:
+            f = plt.figure()
+
+            plt.plot(x, y)
+            plt.xlabel(x_title)
+            plt.ylabel(y_title)
+            plt.tight_layout()
+
+            tb_logger = self._get_tb_logger(self.trainer)
+            if tb_logger is not None:
+                tb_logger.add_figure("val/score_plot", f, global_step=self.global_step)
+
+            plt.close(f)
 
     def validation_step(self, batch, batch_idx):
         outputs = self(**batch)

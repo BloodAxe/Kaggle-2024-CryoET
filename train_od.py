@@ -11,7 +11,7 @@ from transformers import (
     HfArgumentParser,
 )
 
-from cryoet.data.detection.detection_data_module import ObjectDetectionDataModule
+from cryoet.data.detection.data_module import ObjectDetectionDataModule
 from cryoet.modelling.detection.segresnet_object_detection import SegResNetForObjectDetection, SegResNetForObjectDetectionConfig
 from cryoet.training.args import MyTrainingArguments, ModelArguments, DataArguments
 from cryoet.training.ema import BetaDecay, EMACallback
