@@ -1,7 +1,7 @@
 import torch
 from torch import nn, Tensor
 import dataclasses
-from typing import Optional
+from typing import Optional, Dict
 
 from .functional import anchors_for_offsets_feature_map, object_detection_loss
 
@@ -13,7 +13,7 @@ class ObjectDetectionOutput:
     anchors: Tensor
 
     loss: Optional[Tensor]
-    num_items_in_batch: Optional[Tensor]
+    loss_dict: Optional[Dict]
 
 
 class ObjectDetectionHead(nn.Module):
@@ -58,12 +58,8 @@ class ObjectDetectionHead(nn.Module):
         anchors = anchors_for_offsets_feature_map(offsets, self.stride)
 
         loss = None
-        num_items_in_batch = None
+        loss_dict = None
         if labels is not None:
-            loss, num_items_in_batch = object_detection_loss(
-                logits.float(), offsets.float(), anchors.float(), labels, **loss_kwargs
-            )
+            loss, loss_dict = object_detection_loss(logits.float(), offsets.float(), anchors.float(), labels, **loss_kwargs)
 
-        return ObjectDetectionOutput(
-            logits=logits, offsets=offsets, anchors=anchors, loss=loss, num_items_in_batch=num_items_in_batch
-        )
+        return ObjectDetectionOutput(logits=logits, offsets=offsets, anchors=anchors, loss=loss, loss_dict=loss_dict)

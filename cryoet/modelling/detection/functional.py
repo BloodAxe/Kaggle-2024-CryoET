@@ -140,17 +140,27 @@ def object_detection_loss(logits, offsets, anchors, labels, average_tokens_acros
         mask_positive=assigned_labels != num_classes,
     )
 
-    total_loss = cls_loss + reg_loss
     divisor = assigned_scores.sum()
 
     # present_labels = true_labels.numel() - true_labels.eq(-100).sum()
     # print("Total loss", total_loss, "Divisor", divisor, "present_labels", present_labels, flush=True)
     if average_tokens_across_devices and is_dist_avail_and_initialized():
-        total_loss *= get_world_size()
         divisor = maybe_all_reduce(divisor.detach())
+        cls_loss.mul_(get_world_size())
+        reg_loss.mul_(get_world_size())
 
     divisor = divisor.clamp_min(1)
-    return total_loss / divisor, divisor
+    cls_loss.div_(divisor)
+    reg_loss.div_(divisor)
+    loss = cls_loss + reg_loss
+
+    loss_dict = {
+        "loss": loss.detach(),
+        "cls_loss": cls_loss.detach(),
+        "reg_loss": reg_loss.detach(),
+        "num_items_in_batch": divisor,
+    }
+    return loss, loss_dict
 
 
 def anchors_for_offsets_feature_map(offsets, stride):

@@ -99,11 +99,8 @@ class ObjectDetectionModel(L.LightningModule):
     def training_step(self, batch, batch_idx):
         outputs = self(**batch, average_tokens_across_devices=self.average_tokens_across_devices)
 
-        loss = outputs.loss
-
-        self.log(
-            "train/loss",
-            loss,
+        self.log_dict(
+            dict(("train/" + k, v) for k, v in outputs.loss_dict.items()),
             batch_size=len(batch["volume"]),
             sync_dist=True,
             on_step=True,
@@ -111,17 +108,7 @@ class ObjectDetectionModel(L.LightningModule):
             prog_bar=True,
             logger=True,
         )
-        self.log(
-            "train/num_items_in_batch",
-            outputs.num_items_in_batch,
-            batch_size=len(batch["volume"]),
-            sync_dist=True,
-            on_step=True,
-            on_epoch=True,
-            prog_bar=True,
-            logger=True,
-        )
-        return loss
+        return outputs.loss
 
     def on_train_epoch_start(self) -> None:
         torch.cuda.empty_cache()
@@ -236,10 +223,8 @@ class ObjectDetectionModel(L.LightningModule):
 
         self.accumulate_predictions(outputs, batch)
 
-        val_loss = outputs.loss
-        self.log(
-            "val/loss",
-            val_loss,
+        self.log_dict(
+            dict(("val/" + k, v) for k, v in outputs.loss_dict.items()),
             batch_size=len(batch["volume"]),
             on_step=False,
             on_epoch=True,
@@ -247,7 +232,7 @@ class ObjectDetectionModel(L.LightningModule):
             logger=True,
             sync_dist=True,
         )
-        return val_loss
+        return outputs
 
     def _get_tb_logger(self, trainer) -> Optional[SummaryWriter]:
         tb_logger: Optional[TensorBoardLogger] = None
