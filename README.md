@@ -19,8 +19,9 @@ LB: 0.736 (Score 0.1, TopK 2048 per class)
 | 1    | 0.7984 | 0.1945    |
 | 2    | 0.7443 | 0.1584    |
 | 3    | 0.8271 | 0.1584    |
-| 4    |        | 0.0900    |
+| 4    | 0.8264 | 0.1584    |
 
+CV: 0.803 (Mean threshold 0.17278)
 
 # Baseline Detection SegResNet + EMA
 
