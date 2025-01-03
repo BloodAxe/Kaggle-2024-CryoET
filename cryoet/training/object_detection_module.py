@@ -63,21 +63,22 @@ class ObjectDetectionModel(L.LightningModule):
         self.validation_predictions = {}
 
     def accumulate_predictions(self, outputs: ObjectDetectionOutput, batch):
-        pred_scores = outputs.logits.sigmoid().cpu()
-        pred_centers = (outputs.offsets + outputs.anchors).cpu()
-        num_classes = pred_scores.shape[1]
 
         tile_offsets_zyx = batch["tile_offsets_zyx"].cpu()
 
-        for study, tile_offsets, volume_shape, tile_scores, tile_centers in zip(
-            batch["study"], tile_offsets_zyx, batch["volume_shape"], pred_scores, pred_centers
+        scores = [torch.sigmoid(p).cpu() for p in outputs.logits]
+        offsets = [p.cpu() for p in outputs.offsets]
+        num_classes = scores[0].shape[1]
+
+        for study, tile_offsets, volume_shape, pred_logits, pred_offsets in zip(
+            batch["study"], tile_offsets_zyx, batch["volume_shape"], scores, offsets
         ):
             if study not in self.validation_predictions:
                 self.validation_predictions[study] = AccumulatedObjectDetectionPredictionContainer.from_shape(
-                    volume_shape, num_classes, device="cpu", dtype=torch.float16
+                    volume_shape, num_classes=num_classes, strides=outputs.strides, device="cpu", dtype=torch.float16
                 )
 
-            self.validation_predictions[study].accumulate(tile_scores, tile_centers, tile_offsets)
+            self.validation_predictions[study].accumulate(tile_scores, pred_logits, pred_offsets)
 
     def on_validation_epoch_end(self) -> None:
         torch.cuda.empty_cache()
@@ -101,21 +102,16 @@ class ObjectDetectionModel(L.LightningModule):
 
             accumulated_predictions = preds[0]
             for p in preds[1:]:
-                accumulated_predictions.scores += p.scores
-                accumulated_predictions.centers += p.centers
-                accumulated_predictions.counter += p.counter
+                accumulated_predictions += p
 
-            accumulated_predictions.scores /= accumulated_predictions.counter
-            accumulated_predictions.scores.masked_fill_(accumulated_predictions.counter == 0, 0.0)
+            scores, offsets = accumulated_predictions.merge_()
 
-            accumulated_predictions.centers /= accumulated_predictions.counter.unsqueeze(0)
-            accumulated_predictions.centers.masked_fill_(accumulated_predictions.counter == 0, 0.0)
-
-            self.log_heatmaps(study_name, accumulated_predictions.scores)
+            # self.log_heatmaps(study_name, accumulated_predictions.scores)
 
             topk_coords_px, topk_clses, topk_scores = decode_detections_with_nms(
-                accumulated_predictions.scores,
-                accumulated_predictions.centers,
+                scores,
+                offsets,
+                strides=accumulated_predictions.strides,
                 class_sigmas=TARGET_SIGMAS,
                 min_score=score_thresholds.min(),
                 iou_threshold=0.6,

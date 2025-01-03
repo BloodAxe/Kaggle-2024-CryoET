@@ -1,16 +1,16 @@
 import torch
 from torch import nn, Tensor
 import dataclasses
-from typing import Optional, Dict
+from typing import Optional, Dict, List
 
 from .functional import anchors_for_offsets_feature_map, object_detection_loss
 
 
 @dataclasses.dataclass
 class ObjectDetectionOutput:
-    logits: Tensor
-    offsets: Tensor
-    strides: Tensor
+    logits: List[Tensor]
+    offsets: List[Tensor]
+    strides: List[int]
 
     loss: Optional[Tensor]
     loss_dict: Optional[Dict]
@@ -62,4 +62,4 @@ class ObjectDetectionHead(nn.Module):
         if labels is not None:
             loss, loss_dict = object_detection_loss(logits.float(), offsets.float(), anchors.float(), labels, **loss_kwargs)
 
-        return ObjectDetectionOutput(logits=logits, offsets=offsets, anchors=anchors, loss=loss, loss_dict=loss_dict)
+        return ObjectDetectionOutput(logits=[logits], offsets=[offsets], strides=[self.stride], loss=loss, loss_dict=loss_dict)

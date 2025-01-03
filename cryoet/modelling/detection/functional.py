@@ -203,13 +203,18 @@ def object_detection_loss(
 
 
 def decode_detections_with_nms(
-    scores: torch.Tensor, centers: torch.Tensor, min_score: float, class_sigmas: List[float], iou_threshold: float = 0.25
+    scores: List[Tensor],
+    offsets: List[Tensor],
+    strides: List[int],
+    min_score: float,
+    class_sigmas: List[float],
+    iou_threshold: float = 0.25,
 ) -> Tuple[torch.Tensor, torch.Tensor, torch.Tensor]:
     """
     Decode detections from scores and centers with NMS
 
     :param scores: Predicted scores of shape (C, D, H, W)
-    :param centers: Predicted centers of shape (3, D, H, W)
+    :param offsets: Predicted offsets of shape (3, D, H, W)
     :param min_score: Minimum score to consider a detection
     :param class_sigmas: Class sigmas (class radius for NMS), length = number of classes
     :param iou_threshold: Threshold above which detections are suppressed
@@ -222,15 +227,15 @@ def decode_detections_with_nms(
 
     # Number of classes is the second dimension of `scores`
     # e.g. scores shape = (C, D, H, W)
-    num_classes = scores.shape[0]  # the 'C' dimension
+    num_classes = scores[0].shape[0]  # the 'C' dimension
 
-    # Flatten spatial dimensions so that scores.shape becomes (C, -1)
-    print("Predictions above treshold before centernet nms:", torch.count_nonzero(scores > min_score).item())
-    scores = centernet_heatmap_nms(scores.unsqueeze(0)).squeeze(0)
-    print("Predictions after centernet nms:", torch.count_nonzero(scores > min_score).item())
+    # print("Predictions above treshold before centernet nms:", torch.count_nonzero(scores > min_score).item())
+    scores = [centernet_heatmap_nms(s.unsqueeze(0)).squeeze(0) for s in scores]
+    # print("Predictions after centernet nms:", torch.count_nonzero(scores > min_score).item())
 
-    scores = einops.rearrange(scores, "C D H W -> (D H W) C")
-    centers = einops.rearrange(centers, "C D H W -> (D H W) C")
+    scores, centers, _ = decode_detections([s.unsqueeze(0) for s in scores], [o.unsqueeze(0) for o in offsets], strides)
+    scores = scores.squeeze(0)
+    centers = centers.squeeze(0)
 
     # max_scores: shape [D*H*W], class_labels: shape [D*H*W]
     max_scores = scores.max(dim=1)
