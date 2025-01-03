@@ -1,6 +1,9 @@
 import torch
 
-
+from cryoet.modelling.detection.segresnet_object_detection_v2 import (
+    SegResNetForObjectDetectionConfig,
+    SegResNetForObjectDetectionV2,
+)
 from cryoet.modelling.detection.unet3d_detection import UNet3DForObjectDetectionConfig, UNet3DForObjectDetection
 from cryoet.modelling.unetr_point_detection import SwinUNETRForPointDetection
 
@@ -16,6 +19,14 @@ def test_model_forward():
 
     print(output.logits.shape)
     print(output.loss)
+
+
+def test_segresnetv2():
+    config = SegResNetForObjectDetectionConfig(window_size=96)
+    model = SegResNetForObjectDetectionV2(config)
+    x = torch.randn(2, 1, 96, 96, 96)
+    out = model(x)
+    print(out)
 
 
 def test_unet_3d():

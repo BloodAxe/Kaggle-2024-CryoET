@@ -160,9 +160,8 @@ class SegResNetBackbone(nn.Module):
 
         if self.use_conv_final:
             x = self.conv_final(x)
-            feature_maps.append(x)
 
-        return x
+        return x, feature_maps
 
     def forward(self, x: Tensor) -> Tensor:
         x, down_x = self.encode(x)
@@ -210,27 +209,21 @@ class SegResNetForObjectDetectionV2(nn.Module):
             dropout_prob=config.dropout_prob,
         )
 
-        self.head2 = ObjectDetectionHead(
-            in_channels=config.out_channels, num_classes=config.num_classes, stride=2, intermediate_channels=32
-        )
-        self.head4 = ObjectDetectionHead(
-            in_channels=config.out_channels, num_classes=config.num_classes, stride=4, intermediate_channels=32
-        )
-        self.head8 = ObjectDetectionHead(
-            in_channels=config.out_channels, num_classes=config.num_classes, stride=8, intermediate_channels=32
-        )
+        self.head2 = ObjectDetectionHead(in_channels=64, num_classes=config.num_classes, stride=2, intermediate_channels=32)
+        self.head4 = ObjectDetectionHead(in_channels=128, num_classes=config.num_classes, stride=4, intermediate_channels=32)
 
     def forward(self, volume, labels=None, **loss_kwargs):
-        feature_maps = self.backbone(volume)
-        fm8, fm4, fm2 = feature_maps[-5], feature_maps[-4], feature_maps[-3]
+        _, feature_maps = self.backbone(volume)
+        print(len(feature_maps))
+        fm4, fm2 = feature_maps[-3], feature_maps[-2]
+        print(fm4.shape, fm2.shape)
 
-        output8 = self.head8(fm8)
         output4 = self.head4(fm4)
         output2 = self.head2(fm2)
 
-        logits = [output8.logits, output4.logits, output2.logits]
-        offsets = [output8.offsets, output4.offsets, output2.offsets]
-        strides = [self.head8.stride, self.head4.stride, self.head2.stride]
+        logits = [output4.logits, output2.logits]
+        offsets = [output4.offsets, output2.offsets]
+        strides = [self.head4.stride, self.head2.stride]
 
         if torch.jit.is_tracing():
             return logits, offsets, strides
