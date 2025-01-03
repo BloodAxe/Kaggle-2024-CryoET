@@ -10,7 +10,7 @@ from .functional import anchors_for_offsets_feature_map, object_detection_loss
 class ObjectDetectionOutput:
     logits: Tensor
     offsets: Tensor
-    anchors: Tensor
+    strides: Tensor
 
     loss: Optional[Tensor]
     loss_dict: Optional[Dict]
@@ -50,7 +50,7 @@ class ObjectDetectionHead(nn.Module):
 
     def forward(self, features, labels=None, **loss_kwargs):
         logits = self.cls_head(self.cls_stem(features))
-        offsets = self.offset_head(self.offset_stem(features)).tanh()
+        offsets = self.offset_head(self.offset_stem(features)).tanh() * self.stride
 
         if torch.jit.is_tracing():
             return logits, offsets

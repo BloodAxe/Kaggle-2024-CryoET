@@ -1,6 +1,5 @@
 import dataclasses
-from collections import defaultdict
-from typing import Optional, Any
+from typing import Optional, Any, Tuple
 
 import lightning as L
 import numpy as np
@@ -15,13 +14,13 @@ from torch import Tensor
 from torch.optim import Optimizer
 from torch.utils.tensorboard import SummaryWriter
 
+from cryoet.modelling.detection.detection_head import ObjectDetectionOutput
 from cryoet.schedulers import WarmupCosineScheduler
 from .args import MyTrainingArguments
 from .visualization import render_heatmap
-from ..modelling.detection.functional import decode_detections_with_nms
 from ..data.parsers import CLASS_LABEL_TO_CLASS_NAME, ANGSTROMS_IN_PIXEL, TARGET_SIGMAS
 from ..metric import score_submission
-from cryoet.modelling.detection.detection_head import ObjectDetectionOutput
+from ..modelling.detection.functional import decode_detections_with_nms
 
 
 @dataclasses.dataclass
@@ -31,7 +30,7 @@ class AccumulatedObjectDetectionPredictionContainer:
     counter: Tensor
 
     @classmethod
-    def from_shape(cls, shape, num_classes, device="cpu", dtype=torch.float32):
+    def from_shape(cls, shape: Tuple[int, int, int], num_classes: int, device="cpu", dtype=torch.float32):
         shape = tuple(shape)
         return cls(
             scores=torch.zeros((num_classes,) + shape, device=device, dtype=dtype),

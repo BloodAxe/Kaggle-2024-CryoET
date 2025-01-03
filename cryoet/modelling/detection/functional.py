@@ -9,7 +9,21 @@ from pytorch_toolbelt.utils.distributed import is_dist_avail_and_initialized, ge
 import torch.distributed as dist
 
 
-def decode_detections(logits, offsets, anchors):
+def anchors_for_offsets_feature_map(offsets, stride):
+    z, y, x = torch.meshgrid(
+        torch.arange(offsets.size(-3), device=offsets.device),
+        torch.arange(offsets.size(-2), device=offsets.device),
+        torch.arange(offsets.size(-1), device=offsets.device),
+        indexing="ij",
+    )
+    anchors = torch.stack([x, y, z], dim=0)
+    anchors = anchors.float().add_(0.5).mul_(stride)
+
+    anchors = anchors[None, ...].repeat(offsets.size(0), 1, 1, 1, 1)
+    return anchors
+
+
+def decode_detections(logits: Tensor | List[Tensor], offsets: Tensor | List[Tensor], strides: int | List[int]):
     """
     Decode detections from logits and offsets
     :param logits: Predicted logits B C D H W
@@ -21,12 +35,31 @@ def decode_detections(logits, offsets, anchors):
              centers - B N 3
 
     """
-    centers = anchors + offsets
+    if torch.is_tensor(logits):
+        logits = [logits]
+    if torch.is_tensor(offsets):
+        offsets = [offsets]
+    if isinstance(strides, int):
+        strides = [strides]
 
-    logits = einops.rearrange(logits, "B C D H W -> B (D H W) C")
-    centers = einops.rearrange(centers, "B C D H W -> B (D H W) C")
-    anchors = einops.rearrange(anchors, "B C D H W -> B (D H W) C")
-    return logits, centers, anchors
+    anchors = [anchors_for_offsets_feature_map(offset, s) for offset, s in zip(offsets, strides)]
+
+    logits_flat = []
+    centers_flat = []
+    anchors_flat = []
+
+    for logit, offset, anchor in zip(logits, offsets, anchors):
+        centers = anchor + offset
+
+        logits_flat.append(einops.rearrange(logit, "B C D H W -> B (D H W) C"))
+        centers_flat.append(einops.rearrange(centers, "B C D H W -> B (D H W) C"))
+        anchors_flat.append(einops.rearrange(anchor, "B C D H W -> B (D H W) C"))
+
+    logits_flat = torch.cat(logits_flat, dim=1)
+    centers_flat = torch.cat(centers_flat, dim=1)
+    anchors_flat = torch.cat(anchors_flat, dim=1)
+
+    return logits_flat, centers_flat, anchors_flat
 
 
 def varifocal_loss(pred_logits: Tensor, gt_score: Tensor, label: Tensor, alpha=0.75, gamma=2.0) -> Tensor:
@@ -73,7 +106,7 @@ def maybe_all_reduce(x: Tensor, op=dist.ReduceOp.SUM):
     return xc
 
 
-def object_detection_loss(logits, offsets, anchors, labels, average_tokens_across_devices: bool = False, **kwargs):
+def object_detection_loss(logits: Tensor | List[Tensor], offsets: Tensor | List[Tensor], strides: int | List[int], labels, average_tokens_across_devices: bool = False, **kwargs):
     """
     Compute the detection loss adapted for 3D data
     It uses keypoint-like IOU loss (negative exponent of mse) to assign the objectness score to the center of the object
@@ -91,7 +124,7 @@ def object_detection_loss(logits, offsets, anchors, labels, average_tokens_acros
     #     print("Offsets are not finite")
 
     # 1) Decode predictions
-    pred_logits, pred_centers, anchor_points = decode_detections(logits, offsets, anchors)
+    pred_logits, pred_centers, anchor_points = decode_detections(logits, offsets, strides)
     # shapes:
     # pred_logits:  [B, L, C]
     # pred_centers: [B, L, 3]
@@ -162,20 +195,6 @@ def object_detection_loss(logits, offsets, anchors, labels, average_tokens_acros
     return loss, loss_dict
 
 
-def anchors_for_offsets_feature_map(offsets, stride):
-    z, y, x = torch.meshgrid(
-        torch.arange(offsets.size(-3), device=offsets.device),
-        torch.arange(offsets.size(-2), device=offsets.device),
-        torch.arange(offsets.size(-1), device=offsets.device),
-        indexing="ij",
-    )
-    anchors = torch.stack([x, y, z], dim=0)
-    anchors = anchors.float().add_(0.5).mul_(stride)
-
-    anchors = anchors[None, ...].repeat(offsets.size(0), 1, 1, 1, 1)
-    return anchors
-
-
 def decode_detections_with_nms(
     scores: torch.Tensor, centers: torch.Tensor, min_score: float, class_sigmas: List[float], iou_threshold: float = 0.25
 ) -> Tuple[torch.Tensor, torch.Tensor, torch.Tensor]:
@@ -200,7 +219,7 @@ def decode_detections_with_nms(
 
     # Flatten spatial dimensions so that scores.shape becomes (C, -1)
     print("Predictions above treshold before centernet nms:", torch.count_nonzero(scores > min_score).item())
-    scores = centernet_heatmap_nms(scores)
+    scores = centernet_heatmap_nms(scores.unsqueeze(0)).squeeze(0)
     print("Predictions after centernet nms:", torch.count_nonzero(scores > min_score).item())
 
     scores = einops.rearrange(scores, "C D H W -> (D H W) C")
