@@ -13,6 +13,7 @@ from transformers import (
 
 from cryoet.data.detection.data_module import ObjectDetectionDataModule
 from cryoet.modelling.detection.segresnet_object_detection import SegResNetForObjectDetection, SegResNetForObjectDetectionConfig
+from cryoet.modelling.detection.segresnet_object_detection_v2 import SegResNetForObjectDetectionV2
 from cryoet.training.args import MyTrainingArguments, ModelArguments, DataArguments
 from cryoet.training.ema import BetaDecay, EMACallback
 from cryoet.training.object_detection_module import ObjectDetectionModel
@@ -53,6 +54,9 @@ def main():
     if model_args.model_name == "segresnet":
         config = SegResNetForObjectDetectionConfig(window_size=model_args.window_size)
         model = SegResNetForObjectDetection(config)
+    if model_args.model_name == "segresnetv2":
+        config = SegResNetForObjectDetectionConfig(window_size=model_args.window_size)
+        model = SegResNetForObjectDetectionV2(config)
     else:
         raise ValueError(f"Unknown model name: {model_args.model_name}")
 

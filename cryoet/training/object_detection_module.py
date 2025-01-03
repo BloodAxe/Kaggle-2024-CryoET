@@ -1,5 +1,4 @@
-import dataclasses
-from typing import Optional, Any, Tuple
+from typing import Optional, Any
 
 import lightning as L
 import numpy as np
@@ -17,77 +16,11 @@ from torch.utils.tensorboard import SummaryWriter
 from cryoet.modelling.detection.detection_head import ObjectDetectionOutput
 from cryoet.schedulers import WarmupCosineScheduler
 from .args import MyTrainingArguments
+from .od_accumulator import AccumulatedObjectDetectionPredictionContainer
 from .visualization import render_heatmap
 from ..data.parsers import CLASS_LABEL_TO_CLASS_NAME, ANGSTROMS_IN_PIXEL, TARGET_SIGMAS
 from ..metric import score_submission
 from ..modelling.detection.functional import decode_detections_with_nms
-
-
-@dataclasses.dataclass
-class AccumulatedObjectDetectionPredictionContainer:
-    scores: Tensor
-    centers: Tensor
-    counter: Tensor
-
-    @classmethod
-    def from_shape(cls, shape: Tuple[int, int, int], num_classes: int, device="cpu", dtype=torch.float32):
-        shape = tuple(shape)
-        return cls(
-            scores=torch.zeros((num_classes,) + shape, device=device, dtype=dtype),
-            centers=torch.zeros((3,) + shape, device=device, dtype=dtype),
-            counter=torch.zeros(shape, device=device, dtype=dtype),
-        )
-
-    def accumulate_batch(self, batch_probas, batch_centers, batch_tile_offsets):
-        for tile_scores, tile_centers, tile_offsets in zip(batch_probas, batch_centers, batch_tile_offsets):
-            self.accumulate(tile_scores, tile_centers, tile_offsets)
-
-    def accumulate(self, tile_scores, pred_centers, tile_offsets_zyx):
-        probas_view = self.scores[
-            :,
-            tile_offsets_zyx[0] : tile_offsets_zyx[0] + tile_scores.shape[1],
-            tile_offsets_zyx[1] : tile_offsets_zyx[1] + tile_scores.shape[2],
-            tile_offsets_zyx[2] : tile_offsets_zyx[2] + tile_scores.shape[3],
-        ]
-
-        centers_view = self.centers[
-            :,
-            tile_offsets_zyx[0] : tile_offsets_zyx[0] + tile_scores.shape[1],
-            tile_offsets_zyx[1] : tile_offsets_zyx[1] + tile_scores.shape[2],
-            tile_offsets_zyx[2] : tile_offsets_zyx[2] + tile_scores.shape[3],
-        ]
-
-        counter_view = self.counter[
-            tile_offsets_zyx[0] : tile_offsets_zyx[0] + tile_scores.shape[1],
-            tile_offsets_zyx[1] : tile_offsets_zyx[1] + tile_scores.shape[2],
-            tile_offsets_zyx[2] : tile_offsets_zyx[2] + tile_scores.shape[3],
-        ]
-
-        tile_offsets_xyz = torch.tensor(
-            [
-                tile_offsets_zyx[2],
-                tile_offsets_zyx[1],
-                tile_offsets_zyx[0],
-            ],
-            device=probas_view.device,
-        ).view(3, 1, 1, 1)
-
-        # Crop tile_scores to the view shape
-        tile_scores = tile_scores[:, : probas_view.shape[1], : probas_view.shape[2], : probas_view.shape[3]]
-        pred_centers = pred_centers[:, : centers_view.shape[1], : centers_view.shape[2], : centers_view.shape[3]]
-
-        probas_view += tile_scores.to(probas_view.device)
-        centers_view += (pred_centers + tile_offsets_xyz).to(centers_view.device)
-        counter_view += 1
-
-    def merge_(self):
-        self.scores /= self.counter.unsqueeze(0)
-        self.scores.masked_fill_(self.counter == 0, 0.0)
-
-        self.centers /= self.counter.unsqueeze(0)
-        self.centers.masked_fill_(self.counter == 0, 0.0)
-
-        return self.scores, self.centers
 
 
 class ObjectDetectionModel(L.LightningModule):

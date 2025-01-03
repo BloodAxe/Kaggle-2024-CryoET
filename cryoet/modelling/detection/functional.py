@@ -106,7 +106,14 @@ def maybe_all_reduce(x: Tensor, op=dist.ReduceOp.SUM):
     return xc
 
 
-def object_detection_loss(logits: Tensor | List[Tensor], offsets: Tensor | List[Tensor], strides: int | List[int], labels, average_tokens_across_devices: bool = False, **kwargs):
+def object_detection_loss(
+    logits: Tensor | List[Tensor],
+    offsets: Tensor | List[Tensor],
+    strides: int | List[int],
+    labels,
+    average_tokens_across_devices: bool = False,
+    **kwargs,
+):
     """
     Compute the detection loss adapted for 3D data
     It uses keypoint-like IOU loss (negative exponent of mse) to assign the objectness score to the center of the object
