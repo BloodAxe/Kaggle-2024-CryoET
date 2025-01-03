@@ -5,6 +5,10 @@ import torch.nn as nn
 import torch.nn.functional as F
 import math
 
+from .detection_head import ObjectDetectionHead
+
+from transformers import PretrainedConfig
+
 
 class RepVGGBlock3D(nn.Module):
     """
@@ -29,7 +33,7 @@ class RepVGGBlock3D(nn.Module):
         # 1x1x1 convolution
         self.conv1x1 = nn.Conv3d(in_channels, out_channels, kernel_size=1, stride=stride, padding=0, bias=bias)
 
-        self.bn = nn.BatchNorm3d(out_channels)
+        self.bn = nn.InstanceNorm3d(out_channels)
         self.act = nn.SiLU(inplace=True)
 
     def forward(self, x: torch.Tensor) -> torch.Tensor:
@@ -121,7 +125,6 @@ class UNet3DBackbone(nn.Module):
     def __init__(
         self,
         in_channels: int,
-        num_classes: int,
         encoder_channels: Iterable[int],
         num_blocks_per_stage: Iterable[int],
         num_blocks_per_decoder_stage: Iterable[int],
@@ -129,7 +132,6 @@ class UNet3DBackbone(nn.Module):
         super().__init__()
 
         self.in_channels = in_channels
-        self.num_classes = num_classes
         self.encoder_channels = tuple(encoder_channels)
         self.num_down_stages = len(self.encoder_channels)  # total encoder stages
         self.num_blocks_per_stage = tuple(num_blocks_per_stage)
@@ -173,6 +175,7 @@ class UNet3DBackbone(nn.Module):
             self.decoders.append(block)
 
         self.decoder_output_channels = decoder_output_channels
+        self.out_channels = self.decoder_output_channels[-1]
 
     def forward(self, x: torch.Tensor) -> torch.Tensor:
         skips = []
@@ -199,23 +202,39 @@ class UNet3DBackbone(nn.Module):
         return out
 
 
-if __name__ == "__main__":
-    from pytorch_toolbelt.utils import count_parameters
-
-    # Example usage with decode_final_stride=2 -> output is half resolution
-    model = UNet3DBackbone(
+class UNet3DForObjectDetectionConfig(PretrainedConfig):
+    def __init__(
+        self,
         in_channels=1,
-        num_classes=2,
-        encoder_channels=[16, 24, 32, 64, 96],
-        num_blocks_per_stage=[1, 1, 2, 2, 2],
-        num_blocks_per_decoder_stage=[1, 2, 2, 2],
-    )
+        num_classes=5,
+        encoder_channels=(16, 24, 32, 64, 96),
+        num_blocks_per_stage=(1, 1, 2, 2, 2),
+        num_blocks_per_decoder_stage=(1, 2, 2, 2),
+        **kwargs,
+    ):
+        super().__init__(**kwargs)
+        self.in_channels = in_channels
+        self.num_classes = num_classes
+        self.encoder_channels = encoder_channels
+        self.num_blocks_per_stage = num_blocks_per_stage
+        self.num_blocks_per_decoder_stage = num_blocks_per_decoder_stage
 
-    # Fake input: batch_size=2, channels=1, depth=64, height=64, width=64
-    x = torch.randn(2, 1, 96, 96, 96)
-    out = model(x)
 
-    print("Model summary:", count_parameters(model, human_friendly=True))
-    print("Input shape:", x.shape)
-    print("Output shape:", out.shape)
-    # With decode_final_stride=2, we expect an output shape of [2, 2, 32, 32, 32].
+class UNet3DForObjectDetection(nn.Module):
+    def __init__(self, config: UNet3DForObjectDetectionConfig):
+        super().__init__()
+
+        self.backbone = UNet3DBackbone(
+            in_channels=config.in_channels,
+            encoder_channels=config.encoder_channels,
+            num_blocks_per_stage=config.num_blocks_per_stage,
+            num_blocks_per_decoder_stage=config.num_blocks_per_decoder_stage,
+        )
+
+        self.head = ObjectDetectionHead(
+            in_channels=self.backbone.out_channels, num_classes=config.num_classes, intermediate_channels=32, stride=1
+        )
+
+    def forward(self, volume, labels=None, **loss_kwargs):
+        features = self.backbone(volume)
+        return self.head(features, labels, **loss_kwargs)

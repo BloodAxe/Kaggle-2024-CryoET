@@ -17,28 +17,28 @@ class ObjectDetectionOutput:
 
 
 class ObjectDetectionHead(nn.Module):
-    def __init__(self, in_channels: int, num_classes: int, stride: int):
+    def __init__(self, in_channels: int, num_classes: int, stride: int, intermediate_channels: int = 64):
         super().__init__()
         self.cls_stem = nn.Sequential(
-            nn.Conv3d(in_channels, 64, kernel_size=3, padding=1),
+            nn.Conv3d(in_channels, intermediate_channels, kernel_size=3, padding=1),
             nn.SiLU(inplace=True),
-            nn.InstanceNorm3d(64),
-            nn.Conv3d(64, 64, kernel_size=3, padding=1),
+            nn.InstanceNorm3d(intermediate_channels),
+            nn.Conv3d(intermediate_channels, intermediate_channels, kernel_size=3, padding=1),
             nn.SiLU(inplace=True),
-            nn.InstanceNorm3d(64),
+            nn.InstanceNorm3d(intermediate_channels),
         )
 
         self.offset_stem = nn.Sequential(
-            nn.Conv3d(in_channels, 64, kernel_size=3, padding=1),
+            nn.Conv3d(in_channels, intermediate_channels, kernel_size=3, padding=1),
             nn.SiLU(inplace=True),
-            nn.InstanceNorm3d(64),
-            nn.Conv3d(64, 64, kernel_size=3, padding=1),
+            nn.InstanceNorm3d(intermediate_channels),
+            nn.Conv3d(intermediate_channels, intermediate_channels, kernel_size=3, padding=1),
             nn.SiLU(inplace=True),
-            nn.InstanceNorm3d(64),
+            nn.InstanceNorm3d(intermediate_channels),
         )
 
-        self.cls_head = nn.Conv3d(64, num_classes, kernel_size=1, padding=0)
-        self.offset_head = nn.Conv3d(64, 3, kernel_size=1, padding=0)
+        self.cls_head = nn.Conv3d(intermediate_channels, num_classes, kernel_size=1, padding=0)
+        self.offset_head = nn.Conv3d(intermediate_channels, 3, kernel_size=1, padding=0)
 
         self.stride = stride
 
