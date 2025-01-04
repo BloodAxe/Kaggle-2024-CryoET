@@ -230,7 +230,7 @@ def decode_detections_with_nms(
     num_classes = scores[0].shape[0]  # the 'C' dimension
 
     # print("Predictions above treshold before centernet nms:", torch.count_nonzero(scores > min_score).item())
-    scores = [centernet_heatmap_nms(s.unsqueeze(0)).squeeze(0) for s in scores]
+    # scores = [centernet_heatmap_nms(s.unsqueeze(0)).squeeze(0) for s in scores]
     # print("Predictions after centernet nms:", torch.count_nonzero(scores > min_score).item())
 
     scores, centers, _ = decode_detections([s.unsqueeze(0) for s in scores], [o.unsqueeze(0) for o in offsets], strides)

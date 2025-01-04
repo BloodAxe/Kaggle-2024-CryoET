@@ -55,9 +55,9 @@ class AccumulatedObjectDetectionPredictionContainer:
                 slice(strided_offsets_zyx[2], strided_offsets_zyx[2] + scores.shape[3]),
             )
 
-            scores_view = self.scores[i][:, roi]
-            offsets_view = self.offsets[i][:, roi]
-            counter_view = self.counter[i][roi]
+            scores_view = self.scores[i][:, *roi]
+            offsets_view = self.offsets[i][:, *roi]
+            counter_view = self.counter[i][*roi]
 
             tile_offsets_xyz = torch.tensor(
                 [

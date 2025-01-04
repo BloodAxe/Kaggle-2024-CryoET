@@ -1,4 +1,4 @@
-from typing import Optional, Any
+from typing import Optional, Any, Dict
 
 import lightning as L
 import numpy as np
@@ -60,7 +60,7 @@ class ObjectDetectionModel(L.LightningModule):
         torch.cuda.empty_cache()
 
     def on_validation_start(self) -> None:
-        self.validation_predictions = {}
+        self.validation_predictions: Dict[str, AccumulatedObjectDetectionPredictionContainer] = {}
 
     def accumulate_predictions(self, outputs: ObjectDetectionOutput, batch):
 
@@ -70,7 +70,7 @@ class ObjectDetectionModel(L.LightningModule):
         offsets = [p.cpu() for p in outputs.offsets]
         num_classes = scores[0].shape[1]
 
-        for study, tile_offsets, volume_shape, pred_logits, pred_offsets in zip(
+        for study, tile_coord, volume_shape, pred_scores, pred_offsets in zip(
             batch["study"], tile_offsets_zyx, batch["volume_shape"], scores, offsets
         ):
             if study not in self.validation_predictions:
@@ -78,7 +78,7 @@ class ObjectDetectionModel(L.LightningModule):
                     volume_shape, num_classes=num_classes, strides=outputs.strides, device="cpu", dtype=torch.float16
                 )
 
-            self.validation_predictions[study].accumulate(tile_scores, pred_logits, pred_offsets)
+            self.validation_predictions[study].accumulate(pred_scores, pred_offsets, tile_coord)
 
     def on_validation_epoch_end(self) -> None:
         torch.cuda.empty_cache()

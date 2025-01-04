@@ -214,9 +214,7 @@ class SegResNetForObjectDetectionV2(nn.Module):
 
     def forward(self, volume, labels=None, **loss_kwargs):
         _, feature_maps = self.backbone(volume)
-        print(len(feature_maps))
         fm4, fm2 = feature_maps[-3], feature_maps[-2]
-        print(fm4.shape, fm2.shape)
 
         output4 = self.head4(fm4)
         output2 = self.head2(fm2)

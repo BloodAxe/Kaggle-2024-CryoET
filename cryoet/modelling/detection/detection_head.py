@@ -55,11 +55,9 @@ class ObjectDetectionHead(nn.Module):
         if torch.jit.is_tracing():
             return logits, offsets
 
-        anchors = anchors_for_offsets_feature_map(offsets, self.stride)
-
         loss = None
         loss_dict = None
         if labels is not None:
             loss, loss_dict = object_detection_loss(logits.float(), offsets.float(), anchors.float(), labels, **loss_kwargs)
 
-        return ObjectDetectionOutput(logits=[logits], offsets=[offsets], strides=[self.stride], loss=loss, loss_dict=loss_dict)
+        return ObjectDetectionOutput(logits=logits, offsets=offsets, strides=self.stride, loss=loss, loss_dict=loss_dict)
