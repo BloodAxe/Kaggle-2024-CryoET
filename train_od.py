@@ -127,6 +127,7 @@ def main():
 
     trainer = L.Trainer(
         strategy=strategy,
+        num_sanity_val_steps=0,
         max_epochs=int(training_args.num_train_epochs),
         max_steps=training_args.max_steps,
         precision=precision,
