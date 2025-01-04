@@ -1,4 +1,4 @@
-from typing import Optional, Any, Dict
+from typing import Optional, Any, Dict, List
 
 import lightning as L
 import numpy as np
@@ -106,7 +106,7 @@ class ObjectDetectionModel(L.LightningModule):
 
             scores, offsets = accumulated_predictions.merge_()
 
-            # self.log_heatmaps(study_name, accumulated_predictions.scores)
+            self.log_heatmaps(study_name, scores)
 
             topk_coords_px, topk_clses, topk_scores = decode_detections_with_nms(
                 scores,
@@ -211,18 +211,19 @@ class ObjectDetectionModel(L.LightningModule):
             return tb_logger.experiment
         return None
 
-    def log_heatmaps(self, study_name: str, heatmap: Tensor):
+    def log_heatmaps(self, study_name: str, heatmaps: List[Tensor]):
         if self.trainer.is_global_zero:
             tb_logger = self._get_tb_logger(self.trainer)
-            heatmap = render_heatmap(heatmap)
+            for i, heatmap in enumerate(heatmaps):
+                heatmap = render_heatmap(heatmap)
 
-            if tb_logger is not None:
-                tb_logger.add_images(
-                    tag=f"val/{study_name}",
-                    img_tensor=heatmap,
-                    global_step=self.global_step,
-                    dataformats="HWC",
-                )
+                if tb_logger is not None:
+                    tb_logger.add_images(
+                        tag=f"val/{study_name}_{i}",
+                        img_tensor=heatmap,
+                        global_step=self.global_step,
+                        dataformats="HWC",
+                    )
 
     def configure_optimizers(self):
         param_groups, optimizer_kwargs = build_optimizer_param_groups(
