@@ -303,12 +303,12 @@ def decode_detections_with_nms(
             iou = keypoint_similarity(class_centers[i : i + 1, :], class_centers, sigma_value)
 
             high_iou_mask = iou > iou_threshold
-            suppressed |= high_iou_mask
+            suppressed |= high_iou_mask.to(suppressed.device)
 
         print(f"Predictions for class {class_index} after NMS", len(keep_indices))
 
         # Gather kept detections for this class
-        keep_indices = torch.as_tensor(keep_indices, dtype=torch.long)
+        keep_indices = torch.as_tensor(keep_indices, dtype=torch.long, device=class_scores.device)
         final_labels_list.append(torch.full((keep_indices.numel(),), class_index, dtype=torch.long))
         final_scores_list.append(class_scores[keep_indices])
         final_centers_list.append(class_centers[keep_indices])
