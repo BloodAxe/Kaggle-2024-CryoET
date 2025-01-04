@@ -88,7 +88,7 @@ def iou_loss(pred_centers, assigned_centers, assigned_scores, assigned_sigmas, m
 
         iou = keypoint_similarity(pred_centers, assigned_centers, assigned_sigmas)
         iou_loss = (1 - iou) * weight
-        l1_loss = torch.nn.functional.l1_loss(pred_centers, assigned_centers, reduction="none").sum(-1) * weight
+        l1_loss = torch.nn.functional.smooth_l1_loss(pred_centers, assigned_centers, reduction="none").sum(-1) * weight
 
         loss = iou_loss + l1_loss
         loss_reduced_iou = torch.masked_fill(loss, ~mask_positive, 0).sum()
