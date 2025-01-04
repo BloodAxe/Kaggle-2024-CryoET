@@ -130,12 +130,12 @@ class ObjectDetectionModel(L.LightningModule):
             print("Merge done")
 
             # Save averaged heatmap for further postprocessing hyperparam tuning
-            if self.trainer.is_global_zero:
-                torch.save({"scores": scores, "offsets": offsets}, os.path.join(self.trainer.log_dir, f"{study_name}.pth"))
-
-                self.trainer.datamodule.solution.to_csv(
-                    os.path.join(self.trainer.log_dir, f"{study_name}.csv"),
-                )
+            # if self.trainer.is_global_zero:
+            #     torch.save({"scores": scores, "offsets": offsets}, os.path.join(self.trainer.log_dir, f"{study_name}.pth"))
+            #
+            #     self.trainer.datamodule.solution.to_csv(
+            #         os.path.join(self.trainer.log_dir, f"{study_name}.csv"),
+            #     )
 
             self.log_heatmaps(study_name, scores)
 
