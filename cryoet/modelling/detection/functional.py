@@ -217,7 +217,7 @@ def decode_detections_with_nms(
     min_score: float,
     class_sigmas: List[float],
     iou_threshold: float = 0.25,
-    enable_centernet_nms: bool = False,
+    use_centernet_nms: bool = False,
 ) -> Tuple[torch.Tensor, torch.Tensor, torch.Tensor]:
     """
     Decode detections from scores and centers with NMS
@@ -238,7 +238,7 @@ def decode_detections_with_nms(
     # e.g. scores shape = (C, D, H, W)
     num_classes = scores[0].shape[0]  # the 'C' dimension
 
-    if enable_centernet_nms:
+    if use_centernet_nms:
         print(
             "Predictions above threshold before centernet nms:",
             [torch.count_nonzero(score >= min_score).item() for score in scores],

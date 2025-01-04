@@ -1,6 +1,5 @@
 import os
-import types
-from typing import Optional, Any, Dict, List, Union, Sequence
+from typing import Optional, Any, Dict, List
 
 import lightning as L
 import numpy as np
@@ -140,6 +139,7 @@ class ObjectDetectionModel(L.LightningModule):
                 class_sigmas=TARGET_SIGMAS,
                 min_score=score_thresholds.min(),
                 iou_threshold=0.6,
+                use_centernet_nms=self.model_args.use_centernet_nms,
             )
             topk_scores = topk_scores.float().cpu().numpy()
             top_coords = topk_coords_px.float().cpu().numpy() * ANGSTROMS_IN_PIXEL
