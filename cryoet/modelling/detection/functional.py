@@ -287,7 +287,9 @@ def decode_detections_with_nms(
 
         print(f"Predictions for class {class_index}: ", torch.count_nonzero(class_mask).item())
 
-        iou = batch_pairwise_keypoints_iou(class_centers, class_centers, torch.full((class_centers.size(0),), sigma_value))
+        iou = batch_pairwise_keypoints_iou(
+            class_centers[None, ...], class_centers[None, ...], torch.full((class_centers.size(0),), sigma_value)
+        ).squeeze(0)
 
         for i in range(class_scores.size(0)):
             if suppressed[i]:
