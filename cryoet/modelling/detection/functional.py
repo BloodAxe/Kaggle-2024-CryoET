@@ -318,6 +318,7 @@ def decode_detections_with_nms(
     final_scores = torch.cat(final_scores_list, dim=0) if final_scores_list else torch.empty((0,))
     final_centers = torch.cat(final_centers_list, dim=0) if final_centers_list else torch.empty((0, 3))
 
+    print(f"Final predictions after NMS: {final_centers.size(0)}")
     return final_centers, final_labels, final_scores
 
 
