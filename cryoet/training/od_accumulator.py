@@ -30,9 +30,9 @@ class AccumulatedObjectDetectionPredictionContainer:
             raise ValueError("Strides mismatch")
 
         for i in range(len(self.scores)):
-            self.scores[i] += other.scores[i]
-            self.offsets[i] += other.offsets[i]
-            self.counter[i] += other.counter[i]
+            self.scores[i] += other.scores[i].to(self.scores[i].device)
+            self.offsets[i] += other.offsets[i].to(self.offsets[i].device)
+            self.counter[i] += other.counter[i].to(self.counter[i].device)
 
         return self
 
