@@ -4,7 +4,7 @@ import einops
 import torch
 from torch import Tensor
 
-from .task_aligned_assigner import TaskAlignedAssigner
+from .task_aligned_assigner import TaskAlignedAssigner, batch_pairwise_keypoints_iou
 from pytorch_toolbelt.utils.distributed import is_dist_avail_and_initialized, get_world_size
 import torch.distributed as dist
 
@@ -211,6 +211,7 @@ def decode_detections_with_nms(
     min_score: float,
     class_sigmas: List[float],
     iou_threshold: float = 0.25,
+    enable_centernet_nms: bool = False,
 ) -> Tuple[torch.Tensor, torch.Tensor, torch.Tensor]:
     """
     Decode detections from scores and centers with NMS
@@ -231,9 +232,16 @@ def decode_detections_with_nms(
     # e.g. scores shape = (C, D, H, W)
     num_classes = scores[0].shape[0]  # the 'C' dimension
 
-    # print("Predictions above treshold before centernet nms:", torch.count_nonzero(scores > min_score).item())
-    # scores = [centernet_heatmap_nms(s.unsqueeze(0)).squeeze(0) for s in scores]
-    # print("Predictions after centernet nms:", torch.count_nonzero(scores > min_score).item())
+    if enable_centernet_nms:
+        print(
+            "Predictions above threshold before centernet nms:",
+            [torch.count_nonzero(score >= min_score).item() for score in scores],
+        )
+        scores = [centernet_heatmap_nms(s.unsqueeze(0)).squeeze(0) for s in scores]
+        print(
+            "Predictions above threshold after centernet nms:",
+            [torch.count_nonzero(score >= min_score).item() for score in scores],
+        )
 
     scores, centers, _ = decode_detections([s.unsqueeze(0) for s in scores], [o.unsqueeze(0) for o in offsets], strides)
     scores = scores.squeeze(0)
@@ -279,6 +287,8 @@ def decode_detections_with_nms(
 
         print(f"Predictions for class {class_index}: ", torch.count_nonzero(class_mask).item())
 
+        iou = batch_pairwise_keypoints_iou(class_centers, class_centers, torch.full((class_centers.size(0),), sigma_value))
+
         for i in range(class_scores.size(0)):
             if suppressed[i]:
                 continue
@@ -289,11 +299,11 @@ def decode_detections_with_nms(
 
             # Precompute pairwise IoU = exp(-(||x_i - x_j||^2) / (2 * sigma^2))
             # shape of d: [Nc, Nc]
-            d = ((class_centers[i : i + 1, :] - class_centers) ** 2).sum(dim=-1)
-            e = d / (2 * sigma_value**2)
-            iou = torch.exp(-e)  # shape: [Nc, Nc]
+            # d = ((class_centers[i : i + 1, :] - class_centers) ** 2).sum(dim=-1)
+            # e = d / (2 * sigma_value**2)
+            # iou = torch.exp(-e)  # shape: [Nc, Nc]
 
-            high_iou_mask = iou > iou_threshold
+            high_iou_mask = iou[i] > iou_threshold
             suppressed |= high_iou_mask
 
         print(f"Predictions for class {class_index} after NMS", len(keep_indices))
