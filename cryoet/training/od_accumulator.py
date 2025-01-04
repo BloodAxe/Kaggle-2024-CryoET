@@ -37,8 +37,8 @@ class AccumulatedObjectDetectionPredictionContainer:
         return self
 
     def accumulate_batch(self, batch_scores, batch_offsets, batch_tile_coords):
-        for pred_scores, pred_offsets, tile_coors in zip(batch_scores, batch_offsets, batch_tile_coords):
-            self.accumulate(pred_scores, pred_offsets, tile_coors)
+        for scores_list, offsets_list, tile_coords_zyx in zip(batch_scores, batch_offsets, batch_tile_coords):
+            self.accumulate(scores_list, offsets_list, tile_coords_zyx)
 
     def accumulate(self, scores_list: List[Tensor], offsets_list: List[Tensor], tile_coords_zyx):
         num_feature_maps = len(self.scores)
@@ -59,21 +59,12 @@ class AccumulatedObjectDetectionPredictionContainer:
             offsets_view = self.offsets[i][:, *roi]
             counter_view = self.counter[i][*roi]
 
-            tile_offsets_xyz = torch.tensor(
-                [
-                    tile_coords_zyx[2],
-                    tile_coords_zyx[1],
-                    tile_coords_zyx[0],
-                ],
-                device=scores_view.device,
-            ).view(3, 1, 1, 1)
-
             # Crop tile_scores to the view shape
             scores = scores[:, : scores_view.shape[1], : scores_view.shape[2], : scores_view.shape[3]]
             offsets = offsets[:, : offsets_view.shape[1], : offsets_view.shape[2], : offsets_view.shape[3]]
 
             scores_view += scores.to(scores_view.device)
-            offsets_view += (offsets + tile_offsets_xyz).to(offsets_view.device)
+            offsets_view += offsets.to(offsets_view.device)
             counter_view += 1
 
     def merge_(self):
