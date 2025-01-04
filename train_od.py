@@ -78,7 +78,7 @@ def main():
             stride=70,
         )
 
-    model_module = ObjectDetectionModel(model, training_args)
+    model_module = ObjectDetectionModel(model=model, data_args=data_args, model_args=model_args, train_args=training_args)
 
     checkpoint_callback = ModelCheckpoint(
         monitor="val/score",

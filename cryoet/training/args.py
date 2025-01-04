@@ -23,6 +23,8 @@ class ModelArguments:
 
     window_size: int = field(default=96)
 
+    enable_centernet_nms: bool = field(default=False, metadata={"help": "Enable CenterNet NMS when decoding"})
+
 
 def data_root_default_factory():
     return os.environ.get("CRYOET_DATA_ROOT", None)
@@ -85,6 +87,8 @@ class MyTrainingArguments(TrainingArguments):
     ema_beta: float = field(default=10, metadata={"help": "Exponential moving average beta"})
 
     early_stopping: int = field(default=0, metadata={"help": "Early stopping"})
+
+    use_l1_loss: bool = field(default=False, metadata={"help": "If true, adds L1 loss on offsets prediction"})
 
     def master_print(self, *args):
         if self.process_index == 0:

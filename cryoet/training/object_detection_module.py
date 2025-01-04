@@ -1,4 +1,6 @@
-from typing import Optional, Any, Dict, List
+import os
+import types
+from typing import Optional, Any, Dict, List, Union, Sequence
 
 import lightning as L
 import numpy as np
@@ -15,7 +17,7 @@ from torch.utils.tensorboard import SummaryWriter
 
 from cryoet.modelling.detection.detection_head import ObjectDetectionOutput
 from cryoet.schedulers import WarmupCosineScheduler
-from .args import MyTrainingArguments
+from .args import MyTrainingArguments, ModelArguments, DataArguments
 from .od_accumulator import AccumulatedObjectDetectionPredictionContainer
 from .visualization import render_heatmap
 from ..data.parsers import CLASS_LABEL_TO_CLASS_NAME, ANGSTROMS_IN_PIXEL, TARGET_SIGMAS
@@ -26,12 +28,17 @@ from ..modelling.detection.functional import decode_detections_with_nms
 class ObjectDetectionModel(L.LightningModule):
     def __init__(
         self,
+        *,
         model,
+        data_args: DataArguments,
+        model_args: ModelArguments,
         train_args: MyTrainingArguments,
     ):
         super().__init__()
         self.model = model
+        self.data_args = data_args
         self.train_args = train_args
+        self.model_args = model_args
         self.validation_predictions = None
         self.average_tokens_across_devices = train_args.average_tokens_across_devices
 
@@ -39,11 +46,15 @@ class ObjectDetectionModel(L.LightningModule):
         return self.model(
             volume=volume,
             labels=labels,
+            average_tokens_across_devices=self.average_tokens_across_devices,
+            use_l1_loss=self.train_args.use_l1_loss,
             **loss_kwargs,
         )
 
     def training_step(self, batch, batch_idx):
-        outputs = self(**batch, average_tokens_across_devices=self.average_tokens_across_devices)
+        outputs = self(
+            **batch,
+        )
 
         self.log_dict(
             dict(("train/" + k, v) for k, v in outputs.loss_dict.items()),
@@ -111,6 +122,14 @@ class ObjectDetectionModel(L.LightningModule):
                 accumulated_predictions += p
 
             scores, offsets = accumulated_predictions.merge_()
+
+            # Save averaged heatmap for further postprocessing hyperparam tuning
+            if self.trainer.is_global_zero:
+                torch.save({"scores": scores, "offsets": offsets}, os.path.join(self.trainer.log_dir, f"{study_name}.pth"))
+
+                self.trainer.datamodule.solution.to_csv(
+                    os.path.join(self.trainer.log_dir, f"{study_name}.csv"),
+                )
 
             self.log_heatmaps(study_name, scores)
 
