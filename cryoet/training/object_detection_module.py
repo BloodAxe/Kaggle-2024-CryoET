@@ -63,22 +63,28 @@ class ObjectDetectionModel(L.LightningModule):
         self.validation_predictions: Dict[str, AccumulatedObjectDetectionPredictionContainer] = {}
 
     def accumulate_predictions(self, outputs: ObjectDetectionOutput, batch):
-
         tile_offsets_zyx = batch["tile_offsets_zyx"].cpu()
 
         scores = [torch.sigmoid(p).cpu() for p in outputs.logits]
         offsets = [p.cpu() for p in outputs.offsets]
         num_classes = scores[0].shape[1]
 
-        for study, tile_coord, volume_shape, pred_scores, pred_offsets in zip(
-            batch["study"], tile_offsets_zyx, batch["volume_shape"], scores, offsets
-        ):
+        batch_size = len(batch["study"])
+        for i in range(batch_size):
+            study = batch["study"][i]
+            volume_shape = batch["volume_shape"][i]
+            tile_coord = tile_offsets_zyx[i]
+
             if study not in self.validation_predictions:
                 self.validation_predictions[study] = AccumulatedObjectDetectionPredictionContainer.from_shape(
                     volume_shape, num_classes=num_classes, strides=outputs.strides, device="cpu", dtype=torch.float16
                 )
 
-            self.validation_predictions[study].accumulate(pred_scores, pred_offsets, tile_coord)
+            self.validation_predictions[study].accumulate(
+                scores_list=[s[i] for s in scores],
+                offsets_list=[o[i] for o in offsets],
+                tile_coords_zyx=tile_coord,
+            )
 
     def on_validation_epoch_end(self) -> None:
         torch.cuda.empty_cache()

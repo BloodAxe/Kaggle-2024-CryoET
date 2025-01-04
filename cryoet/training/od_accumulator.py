@@ -41,12 +41,22 @@ class AccumulatedObjectDetectionPredictionContainer:
             self.accumulate(scores_list, offsets_list, tile_coords_zyx)
 
     def accumulate(self, scores_list: List[Tensor], offsets_list: List[Tensor], tile_coords_zyx):
+        if len(scores_list) != len(self.scores):
+            raise ValueError("Number of feature maps mismatch")
+        if not isinstance(scores_list, list):
+            raise ValueError("Scores should be a list of tensors")
+        if not isinstance(offsets_list, list):
+            raise ValueError("Offsets should be a list of tensors")
+
         num_feature_maps = len(self.scores)
 
         for i in range(num_feature_maps):
             stride = self.strides[i]
             scores = scores_list[i]
             offsets = offsets_list[i]
+
+            if scores.ndim != 4 or offsets.ndim != 4:
+                raise ValueError("Scores and offsets should have shape (C, D, H, W)")
 
             strided_offsets_zyx = tile_coords_zyx // stride
             roi = (
@@ -70,10 +80,13 @@ class AccumulatedObjectDetectionPredictionContainer:
     def merge_(self):
         num_feature_maps = len(self.scores)
         for i in range(num_feature_maps):
-            self.scores[i] /= self.counter[i].unsqueeze(0)
-            self.scores[i].masked_fill_(self.counter[i] == 0, 0.0)
+            c = self.counter[i].unsqueeze(0)
+            zero_mask = c.eq(0)
 
-            self.offsets[i] /= self.counter[i].unsqueeze(0)
-            self.offsets[i].masked_fill_(self.counter[i] == 0, 0.0)
+            self.scores[i] /= c
+            self.scores[i].masked_fill_(zero_mask, 0.0)
+
+            self.offsets[i] /= c
+            self.offsets[i].masked_fill_(zero_mask, 0.0)
 
         return self.scores, self.offsets
