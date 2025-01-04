@@ -81,17 +81,21 @@ def keypoint_similarity(pts1, pts2, sigmas):
     return iou
 
 
-def iou_loss(pred_centers, assigned_centers, assigned_scores, assigned_sigmas, mask_positive):
+def iou_loss(pred_centers, assigned_centers, assigned_scores, assigned_sigmas, mask_positive, use_l1_loss=False):
     num_pos = mask_positive.sum()
     if num_pos > 0:
         weight = assigned_scores.sum(-1)
 
         iou = keypoint_similarity(pred_centers, assigned_centers, assigned_sigmas)
-        iou_loss = (1 - iou) * weight
-        l1_loss = torch.nn.functional.smooth_l1_loss(pred_centers, assigned_centers, reduction="none").sum(-1) * weight
+        iou_loss = 1 - iou
 
-        loss = iou_loss + l1_loss
-        loss_reduced_iou = torch.masked_fill(loss, ~mask_positive, 0).sum()
+        loss = iou_loss
+
+        if use_l1_loss:
+            l1_loss = torch.nn.functional.smooth_l1_loss(pred_centers, assigned_centers, reduction="none").sum(-1)
+            loss = loss + l1_loss
+
+        loss_reduced_iou = torch.masked_fill(loss * weight, ~mask_positive, 0).sum()
         return loss_reduced_iou
     else:
         loss_reduced_iou = torch.zeros([], device=pred_centers.device)
@@ -114,6 +118,7 @@ def object_detection_loss(
     strides: int | List[int],
     labels,
     average_tokens_across_devices: bool = False,
+    use_l1_loss: bool = False,
     **kwargs,
 ):
     """
@@ -179,6 +184,7 @@ def object_detection_loss(
         assigned_scores=assigned_scores,
         assigned_sigmas=assigned_sigmas,
         mask_positive=assigned_labels != num_classes,
+        use_l1_loss=use_l1_loss,
     )
 
     divisor = assigned_scores.sum()
