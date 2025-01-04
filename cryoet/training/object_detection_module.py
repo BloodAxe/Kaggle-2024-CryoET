@@ -110,6 +110,8 @@ class ObjectDetectionModel(L.LightningModule):
         score_thresholds = np.linspace(0.14, 1.0, 20, endpoint=False) ** 2
 
         for study_name in self.trainer.datamodule.valid_studies:
+            print("Processing", study_name)
+
             preds = self.validation_predictions.get(study_name, None)
             preds = all_gather(preds)
             preds = [p for p in preds if p is not None]
@@ -121,6 +123,7 @@ class ObjectDetectionModel(L.LightningModule):
                 accumulated_predictions += p
 
             scores, offsets = accumulated_predictions.merge_()
+            print("Merge done")
 
             # Save averaged heatmap for further postprocessing hyperparam tuning
             if self.trainer.is_global_zero:
@@ -152,6 +155,8 @@ class ObjectDetectionModel(L.LightningModule):
                 submission["x"].append(float(coord[0]))
                 submission["y"].append(float(coord[1]))
                 submission["z"].append(float(coord[2]))
+
+            print("Added predictions for", study_name, "to dataframe")
 
         submission = pd.DataFrame.from_dict(submission)
 
