@@ -293,10 +293,6 @@ def decode_detections_with_nms(
 
         print(f"Predictions for class {class_index}: ", torch.count_nonzero(class_mask).item())
 
-        iou = batch_pairwise_keypoints_iou(
-            class_centers[None, ...], class_centers[None, ...], torch.full((class_centers.size(0),), sigma_value)
-        ).squeeze(0)
-
         for i in range(class_scores.size(0)):
             if suppressed[i]:
                 continue
@@ -304,14 +300,9 @@ def decode_detections_with_nms(
             keep_indices.append(i)
 
             # Suppress detections whose IoU with i is above threshold
+            iou = keypoint_similarity(class_centers[i : i + 1, :], class_centers, sigma_value)
 
-            # Precompute pairwise IoU = exp(-(||x_i - x_j||^2) / (2 * sigma^2))
-            # shape of d: [Nc, Nc]
-            # d = ((class_centers[i : i + 1, :] - class_centers) ** 2).sum(dim=-1)
-            # e = d / (2 * sigma_value**2)
-            # iou = torch.exp(-e)  # shape: [Nc, Nc]
-
-            high_iou_mask = iou[i] > iou_threshold
+            high_iou_mask = iou > iou_threshold
             suppressed |= high_iou_mask
 
         print(f"Predictions for class {class_index} after NMS", len(keep_indices))
