@@ -54,7 +54,7 @@ def main():
     if model_args.model_name == "segresnet":
         config = SegResNetForObjectDetectionConfig(window_size=model_args.window_size)
         model = SegResNetForObjectDetection(config)
-    if model_args.model_name == "segresnetv2":
+    elif model_args.model_name == "segresnetv2":
         config = SegResNetForObjectDetectionConfig(window_size=model_args.window_size)
         model = SegResNetForObjectDetectionV2(config)
     else:
