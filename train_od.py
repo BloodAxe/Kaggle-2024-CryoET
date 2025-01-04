@@ -75,7 +75,7 @@ def main():
             data_args=data_args,
             train_args=training_args,
             window_size=model_args.window_size,
-            stride=32,
+            stride=70,
         )
 
     model_module = ObjectDetectionModel(model, training_args)
