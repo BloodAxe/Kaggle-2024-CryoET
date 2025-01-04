@@ -132,7 +132,7 @@ class ObjectDetectionModel(L.LightningModule):
 
             self.log_heatmaps(study_name, scores)
 
-            topk_coords_px, topk_clses, topk_scores = decode_detections_with_nms(
+            topk_coords_px, topk_clases, topk_scores = decode_detections_with_nms(
                 scores,
                 offsets,
                 strides=accumulated_predictions.strides,
@@ -142,10 +142,10 @@ class ObjectDetectionModel(L.LightningModule):
                 use_centernet_nms=self.model_args.use_centernet_nms,
             )
             topk_scores = topk_scores.float().cpu().numpy()
-            top_coords = topk_coords_px.float().cpu().numpy() * ANGSTROMS_IN_PIXEL
-            topk_clses = topk_clses.cpu().numpy()
+            topk_coords = topk_coords_px.float().cpu().numpy() * ANGSTROMS_IN_PIXEL
+            topk_clases = topk_clases.cpu().numpy()
 
-            for cls, coord, score in zip(topk_clses, top_coords, topk_scores):
+            for cls, coord, score in zip(topk_clases, topk_coords, topk_scores):
                 submission["experiment"].append(study_name)
                 submission["particle_type"].append(CLASS_LABEL_TO_CLASS_NAME[int(cls)])
                 submission["score"].append(float(score))

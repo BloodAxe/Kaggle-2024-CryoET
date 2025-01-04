@@ -210,6 +210,7 @@ def object_detection_loss(
     return loss, loss_dict
 
 
+@torch.no_grad()
 def decode_detections_with_nms(
     scores: List[Tensor],
     offsets: List[Tensor],
