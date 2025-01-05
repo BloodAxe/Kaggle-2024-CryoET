@@ -1,6 +1,7 @@
-from typing import List, Tuple
+from typing import List, Tuple, Union
 
 import einops
+import numpy as np
 import torch
 from torch import Tensor
 
@@ -215,7 +216,7 @@ def decode_detections_with_nms(
     scores: List[Tensor],
     offsets: List[Tensor],
     strides: List[int],
-    min_score: float,
+    min_score: Union[float, List[float]],
     class_sigmas: List[float],
     iou_threshold: float = 0.25,
     use_centernet_nms: bool = False,
@@ -239,6 +240,11 @@ def decode_detections_with_nms(
     # e.g. scores shape = (C, D, H, W)
     num_classes = scores[0].shape[0]  # the 'C' dimension
 
+    # Allow min_score to be a single value or a list of values
+    min_score = np.asarray(min_score, dtype=np.float32).reshape(-1)
+    if len(min_score) == 1:
+        min_score = np.full(num_classes, min_score[0], dtype=np.float32)
+
     if use_centernet_nms:
         print(
             "Predictions above threshold before centernet nms:",
@@ -256,19 +262,8 @@ def decode_detections_with_nms(
 
     # max_scores: shape [D*H*W], class_labels: shape [D*H*W]
     max_scores = scores.max(dim=1)
-    class_labels = max_scores.indices
-    class_scores = max_scores.values
-
-    # Filter out low-scoring detections
-    mask = class_scores >= min_score
-    labels = class_labels[mask]  # shape: [M]
-    scores = class_scores[mask]  # shape: [M]
-    centers = centers[mask]  # shape: [M, 3]
-
-    # Sort remaining detections by descending score
-    scores, sort_idx = scores.sort(descending=True)
-    labels = labels[sort_idx]
-    centers = centers[sort_idx]
+    labels = max_scores.indices
+    scores = max_scores.values
 
     # Prepare final outputs
     final_labels_list = []
@@ -277,13 +272,19 @@ def decode_detections_with_nms(
 
     # NMS per class
     for class_index in range(num_classes):
-        # Pick out only detections of this class
-        class_mask = labels == class_index
-        if not class_mask.any():
+        class_mask = labels == class_index  # Pick out only detections of this class
+        score_mask = scores >= min_score[class_index]  # Filter out low-scoring detections
+        mask = class_mask & score_mask
+
+        if not mask.any():
             continue
 
-        class_centers = centers[class_mask]  # shape: [Nc, 3]
-        class_scores = scores[class_mask]  # shape: [Nc]
+        class_scores = scores[mask]  # shape: [Nc]
+        class_centers = centers[mask]  # shape: [Nc, 3]
+
+        # Sort remaining detections by descending score
+        class_scores, sort_idx = class_scores.sort(descending=True)
+        class_centers = class_centers[sort_idx]
 
         # Get the sigma for this class
         sigma_value = float(class_sigmas[class_index])
