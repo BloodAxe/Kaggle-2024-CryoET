@@ -92,7 +92,7 @@ def main():
         auto_insert_metric_name=False,
         save_top_k=5,
         filename=f"{model_args.model_name}_{model_args.window_size}_fold_{data_args.fold}"
-        + "_{step:03d}-score-{val/score:0.4f}-at-{val/apo-ferritin:0.3f}-{val/beta-galactosidase:0.3f}-{val/ribosome:0.3f}-{val/thyroglobulin:0.3f}-{val/virus-like-particle:0.3f}",
+        + "_{step:03d}-score-{val/score:0.4f}-at-{val/apo-ferritin_threshold:0.3f}-{val/beta-galactosidase_threshold:0.3f}-{val/ribosome_threshold:0.3f}-{val/thyroglobulin_threshold:0.3f}-{val/virus-like-particle_threshold:0.3f}",
         # + "_{step:03d}-score-{val/score:0.4f}",
     )
 

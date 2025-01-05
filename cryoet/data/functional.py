@@ -10,7 +10,8 @@ def normalize_volume_to_unit_range(volume):
 def compute_tiles(
     volume_shape: Tuple[int, int, int], window_size: Union[int, Tuple[int, int, int]], stride: Union[int, Tuple[int, int, int]]
 ) -> Iterable[Tuple[slice, slice, slice]]:
-    """Compute the slices for a sliding window over a volume.
+    """
+    Compute the slices for a sliding window over a volume.
     A method can output a last slice that is smaller than the window size.
     """
     if isinstance(window_size, int):
