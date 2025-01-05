@@ -195,7 +195,7 @@ class ObjectDetectionModel(L.LightningModule):
 
         print("Scores", list(zip(score_values, score_thresholds)))
 
-        self.log_plot(dict((key, (score_thresholds, per_class_scores[:, i])) for i, key in enumerate(keys)), "Threshold", "Score")
+        self.log_plots(dict((key, (score_thresholds, per_class_scores[:, i])) for i, key in enumerate(keys)), "Threshold", "Score")
 
         self.log_dict(
             {
@@ -211,11 +211,11 @@ class ObjectDetectionModel(L.LightningModule):
             rank_zero_only=False,
         )
 
-    def log_plot(self, plots: Dict[str, Tuple[np.ndarray, np.ndarray]], x_title, y_title):
+    def log_plots(self, plots: Dict[str, Tuple[np.ndarray, np.ndarray]], x_title, y_title):
         if self.trainer.is_global_zero:
             f = plt.figure()
 
-            for key, (x, y) in plots:
+            for key, (x, y) in plots.items():
                 plt.plot(x, y, label=key)
 
             plt.xlabel(x_title)
