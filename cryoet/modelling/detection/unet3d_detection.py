@@ -5,9 +5,11 @@ import torch.nn as nn
 import torch.nn.functional as F
 import math
 
-from .detection_head import ObjectDetectionHead
+from .detection_head import ObjectDetectionHead, ObjectDetectionOutput
 
 from transformers import PretrainedConfig
+
+from .functional import object_detection_loss
 
 
 class RepVGGBlock3D(nn.Module):
@@ -148,6 +150,8 @@ class UNet3DBackbone(nn.Module):
             prev_ch = out_ch
             self.encoders.append(stage)
 
+        self.strides = [2**i for i in range(self.num_down_stages)]
+
         # ------------------------------------------------------------------
         # Build the Decoder
         # ------------------------------------------------------------------
@@ -163,6 +167,7 @@ class UNet3DBackbone(nn.Module):
         # We only build "num_decoder_stages" of them.
 
         decoder_output_channels = []
+        self.decoder_strides = []
 
         for i in range(self.num_decoder_stages):
             up_in_ch = decode_channels[i]
@@ -173,9 +178,9 @@ class UNet3DBackbone(nn.Module):
             )
             decoder_output_channels.append(up_out_ch)
             self.decoders.append(block)
+            self.decoder_strides.append(self.strides[::-1][i])
 
         self.decoder_output_channels = decoder_output_channels
-        self.out_channels = self.decoder_output_channels[-1]
 
     def forward(self, x: torch.Tensor) -> torch.Tensor:
         skips = []
@@ -194,12 +199,14 @@ class UNet3DBackbone(nn.Module):
         skips = skips[::-1]
         out = skips[0]
 
+        out_features = []
         for i, dec_stage in enumerate(self.decoders):
             # Concatenate skip from shallower level
             skip = skips[i + 1]  # i+1 is "one level shallower" in reversed list
             out = dec_stage(out, skip)
+            out_features.append(out)
 
-        return out
+        return out_features
 
 
 class UNet3DForObjectDetectionConfig(PretrainedConfig):
@@ -208,8 +215,8 @@ class UNet3DForObjectDetectionConfig(PretrainedConfig):
         in_channels=1,
         num_classes=5,
         encoder_channels=(16, 24, 32, 64, 96),
-        num_blocks_per_stage=(1, 1, 2, 2, 2),
-        num_blocks_per_decoder_stage=(1, 2, 2, 2),
+        num_blocks_per_stage=(1, 2, 3, 2, 2),
+        num_blocks_per_decoder_stage=(2, 2, 2, 2),
         **kwargs,
     ):
         super().__init__(**kwargs)
@@ -231,10 +238,37 @@ class UNet3DForObjectDetection(nn.Module):
             num_blocks_per_decoder_stage=config.num_blocks_per_decoder_stage,
         )
 
-        self.head = ObjectDetectionHead(
-            in_channels=self.backbone.out_channels, num_classes=config.num_classes, intermediate_channels=32, stride=1
+        self.heads = nn.ModuleList(
+            [
+                ObjectDetectionHead(
+                    in_channels=in_channels,
+                    num_classes=config.num_classes,
+                    intermediate_channels=48,
+                    offset_intermediate_channels=16,
+                    stride=stride,
+                )
+                for in_channels, stride in zip(self.backbone.decoder_output_channels, self.backbone.decoder_strides)
+            ]
         )
 
     def forward(self, volume, labels=None, **loss_kwargs):
         features = self.backbone(volume)
-        return self.head(features, labels, **loss_kwargs)
+
+        logits = []
+        offsets = []
+        strides = []
+        for i, head in enumerate(self.heads):
+            output = head(features[i], **loss_kwargs)
+            logits.append(output.logits)
+            offsets.append(output.offsets)
+            strides.append(head.stride)
+
+        if torch.jit.is_tracing():
+            return logits, offsets, strides
+
+        loss = None
+        loss_dict = None
+        if labels is not None:
+            loss, loss_dict = object_detection_loss(logits, offsets, strides, labels, **loss_kwargs)
+
+        return ObjectDetectionOutput(logits=logits, offsets=offsets, strides=strides, loss=loss, loss_dict=loss_dict)

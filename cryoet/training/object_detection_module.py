@@ -136,7 +136,6 @@ class ObjectDetectionModel(L.LightningModule):
                 accumulated_predictions += p
 
             scores, offsets = accumulated_predictions.merge_()
-            print("Merge done")
 
             # Save averaged heatmap for further postprocessing hyperparam tuning
             # if self.trainer.is_global_zero:

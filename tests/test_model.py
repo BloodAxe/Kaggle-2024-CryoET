@@ -42,5 +42,4 @@ def test_unet_3d():
 
     print("Model summary:", count_parameters(model, human_friendly=True))
     print("Input shape:", x.shape)
-    print("Output shape:", out.logits.shape)
-    # With decode_final_stride=2, we expect an output shape of [2, 2, 32, 32, 32].
+    print("Output shape:", [x.shape for x in out.logits])
