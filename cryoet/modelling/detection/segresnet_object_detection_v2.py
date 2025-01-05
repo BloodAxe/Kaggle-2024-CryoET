@@ -226,7 +226,7 @@ class SegResNetForObjectDetectionV2(nn.Module):
         if torch.jit.is_tracing():
             logits4, offsets4 = output4
             logits2, offsets2 = output2
-            return (logits4, logits2), (offsets4, offsets2), (self.head4.stride, self.head2.stride)
+            return (logits4, logits2), (offsets4, offsets2)
 
         logits = [output4.logits, output2.logits]
         offsets = [output4.offsets, output2.offsets]
