@@ -2,15 +2,17 @@ from pathlib import Path
 
 import torch
 
-from cryoet.modelling.detection.segresnet_object_detection import SegResNetForObjectDetectionConfig, SegResNetForObjectDetection
-from cryoet.modelling.segresnet_point_detection import SegResNetForPointDetection, SegResNetForPointDetectionConfig
+from cryoet.modelling.detection.segresnet_object_detection_v2 import (
+    SegResNetForObjectDetectionV2,
+    SegResNetForObjectDetectionConfig,
+)
 
 
 def trace_and_save(checkpoint_path, traced_checkpoint_path, window_size=96):
     checkpoint = torch.load(str(checkpoint_path), weights_only=True)
 
     config = SegResNetForObjectDetectionConfig(window_size=window_size)
-    model = SegResNetForObjectDetection(config).cuda().eval()
+    model = SegResNetForObjectDetectionV2(config).cuda().eval()
     model_state_dict = checkpoint["state_dict"]
     model_state_dict = {k.replace("model.", ""): v for k, v in model_state_dict.items()}
 
