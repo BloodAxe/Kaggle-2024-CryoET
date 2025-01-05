@@ -246,15 +246,7 @@ def decode_detections_with_nms(
         min_score = np.full(num_classes, min_score[0], dtype=np.float32)
 
     if use_centernet_nms:
-        print(
-            "Predictions above threshold before centernet nms:",
-            [torch.count_nonzero(score >= min_score).item() for score in scores],
-        )
         scores = [centernet_heatmap_nms(s.unsqueeze(0)).squeeze(0) for s in scores]
-        print(
-            "Predictions above threshold after centernet nms:",
-            [torch.count_nonzero(score >= min_score).item() for score in scores],
-        )
 
     scores, centers, _ = decode_detections([s.unsqueeze(0) for s in scores], [o.unsqueeze(0) for o in offsets], strides)
     scores = scores.squeeze(0)
