@@ -22,13 +22,14 @@ LB: 0.736 (Score 0.1, TopK 2048 per class)
 | 4    | 0.8264 | 0.1584    |
 
 CV: 0.803 (Mean threshold 0.17278)
+Do not fit into time limit
 
-# Baseline Detection SegResNet + EMA
+# Baseline SegResNetV2
 
-| Fold | Score  | Threshold |
-|------|--------|-----------|
-| 0    | 0.8035 | 0.2343    |
-| 1    | 0.7851 | 0.1260    |
-| 2    | 0. | 0.0625    |
-| 3    | 0. | 0.0900    |
-| 4    | 0. | 0.0900    |
+| Fold | Score | Apo-Ferritin Threshold |
+|------|-------|------------------------|
+| 0    |       |                        |
+| 1    |       |                        |
+| 2    |       |                        |
+| 3    |       |                        |
+| 4    |       |                        |

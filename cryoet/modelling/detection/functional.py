@@ -1,4 +1,4 @@
-from typing import List, Tuple, Union
+from typing import List, Tuple, Union, Optional
 
 import einops
 import numpy as np
@@ -220,6 +220,7 @@ def decode_detections_with_nms(
     class_sigmas: List[float],
     iou_threshold: float = 0.25,
     use_centernet_nms: bool = False,
+    pre_nms_top_k: Optional[int] = None,
 ) -> Tuple[torch.Tensor, torch.Tensor, torch.Tensor]:
     """
     Decode detections from scores and centers with NMS
@@ -276,9 +277,12 @@ def decode_detections_with_nms(
         class_scores = scores[mask]  # shape: [Nc]
         class_centers = centers[mask]  # shape: [Nc, 3]
 
-        # Sort remaining detections by descending score
-        class_scores, sort_idx = class_scores.sort(descending=True)
-        class_centers = class_centers[sort_idx]
+        if pre_nms_top_k is not None and len(class_scores) > pre_nms_top_k:
+            class_scores, sort_idx = torch.topk(class_scores, pre_nms_top_k, largest=True, sorted=True)
+            class_centers = class_centers[sort_idx]
+        else:
+            class_scores, sort_idx = class_scores.sort(descending=True)
+            class_centers = class_centers[sort_idx]
 
         # Run a simple “greedy” NMS
         keep_indices = []

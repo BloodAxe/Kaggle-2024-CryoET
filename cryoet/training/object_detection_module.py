@@ -150,6 +150,7 @@ class ObjectDetectionModel(L.LightningModule):
                 min_score=score_thresholds.min(),
                 iou_threshold=0.6,
                 use_centernet_nms=self.model_args.use_centernet_nms,
+                pre_nms_top_k=16536,
             )
             topk_scores = topk_scores.float().cpu().numpy()
             topk_coords = topk_coords_px.float().cpu().numpy() * ANGSTROMS_IN_PIXEL
