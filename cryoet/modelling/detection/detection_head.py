@@ -45,7 +45,7 @@ class ObjectDetectionHead(nn.Module):
         )
 
         self.cls_head = nn.Conv3d(intermediate_channels, num_classes, kernel_size=1, padding=0)
-        self.offset_head = nn.Conv3d(intermediate_channels, 3, kernel_size=1, padding=0)
+        self.offset_head = nn.Conv3d(offset_intermediate_channels, 3, kernel_size=1, padding=0)
 
         self.stride = stride
 
