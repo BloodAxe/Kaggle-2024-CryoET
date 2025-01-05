@@ -24,7 +24,7 @@ class ModelArguments:
     window_size: int = field(default=96)
 
     use_centernet_nms: bool = field(
-        default=False, metadata={"help": "Enable CenterNet NMS when decoding. Relevant only for OD models."}
+        default=True, metadata={"help": "Enable CenterNet NMS when decoding. Relevant only for OD models."}
     )
 
 
