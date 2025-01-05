@@ -154,7 +154,7 @@ class ObjectDetectionModel(L.LightningModule):
                 strides=accumulated_predictions.strides,
                 class_sigmas=TARGET_SIGMAS,
                 min_score=score_thresholds.min(),
-                iou_threshold=0.5,
+                iou_threshold=0.6,
                 use_centernet_nms=self.model_args.use_centernet_nms,
             )
             topk_scores = topk_scores.float().cpu().numpy()
