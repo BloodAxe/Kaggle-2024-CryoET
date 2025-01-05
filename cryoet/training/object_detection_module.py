@@ -119,13 +119,8 @@ class ObjectDetectionModel(L.LightningModule):
         }
 
         for study_name in self.trainer.datamodule.valid_studies:
-            print("Processing", study_name)
-
             preds = self.validation_predictions.get(study_name, None)
-            print("Study present", preds is not None)
-
             preds = all_gather(preds)
-            print("Gather", len(preds))
 
             preds = [p for p in preds if p is not None]
             if len(preds) == 0:
