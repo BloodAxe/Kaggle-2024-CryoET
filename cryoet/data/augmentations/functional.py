@@ -4,7 +4,7 @@ import numpy as np
 
 import numpy as np
 from scipy.ndimage import affine_transform
-from typing import Tuple
+from typing import Tuple, Optional
 
 import numpy as np
 from scipy.ndimage import affine_transform
@@ -223,21 +223,35 @@ def random_rotate90_volume(volume, labels):
     return np.ascontiguousarray(volume), np.ascontiguousarray(labels)
 
 
-def random_flip_volume(volume, labels):
+def random_flip_volume(volume: np.ndarray, heatmap: Optional[np.ndarray] = None, centers: Optional[np.ndarray] = None):
     """Randomly flip the volume and labels.
     :param volume: The volume to rotate. Shape: (D, H, W)
-    :param labels: The labels to rotate. Shape: (C, D, H, W)
+    :param heatmap: The labels to rotate. Shape: (C, D, H, W)
+    :param centers: The centers to rotate. Shape: (N, 3). Each row is (x, y, z)
     """
+    if centers is not None:
+        centers = centers.copy()
+
     if random.random() < 0.5:
         volume = np.flip(volume, axis=0)
-        labels = np.flip(labels, axis=1)
+        if heatmap is not None:
+            heatmap = np.flip(heatmap, axis=1)
+
+        if centers is not None:
+            centers[:, 2] = (volume.shape[0] - 1) - centers[:, 2]
 
     if random.random() < 0.5:
         volume = np.flip(volume, axis=1)
-        labels = np.flip(labels, axis=2)
+        if heatmap is not None:
+            heatmap = np.flip(heatmap, axis=2)
+        if centers is not None:
+            centers[:, 1] = (volume.shape[1] - 1) - centers[:, 1]
 
     if random.random() < 0.5:
         volume = np.flip(volume, axis=2)
-        labels = np.flip(labels, axis=3)
+        if heatmap is not None:
+            heatmap = np.flip(heatmap, axis=3)
+        if centers is not None:
+            centers[:, 0] = (volume.shape[2] - 1) - centers[:, 0]
 
-    return np.ascontiguousarray(volume), np.ascontiguousarray(labels)
+    return dict(volume=np.ascontiguousarray(volume), heatmap=heatmap, centers=centers)

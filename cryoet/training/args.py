@@ -41,10 +41,18 @@ class DataArguments:
     use_random_crops: bool = field(default=False)
     use_instance_crops: bool = field(default=False)
 
+    use_random_flips: bool = field(default=True)
+
     train_modes: str = field(default="denoised")
     valid_modes: str = field(default="denoised")
 
     num_crops_per_study: int = field(default=256)
+
+    scale_limit: float = field(default=0.05)
+
+    z_rotation_limit: float = field(default=360.0)
+    y_rotation_limit: float = field(default=0.0)
+    x_rotation_limit: float = field(default=0.0)
 
 
 @dataclass

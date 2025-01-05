@@ -3,6 +3,7 @@ import numpy as np
 from .detection_dataset import CryoETObjectDetectionDataset
 from .mixin import ObjectDetectionMixin
 from ..functional import compute_tiles
+from ...training.args import DataArguments
 
 
 class SlidingWindowCryoETObjectDetectionDataset(CryoETObjectDetectionDataset, ObjectDetectionMixin):
@@ -16,14 +17,14 @@ class SlidingWindowCryoETObjectDetectionDataset(CryoETObjectDetectionDataset, Ob
         root,
         study,
         mode,
+        data_args: DataArguments,
         split="train",
-        random_rotate: bool = False,
     ):
         super().__init__(root, study, mode, split)
         self.window_size = window_size
         self.stride = stride
         self.tiles = list(compute_tiles(self.volume_data.shape, window_size, stride))
-        self.random_rotate = random_rotate
+        self.data_args = data_args
 
     def __getitem__(self, idx):
         tile = self.tiles[idx]  # tiles are z y x order

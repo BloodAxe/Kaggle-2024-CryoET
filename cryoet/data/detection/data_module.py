@@ -62,7 +62,7 @@ class ObjectDetectionDataModule(L.LightningDataModule):
                         study=train_study,
                         mode=mode,
                         split="train",
-                        random_rotate=True,
+                        data_args=self.data_args,
                     )
                     train_datasets.append(sliding_dataset)
 
@@ -74,7 +74,7 @@ class ObjectDetectionDataModule(L.LightningDataModule):
                         study=train_study,
                         mode=mode,
                         split="train",
-                        random_rotate=True,
+                        data_args=self.data_args,
                     )
                     train_datasets.append(random_crop_dataset)
 
@@ -86,7 +86,7 @@ class ObjectDetectionDataModule(L.LightningDataModule):
                         study=train_study,
                         mode=mode,
                         split="train",
-                        random_rotate=True,
+                        data_args=self.data_args,
                     )
                     train_datasets.append(crop_around_dataset)
 
@@ -102,7 +102,7 @@ class ObjectDetectionDataModule(L.LightningDataModule):
                     study=study_name,
                     mode=mode,
                     split="train",
-                    random_rotate=False,
+                    data_args=self.data_args,
                 )
                 valid_datasets.append(dataset)
 

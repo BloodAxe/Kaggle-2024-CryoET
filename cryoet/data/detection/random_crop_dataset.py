@@ -3,9 +3,11 @@ import random
 from cryoet.data.augmentations.functional import (
     rotate_and_scale_volume,
     get_points_mask_within_cube,
+    random_flip_volume,
 )
 from .detection_dataset import CryoETObjectDetectionDataset
 from .mixin import ObjectDetectionMixin
+from ...training.args import DataArguments
 
 
 class RandomCropForPointDetectionDataset(CryoETObjectDetectionDataset, ObjectDetectionMixin):
@@ -16,27 +18,27 @@ class RandomCropForPointDetectionDataset(CryoETObjectDetectionDataset, ObjectDet
         study,
         mode,
         num_crops: int,
+        data_args: DataArguments,
         split="train",
-        random_rotate: bool = False,
     ):
         super().__init__(root=root, study=study, mode=mode, split=split)
         self.window_size = window_size
         self.num_crops = num_crops
-        self.random_rotate = random_rotate
+        self.data_args = data_args
 
     def __getitem__(self, idx):
         centers_px = self.object_centers_px  # x y z
         radii_px = self.object_radii_px
         object_labels = self.object_labels
 
-        scale = 1 + (random.random() - 0.5) / 10.0
+        scale = random.uniform(1 - self.data_args.scale_limit, 1 + self.data_args.scale_limit)
         volume, centers_px = rotate_and_scale_volume(
             volume=self.volume_data,
             points=centers_px,
             angles=(
-                random.random() * 360,
-                0,  # random.random() * 360,
-                0,  # random.random() * 360
+                random.uniform(-self.data_args.z_rotation_limit, self.data_args.z_rotation_limit),
+                random.uniform(-self.data_args.y_rotation_limit, self.data_args.y_rotation_limit),
+                random.uniform(-self.data_args.x_rotation_limit, self.data_args.x_rotation_limit),
             ),
             scale=scale,
             center_zyx=(
@@ -55,6 +57,10 @@ class RandomCropForPointDetectionDataset(CryoETObjectDetectionDataset, ObjectDet
         centers_px = centers_px[keep_mask].copy()
         radii_px = radii_px[keep_mask].copy()
         object_labels = object_labels[keep_mask].copy()
+
+        if self.data_args.use_random_flips:
+            data = random_flip_volume(volume, centers=centers_px)
+            volume, centers_px = data["volume"], data["centers"]
 
         data = self.convert_to_dict(
             volume=volume,
