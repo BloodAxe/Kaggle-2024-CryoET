@@ -272,8 +272,10 @@ def decode_detections_with_nms(
 
     # NMS per class
     for class_index in range(num_classes):
+        sigma_value = float(class_sigmas[class_index])  # Get the sigma for this class
+        score_threshold = float(min_score[class_index])
         class_mask = labels == class_index  # Pick out only detections of this class
-        score_mask = scores >= min_score[class_index]  # Filter out low-scoring detections
+        score_mask = scores >= score_threshold  # Filter out low-scoring detections
         mask = class_mask & score_mask
 
         if not mask.any():
@@ -285,9 +287,6 @@ def decode_detections_with_nms(
         # Sort remaining detections by descending score
         class_scores, sort_idx = class_scores.sort(descending=True)
         class_centers = class_centers[sort_idx]
-
-        # Get the sigma for this class
-        sigma_value = float(class_sigmas[class_index])
 
         # Run a simple “greedy” NMS
         keep_indices = []
