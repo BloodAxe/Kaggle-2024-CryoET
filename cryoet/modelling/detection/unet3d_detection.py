@@ -217,6 +217,8 @@ class UNet3DForObjectDetectionConfig(PretrainedConfig):
         encoder_channels=(16, 24, 32, 64, 96),
         num_blocks_per_stage=(1, 2, 3, 2, 2),
         num_blocks_per_decoder_stage=(2, 2, 2, 2),
+        intermediate_channels=48,
+        offset_intermediate_channels=16,
         **kwargs,
     ):
         super().__init__(**kwargs)
@@ -225,6 +227,8 @@ class UNet3DForObjectDetectionConfig(PretrainedConfig):
         self.encoder_channels = encoder_channels
         self.num_blocks_per_stage = num_blocks_per_stage
         self.num_blocks_per_decoder_stage = num_blocks_per_decoder_stage
+        self.intermediate_channels = intermediate_channels
+        self.offset_intermediate_channels = offset_intermediate_channels
 
 
 class UNet3DForObjectDetection(nn.Module):
@@ -243,8 +247,8 @@ class UNet3DForObjectDetection(nn.Module):
                 ObjectDetectionHead(
                     in_channels=in_channels,
                     num_classes=config.num_classes,
-                    intermediate_channels=48,
-                    offset_intermediate_channels=16,
+                    intermediate_channels=config.intermediate_channels,
+                    offset_intermediate_channels=config.offset_intermediate_channels,
                     stride=stride,
                 )
                 for in_channels, stride in zip(self.backbone.decoder_output_channels, self.backbone.decoder_strides)

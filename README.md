@@ -35,3 +35,32 @@ Do not fit into time limit
 | 4    | 0.8121 | 0.1584                 | 0.1945                       | 0.23           | 0.1585          | 0.403         | /home/bloodaxe/develop/Kaggle-2024-CryoET/runs/od_segresnetv2_fold_4_rc_ic_denoised/lightning_logs/version_0/checkpoints/segresnetv2_96_fold_4_1378-score-0.8121-at-0.941-0.676-0.872-0.761-0.999.ckpt
 
 CV: 0.81198
+
+LB: [0.20, 0.20, 0.20, 0.20, 0.5] -> 
+LB: [0.20, 0.20, 0.20, 0.20, 0.6] -> 
+LB: [0.20, 0.20, 0.20, 0.20, 0.7] -> 
+LB: [0.15, 0.20, 0.20, 0.20, 0.7] -> 
+LB: [0.25, 0.20, 0.20, 0.20, 0.7] -> 
+
+# Ideas
+
+## Data
+
+- External data
+- Flips augmentations
+- Noise augmentations
+- Copy-paste & random erase
+
+## Models
+
+- Bigger models
+
+## Training
+
+- Knowledge distillation
+- LR & WD Tuning
+
+
+## Postprocessing
+
+- Winner takes all (current) vs multiple classes per anchor

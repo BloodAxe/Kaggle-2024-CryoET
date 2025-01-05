@@ -62,6 +62,16 @@ def main():
     elif model_args.model_name == "unet3d":
         config = UNet3DForObjectDetectionConfig(window_size=model_args.window_size)
         model = UNet3DForObjectDetection(config)
+    elif model_args.model_name == "unet3d-fat":
+        config = UNet3DForObjectDetectionConfig(
+            encoder_channels=[32, 64, 128, 256],
+            num_blocks_per_stage=(2, 3, 4, 6),
+            num_blocks_per_decoder_stage=(2, 2, 2),
+            intermediate_channels=64,
+            offset_intermediate_channels=16,
+            window_size=model_args.window_size,
+        )
+        model = UNet3DForObjectDetection(config)
     else:
         raise ValueError(f"Unknown model name: {model_args.model_name}")
 
