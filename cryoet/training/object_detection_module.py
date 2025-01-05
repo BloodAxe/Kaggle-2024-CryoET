@@ -109,6 +109,15 @@ class ObjectDetectionModel(L.LightningModule):
         )
         score_thresholds = np.linspace(0.14, 1.0, 20, endpoint=False) ** 2
 
+        weights = {
+            "apo-ferritin": 1,
+            "beta-amylase": 0,
+            "beta-galactosidase": 2,
+            "ribosome": 1,
+            "thyroglobulin": 2,
+            "virus-like-particle": 1,
+        }
+
         for study_name in self.trainer.datamodule.valid_studies:
             print("Processing", study_name)
 
@@ -191,11 +200,13 @@ class ObjectDetectionModel(L.LightningModule):
         best_index_per_class = np.argmax(per_class_scores, axis=0)  # [class]
         best_threshold_per_class = np.array([score_thresholds[i] for i in best_index_per_class])  # [class]
         best_score_per_class = np.array([per_class_scores[i, j] for j, i in enumerate(best_index_per_class)])  # [class]
-        averaged_score = np.sum(best_score_per_class) / 7  # weights.sum()
+        averaged_score = np.sum([weights[k] * best_score_per_class[i] for i, k in enumerate(keys)]) / sum(weights.values())
 
         print("Scores", list(zip(score_values, score_thresholds)))
 
-        self.log_plots(dict((key, (score_thresholds, per_class_scores[:, i])) for i, key in enumerate(keys)), "Threshold", "Score")
+        self.log_plots(
+            dict((key, (score_thresholds, per_class_scores[:, i])) for i, key in enumerate(keys)), "Threshold", "Score"
+        )
 
         self.log_dict(
             {
