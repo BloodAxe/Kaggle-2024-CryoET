@@ -88,6 +88,7 @@ def main():
         save_top_k=5,
         filename=f"{model_args.model_name}_{model_args.window_size}_fold_{data_args.fold}"
         + "_{step:03d}-score-{val/score:0.4f}-threshold-{val/threshold:0.4f}",
+        # + "_{step:03d}-score-{val/score:0.4f}",
     )
 
     loggers = []

@@ -1,5 +1,5 @@
 import os
-from typing import Optional, Any, Dict, List
+from typing import Optional, Any, Dict, List, Tuple
 
 import lightning as L
 import numpy as np
@@ -182,18 +182,26 @@ class ObjectDetectionModel(L.LightningModule):
             score_values.append(s[0])
             score_details.append(s[1])
 
-        best_score = np.argmax(score_values)
+        keys = list(score_details[0].keys())
+        per_class_scores = []
+        for scores_dict in score_details:
+            per_class_scores.append([scores_dict[k] for k in keys])
+        per_class_scores = np.array(per_class_scores)  # [threshold, class]
+
+        best_index_per_class = np.argmax(per_class_scores, axis=0)  # [class]
+        best_threshold_per_class = np.array([score_thresholds[i] for i in best_index_per_class])  # [class]
+        best_score_per_class = np.array([per_class_scores[i, j] for j, i in enumerate(best_index_per_class)])  # [class]
+        averaged_score = np.sum(best_score_per_class) / 7  # weights.sum()
+
         print("Scores", list(zip(score_values, score_thresholds)))
 
-        extra_values = dict(("val/" + k, v) for k, v in score_details[best_score].items())
-
-        self.log_plot(score_thresholds, score_values, "Threshold", "Score")
+        self.log_plot(dict((key, (score_thresholds, per_class_scores[:, i])) for i, key in enumerate(keys)), "Threshold", "Score")
 
         self.log_dict(
             {
-                "val/score": score_values[best_score],
-                "val/threshold": score_thresholds[best_score],
-                **extra_values,
+                "val/score": averaged_score,
+                **{f"val/{k}": best_score_per_class[i] for i, k in enumerate(keys)},
+                **{f"val/{k}_threshold": best_threshold_per_class[i] for i, k in enumerate(keys)},
             },
             on_step=False,
             on_epoch=True,
@@ -203,13 +211,16 @@ class ObjectDetectionModel(L.LightningModule):
             rank_zero_only=False,
         )
 
-    def log_plot(self, x, y, x_title, y_title):
+    def log_plot(self, plots: Dict[str, Tuple[np.ndarray, np.ndarray]], x_title, y_title):
         if self.trainer.is_global_zero:
             f = plt.figure()
 
-            plt.plot(x, y)
+            for key, (x, y) in plots:
+                plt.plot(x, y, label=key)
+
             plt.xlabel(x_title)
             plt.ylabel(y_title)
+            plt.legend()
             plt.tight_layout()
 
             tb_logger = self._get_tb_logger(self.trainer)
