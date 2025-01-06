@@ -1,6 +1,6 @@
 torchrun --standalone --nproc-per-node=4 train_od.py \
 --model_name=maxvit_nano_unet25d --window_size=128 \
---per_device_train_batch_size=6 --learning_rate=1e-4 \
+--per_device_train_batch_size=2 --learning_rate=1e-4 \
 --adam_beta1=0.95 --adam_beta2=0.99 \
 --dataloader_num_workers=4 --dataloader_persistent_workers=True --dataloader_pin_memory=True \
 --y_rotation_limit=10 --x_rotation_limit=10 \

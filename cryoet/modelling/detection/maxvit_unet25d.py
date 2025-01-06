@@ -39,6 +39,16 @@ class Upsample25D(nn.Module):
         return self.up(x, output_size)
 
 
+class BilinearUpsample25D(nn.Module):
+    def __init__(self, in_channels, out_channels):
+        super().__init__()
+        # Transposed convolution with stride=2.
+        self.project = nn.Conv3d(in_channels, out_channels, kernel_size=3, padding=1, bias=False)
+
+    def forward(self, x, output_size=None):
+        return torch.nn.functional.interpolate(self.project(x), size=output_size, mode="trilinear", align_corners=False)
+
+
 class RepVGGBlock3D(nn.Module):
     """
     A 3D RepVGG-like block with:
@@ -83,7 +93,8 @@ class RepVGGBlock3D(nn.Module):
 class Unet25DDecoderStage(nn.Module):
     def __init__(self, in_channels, out_channels, skip_channels: int, num_blocks):
         super().__init__()
-        self.up = Upsample25D(in_channels, out_channels)
+        # self.up = Upsample25D(in_channels, out_channels)
+        self.up = BilinearUpsample25D(in_channels, out_channels)
 
         blocks = []
         in_channels = out_channels + skip_channels
