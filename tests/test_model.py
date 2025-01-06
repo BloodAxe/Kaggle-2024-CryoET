@@ -1,6 +1,7 @@
 import torch
 from pytorch_toolbelt.utils import count_parameters
 
+from cryoet.modelling.detection.dynunet import DynUNetForObjectDetectionConfig, DynUNetForObjectDetection
 from cryoet.modelling.detection.maxvit_unet25d import MaxVitUnet25d, MaxVitUnet25dConfig
 from cryoet.modelling.detection.segresnet_object_detection_v2 import (
     SegResNetForObjectDetectionConfig,
@@ -56,3 +57,14 @@ def test_maxvitunet25d():
     print("Model summary:", count_parameters(model, human_friendly=True))
     print("Input shape:", x.shape)
     print("Output shape:", [x.shape for x in out.logits])
+
+
+def test_dynunet():
+    config = DynUNetForObjectDetectionConfig()
+    model = DynUNetForObjectDetection(config)
+
+    x = torch.randn(2, 1, 96, 96, 96)
+    out = model(x)
+    print("Model summary:", count_parameters(model, human_friendly=True))
+    print("Input shape:", x.shape)
+    # print("Output shape:", [x.shape for x in out.logits])
