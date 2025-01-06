@@ -127,6 +127,32 @@ class MaxVitUnet25d(nn.Module):
 
         self.output_spec = self.encoder.get_output_spec()
 
+        self.down2 = nn.Sequential(
+            nn.Conv3d(self.output_spec.channels[0], self.output_spec.channels[0], kernel_size=3, stride=(2, 1, 1), padding=1),
+            nn.InstanceNorm3d(self.output_spec.channels[1]),
+            nn.SiLU(),
+        )
+
+        self.down4 = nn.Sequential(
+            nn.Conv3d(self.output_spec.channels[1], self.output_spec.channels[1], kernel_size=3, stride=(2, 1, 1), padding=1),
+            nn.InstanceNorm3d(self.output_spec.channels[1]),
+            nn.SiLU(),
+            nn.Conv3d(self.output_spec.channels[1], self.output_spec.channels[1], kernel_size=3, stride=(2, 1, 1), padding=1),
+        )
+
+        self.down8 = nn.Sequential(
+            nn.Conv3d(self.output_spec.channels[2], self.output_spec.channels[2], kernel_size=3, stride=(2, 1, 1), padding=1),
+            nn.InstanceNorm3d(self.output_spec.channels[1]),
+            nn.SiLU(),
+            nn.Conv3d(self.output_spec.channels[2], self.output_spec.channels[2], kernel_size=3, stride=(2, 1, 1), padding=1),
+        )
+        self.down16 = nn.Sequential(
+            nn.Conv3d(self.output_spec.channels[3], self.output_spec.channels[3], kernel_size=3, stride=(2, 1, 1), padding=1),
+            nn.InstanceNorm3d(self.output_spec.channels[1]),
+            nn.SiLU(),
+            nn.Conv3d(self.output_spec.channels[3], self.output_spec.channels[3], kernel_size=3, stride=(2, 1, 1), padding=1),
+        )
+
         self.decoder16 = Unet25DDecoderStage(
             in_channels=self.output_spec.channels[-1], out_channels=128, skip_channels=self.output_spec.channels[-2], num_blocks=2
         )
@@ -176,6 +202,12 @@ class MaxVitUnet25d(nn.Module):
 
         # Run decoder
         fm2, fm4, fm8, fm16, fm32 = feature_maps
+
+        fm2 = self.down2(fm2)
+        fm4 = self.down4(fm4)
+        fm8 = self.down8(fm8)
+        fm16 = self.down16(fm16)
+
         out16 = self.decoder16(fm32, fm16)
         out8 = self.decoder8(out16, fm8)
         out4 = self.decoder4(out8, fm4)
