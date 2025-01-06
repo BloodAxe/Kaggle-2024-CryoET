@@ -150,7 +150,7 @@ class MaxVitUnet25d(nn.Module):
 
     def forward(self, volume, labels=None, **loss_kwargs):
         B, C, D, H, W = volume.size()
-        print(volume.size())
+        # print(volume.size())
         volume_reshaped = einops.rearrange(volume, "B C D H W -> (B D) C H W")
 
         if self.use_checkpointing and not torch.jit.is_tracing():
