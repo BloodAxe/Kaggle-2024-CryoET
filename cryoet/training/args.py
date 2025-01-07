@@ -54,6 +54,11 @@ class DataArguments:
     y_rotation_limit: float = field(default=0.0)
     x_rotation_limit: float = field(default=0.0)
 
+    random_erase_prob: float = field(default=0.0)
+
+    copy_paste_prob: float = field(default=0.0)
+    copy_paste_limit: int = field(default=1)
+
 
 @dataclass
 class MyTrainingArguments(TrainingArguments):

@@ -255,3 +255,44 @@ def random_flip_volume(volume: np.ndarray, heatmap: Optional[np.ndarray] = None,
             centers[:, 0] = (volume.shape[2] - 1) - centers[:, 0]
 
     return dict(volume=np.ascontiguousarray(volume), heatmap=heatmap, centers=centers)
+
+
+def erase_objects(volume: np.ndarray, centers_px: np.ndarray, radius_px: np.ndarray, labels: np.ndarray, mask: np.ndarray):
+    """
+    Erase objects from the volume and given centers.
+    Returns new volume, centers, radius and labels.
+    Areas that are erased are set to 0.
+
+    :param volume: The volume to erase objects from. Shape: (D, H, W)
+    :param centers_px: The centers of the objects to erase. Shape: (N, 3). Each row is (x, y, z)
+    :param radius_px: The radius of the objects to erase. Shape: (N,)
+    :param labels: The labels of the objects to erase. Shape: (N,)
+    :param mask: The keep points mask.
+    Note, if other points are inside the radius of point being removed - they are removed too.
+
+    """
+
+    # Compute a volume mask for erasion.
+    # Step 1 - build meshgrid of the volume
+    z, y, x = volume.shape
+    x, y, z = np.meshgrid(np.arange(x), np.arange(y), np.arange(z), indexing="ij")
+
+    grid = np.stack([x, y, z], axis=-1)
+    radius_sqr = radius_px**2
+
+    mask_volume = np.zeros_like(volume, dtype=bool)
+    for center, radius in zip(centers_px[mask], radius_px[mask]):
+        distances_sqr = np.sum((grid - center[None, None, None, :]) ** 2, axis=-1)
+        mask_volume |= distances_sqr < radius
+    volume[mask_volume] = 0
+
+    # Compute matrix of pairwise distances
+    distances_sqr = np.sum((centers_px[:, None] - centers_px[None, :]) ** 2, axis=-1)
+
+    # Update mask to remove points that are inside the radius of the point being removed
+    overlap_mask = distances_sqr < (radius_px[:, None]) ** 2
+
+    # mask out everything that overlaps
+    new_mask = mask & ~np.any(overlap_mask, axis=0)
+
+    return dict(volume=volume, centers=centers_px[new_mask], radius=radius_px[new_mask], labels=labels[new_mask])
