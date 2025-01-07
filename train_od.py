@@ -17,6 +17,7 @@ from cryoet.modelling.detection.maxvit_unet25d import MaxVitUnet25d, MaxVitUnet2
 from cryoet.modelling.detection.segresnet_object_detection import SegResNetForObjectDetection, SegResNetForObjectDetectionConfig
 from cryoet.modelling.detection.segresnet_object_detection_v2 import SegResNetForObjectDetectionV2
 from cryoet.modelling.detection.unet3d_detection import UNet3DForObjectDetection, UNet3DForObjectDetectionConfig
+from cryoet.modelling.detection.unetr import SwinUNETRForObjectDetection, SwinUNETRForObjectDetectionConfig
 
 from cryoet.training.args import MyTrainingArguments, ModelArguments, DataArguments
 from cryoet.training.ema import BetaDecay, EMACallback
@@ -80,6 +81,9 @@ def main():
             window_size=model_args.window_size,
         )
         model = UNet3DForObjectDetection(config)
+    elif model_args.model_name == "unetr":
+        config = SwinUNETRForObjectDetectionConfig()
+        model = SwinUNETRForObjectDetection(config)
     else:
         raise ValueError(f"Unknown model name: {model_args.model_name}")
 

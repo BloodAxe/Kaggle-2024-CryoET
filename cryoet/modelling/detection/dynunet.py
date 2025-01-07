@@ -82,7 +82,7 @@ class DynUNetForObjectDetection(nn.Module):
             upsample_kernel_size=strides[1:],
             norm_name=config.norm_name,
             deep_supervision=True,
-            deep_supr_num=2,
+            deep_supr_num=1,
         )
 
         self.head2 = ObjectDetectionHead(
@@ -92,28 +92,33 @@ class DynUNetForObjectDetection(nn.Module):
             intermediate_channels=48,
             offset_intermediate_channels=16,
         )
-        self.head4 = ObjectDetectionHead(
-            in_channels=config.out_channels,
-            num_classes=config.num_classes,
-            stride=4,
-            intermediate_channels=48,
-            offset_intermediate_channels=16,
-        )
+        # self.head4 = ObjectDetectionHead(
+        #     in_channels=config.out_channels,
+        #     num_classes=config.num_classes,
+        #     stride=4,
+        #     intermediate_channels=48,
+        #     offset_intermediate_channels=16,
+        # )
 
     def forward(self, volume, labels=None, **loss_kwargs):
-        fm4, fm2 = self.backbone(volume)
+        [fm2] = self.backbone(volume)
 
-        output4 = self.head4(fm4)
+        # output4 = self.head4(fm4)
         output2 = self.head2(fm2)
 
         if torch.jit.is_tracing():
-            logits4, offsets4 = output4
+            # logits4, offsets4 = output4
+            # return (logits4, logits2), (offsets4, offsets2)
             logits2, offsets2 = output2
-            return (logits4, logits2), (offsets4, offsets2)
+            return (logits2,), (offsets2,)
 
-        logits = [output4.logits, output2.logits]
-        offsets = [output4.offsets, output2.offsets]
-        strides = [self.head4.stride, self.head2.stride]
+        logits = [output2.logits]
+        offsets = [output2.offsets]
+        strides = [self.head2.stride]
+
+        # logits = [output4.logits, output2.logits]
+        # offsets = [output4.offsets, output2.offsets]
+        # strides = [self.head4.stride, self.head2.stride]
 
         loss = None
         loss_dict = None

@@ -13,7 +13,7 @@ from transformers import (
 
 from cryoet.data.heatmap.point_detection_data_module import PointDetectionDataModule
 from cryoet.modelling.segresnet_point_detection import SegResNetForPointDetection, SegResNetForPointDetectionConfig
-from cryoet.modelling.unetr_point_detection import SwinUNETRForPointDetection, SwinUNETRForPointDetectionConfig
+from cryoet.modelling.detection.unetr_point_detection import SwinUNETRForPointDetection, SwinUNETRForPointDetectionConfig
 from cryoet.training.args import MyTrainingArguments, ModelArguments, DataArguments
 from cryoet.training.ema import BetaDecay, EMACallback
 from cryoet.training.point_detection_module import PointDetectionModel
