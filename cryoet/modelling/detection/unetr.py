@@ -1,12 +1,10 @@
 import torch
 from monai.networks.nets import SwinUNETR
 from torch import nn
-
-from cryoet.modelling.detection.detection_head import ObjectDetectionOutput
-from cryoet.modelling.detection.functional import object_detection_loss
-from cryoet.modelling.point_detection_head import PointDetectionHead
-
 from transformers import PretrainedConfig
+
+from cryoet.modelling.detection.detection_head import ObjectDetectionOutput, ObjectDetectionHead
+from cryoet.modelling.detection.functional import object_detection_loss
 
 
 class SwinUNETRForObjectDetectionConfig(PretrainedConfig):
@@ -43,8 +41,8 @@ class SwinUNETRFeatureExtractor(SwinUNETR):
         dec2 = self.decoder4(dec3, enc3)
         dec1 = self.decoder3(dec2, enc2)
         dec0 = self.decoder2(dec1, enc1)
-        out = self.decoder1(dec0, enc0)
-        return dec2, dec1
+        # out = self.decoder1(dec0, enc0)
+        return dec1, dec0
         # logits = self.out(out)
         # return logits
 
@@ -61,21 +59,33 @@ class SwinUNETRForObjectDetection(nn.Module):
             use_checkpoint=True,
         )
 
-        self.head = PointDetectionHead(in_channels=config.out_channels, num_classes=config.num_classes)
+        self.head2 = ObjectDetectionHead(
+            in_channels=48,
+            num_classes=config.num_classes,
+            stride=2,
+            intermediate_channels=48,
+            offset_intermediate_channels=16,
+        )
 
     def forward(self, volume, labels=None, **loss_kwargs):
-        fm4, fm2 = self.backbone(volume)
-        output4 = self.head4(fm4)
+        [fm4, fm2] = self.backbone(volume)
+
+        # output4 = self.head4(fm4)
         output2 = self.head2(fm2)
 
         if torch.jit.is_tracing():
-            logits4, offsets4 = output4
+            # logits4, offsets4 = output4
+            # return (logits4, logits2), (offsets4, offsets2)
             logits2, offsets2 = output2
-            return (logits4, logits2), (offsets4, offsets2)
+            return (logits2,), (offsets2,)
 
-        logits = [output4.logits, output2.logits]
-        offsets = [output4.offsets, output2.offsets]
-        strides = [self.head4.stride, self.head2.stride]
+        logits = [output2.logits]
+        offsets = [output2.offsets]
+        strides = [self.head2.stride]
+
+        # logits = [output4.logits, output2.logits]
+        # offsets = [output4.offsets, output2.offsets]
+        # strides = [self.head4.stride, self.head2.stride]
 
         loss = None
         loss_dict = None
