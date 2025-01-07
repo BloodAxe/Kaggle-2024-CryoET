@@ -57,6 +57,7 @@ class SwinUNETRForObjectDetection(nn.Module):
             out_channels=config.out_channels,
             feature_size=config.feature_size,
             use_checkpoint=True,
+            dropout_path_rate=0.1,
         )
 
         self.head2 = ObjectDetectionHead(
