@@ -1,28 +1,27 @@
-from dask.array import spacing
+import torch
 from monai.networks.nets import DynUNet
 from torch import nn
 
 from transformers import PretrainedConfig
 
+from cryoet.modelling.detection.detection_head import ObjectDetectionHead, ObjectDetectionOutput
+from cryoet.modelling.detection.functional import object_detection_loss
+
 
 class DynUNetForObjectDetectionConfig(PretrainedConfig):
     def __init__(
         self,
+        num_classes: int = 5,
         in_channels: int = 1,
         out_channels: int = 1,
-        kernel_size: int = 3,
-        strides: int = 2,
         norm_name: str = "instance",
-        deep_supervision: bool = True,
         **kwargs,
     ):
         super().__init__(**kwargs)
+        self.num_classes = num_classes
         self.in_channels = in_channels
         self.out_channels = out_channels
-        self.kernel_size = kernel_size
-        self.strides = strides
         self.norm_name = norm_name
-        self.deep_supervision = deep_supervision
 
 
 def get_kernels_strides(sizes, spacings):
@@ -57,23 +56,60 @@ def get_kernels_strides(sizes, spacings):
     return kernels, strides
 
 
+class DynUNetFeatureExtractor(DynUNet):
+
+    def forward(self, x):
+        _ = self.skip_layers(x)
+        # h = self.heads
+        # out = self.output_block(out)
+        return self.heads
+
+
 class DynUNetForObjectDetection(nn.Module):
     def __init__(self, config: DynUNetForObjectDetectionConfig):
         super().__init__()
-        k, s = get_kernels_strides([128, 128, 128], [1, 1, 1])
-        kernels = [[3, 3, 3]] * 4
-        strides = [[1, 1, 1]] + [[2, 2, 2]] * 3
+        kernels, strides = get_kernels_strides([128, 128, 128], [1, 1, 1])
 
-        self.model = DynUNet(
+        # kernels = [[3, 3, 3]] * 4
+        # strides = [[1, 1, 1]] + [[2, 2, 2]] * 3
+
+        self.backbone = DynUNetFeatureExtractor(
             spatial_dims=3,
             in_channels=config.in_channels,
             out_channels=config.out_channels,
-            strides=s,
-            upsample_kernel_size=s[:1],
-            kernel_size=k,
+            kernel_size=kernels,
+            strides=strides,
+            upsample_kernel_size=strides[1:],
             norm_name=config.norm_name,
-            deep_supervision=config.deep_supervision,
+            deep_supervision=True,
+            deep_supr_num=2,
         )
 
-    def forward(self, x):
-        return self.model(x)
+        self.head2 = ObjectDetectionHead(
+            in_channels=32, num_classes=config.num_classes, stride=2, intermediate_channels=32, offset_intermediate_channels=16
+        )
+        self.head4 = ObjectDetectionHead(
+            in_channels=64, num_classes=config.num_classes, stride=4, intermediate_channels=64, offset_intermediate_channels=32
+        )
+
+    def forward(self, volume, labels=None, **loss_kwargs):
+        fm4, fm2 = self.backbone(volume)
+
+        output4 = self.head4(fm4)
+        output2 = self.head2(fm2)
+
+        if torch.jit.is_tracing():
+            logits4, offsets4 = output4
+            logits2, offsets2 = output2
+            return (logits4, logits2), (offsets4, offsets2)
+
+        logits = [output4.logits, output2.logits]
+        offsets = [output4.offsets, output2.offsets]
+        strides = [self.head4.stride, self.head2.stride]
+
+        loss = None
+        loss_dict = None
+        if labels is not None:
+            loss, loss_dict = object_detection_loss(logits, offsets, strides, labels, **loss_kwargs)
+
+        return ObjectDetectionOutput(logits=logits, offsets=offsets, strides=strides, loss=loss, loss_dict=loss_dict)

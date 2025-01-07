@@ -41,7 +41,7 @@ LB: [0.20, 0.20, 0.20, 0.20, 0.6] -> 0.727
 LB: [0.20, 0.20, 0.20, 0.20, 0.7] -> 0.710
 LB: [0.15, 0.20, 0.20, 0.20, 0.5] -> 0.739
 LB: [0.25, 0.20, 0.20, 0.20, 0.5] -> 0.738
-LB: [0.20, 0.20, 0.20, 0.20, 0.4] -> 
+LB: [0.20, 0.20, 0.20, 0.20, 0.4] -> 0.745
 
 # Baseline SegResNetV2 Flip Augs & Slight rotation along Y & X
 
@@ -56,7 +56,15 @@ LB: [0.20, 0.20, 0.20, 0.20, 0.4] ->
 
 CV: 0.8244
 
-LB: [0.20, 0.20, 0.20, 0.20, 0.4] -> 
+LB: [0.20, 0.20, 0.20, 0.20, 0.4] -> 0.752
+LB: [0.15, 0.20, 0.20, 0.20, 0.4] -> 0.752
+LB: [0.20, 0.15, 0.20, 0.20, 0.4] -> 0.738
+LB: [0.20, 0.20, 0.15, 0.20, 0.4] -> 0.751
+LB: [0.20, 0.20, 0.20, 0.15, 0.4] -> 
+LB: [0.20, 0.20, 0.20, 0.25, 0.4] -> 
+LB: [0.20, 0.20, 0.25, 0.20, 0.4] -> 
+LB: [0.20, 0.25, 0.20, 0.20, 0.4] -> 
+
 
 python trace_od.py /home/bloodaxe/develop/Kaggle-2024-CryoET/runs/od_segresnetv2_fold_0_rc_ic_denoised/lightning_logs/version_1/checkpoints/segresnetv2_96_fold_0_2862-score-0.8466-at-0.234-0.325-0.278-0.234-0.759.ckpt /home/bloodaxe/develop/Kaggle-2024-CryoET/runs/od_segresnetv2_fold_1_rc_ic_denoised/lightning_logs/version_1/checkpoints/segresnetv2_96_fold_1_1590-score-0.8177-at-0.278-0.278-0.234-0.234-0.325.ckpt /home/bloodaxe/develop/Kaggle-2024-CryoET/runs/od_segresnetv2_fold_2_rc_ic_denoised/lightning_logs/version_1/checkpoints/segresnetv2_96_fold_2_1060-score-0.7953-at-0.430-0.234-0.278-0.234-0.489.ckpt /home/bloodaxe/develop/Kaggle-2024-CryoET/runs/od_segresnetv2_fold_3_rc_ic_denoised/lightning_logs/version_1/checkpoints/segresnetv2_96_fold_3_2438-score-0.8234-at-0.158-0.194-0.278-0.278-0.158.ckpt  /home/bloodaxe/develop/Kaggle-2024-CryoET/runs/od_segresnetv2_fold_4_rc_ic_denoised/lightning_logs/version_1/checkpoints/segresnetv2_96_fold_4_2226-score-0.8391-at-0.234-0.194-0.194-0.234-0.278.ckpt 
 
