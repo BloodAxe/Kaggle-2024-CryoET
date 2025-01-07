@@ -13,7 +13,7 @@ class DynUNetForObjectDetectionConfig(PretrainedConfig):
         self,
         num_classes: int = 5,
         in_channels: int = 1,
-        out_channels: int = 1,
+        out_channels: int = 64,
         norm_name: str = "instance",
         **kwargs,
     ):
@@ -86,10 +86,18 @@ class DynUNetForObjectDetection(nn.Module):
         )
 
         self.head2 = ObjectDetectionHead(
-            in_channels=32, num_classes=config.num_classes, stride=2, intermediate_channels=32, offset_intermediate_channels=16
+            in_channels=config.out_channels,
+            num_classes=config.num_classes,
+            stride=2,
+            intermediate_channels=48,
+            offset_intermediate_channels=16,
         )
         self.head4 = ObjectDetectionHead(
-            in_channels=64, num_classes=config.num_classes, stride=4, intermediate_channels=64, offset_intermediate_channels=32
+            in_channels=config.out_channels,
+            num_classes=config.num_classes,
+            stride=4,
+            intermediate_channels=48,
+            offset_intermediate_channels=16,
         )
 
     def forward(self, volume, labels=None, **loss_kwargs):

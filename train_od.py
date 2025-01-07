@@ -12,6 +12,7 @@ from transformers import (
 )
 
 from cryoet.data.detection.data_module import ObjectDetectionDataModule
+from cryoet.modelling.detection.dynunet import DynUNetForObjectDetectionConfig, DynUNetForObjectDetection
 from cryoet.modelling.detection.maxvit_unet25d import MaxVitUnet25d, MaxVitUnet25dConfig
 from cryoet.modelling.detection.segresnet_object_detection import SegResNetForObjectDetection, SegResNetForObjectDetectionConfig
 from cryoet.modelling.detection.segresnet_object_detection_v2 import SegResNetForObjectDetectionV2
@@ -66,6 +67,9 @@ def main():
     elif model_args.model_name == "maxvit_nano_unet25d":
         config = MaxVitUnet25dConfig(img_size=model_args.window_size)
         model = MaxVitUnet25d(config)
+    elif model_args.model_name == "dynunet":
+        config = DynUNetForObjectDetectionConfig()
+        model = DynUNetForObjectDetection(config)
     elif model_args.model_name == "unet3d-fat":
         config = UNet3DForObjectDetectionConfig(
             encoder_channels=[32, 64, 128, 256],
