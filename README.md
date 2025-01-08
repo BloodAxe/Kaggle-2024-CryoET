@@ -56,18 +56,44 @@ LB: [0.20, 0.20, 0.20, 0.20, 0.4] -> 0.745
 
 CV: 0.8244
 
-LB: [0.20, 0.20, 0.20, 0.20, 0.4] -> 0.752
 LB: [0.15, 0.20, 0.20, 0.20, 0.4] -> 0.752
+LB: [0.20, 0.20, 0.20, 0.20, 0.4] -> 0.752
+LB: [0.25, 0.20, 0.20, 0.20, 0.4] -> 0.752
+
 LB: [0.20, 0.15, 0.20, 0.20, 0.4] -> 0.738
+
+LB: [0.20, 0.25, 0.20, 0.20, 0.4] -> 0.758
+
 LB: [0.20, 0.20, 0.15, 0.20, 0.4] -> 0.751
+LB: [0.20, 0.20, 0.25, 0.20, 0.4] -> 0.752
+
 LB: [0.20, 0.20, 0.20, 0.15, 0.4] -> 0.740
 LB: [0.20, 0.20, 0.20, 0.25, 0.4] -> 0.758
-LB: [0.20, 0.20, 0.25, 0.20, 0.4] -> 0.752
-LB: [0.20, 0.25, 0.20, 0.20, 0.4] -> 0.758
-LB: [0.25, 0.20, 0.20, 0.20, 0.4] -> 
+
+
+LB: [0.20, 0.25, 0.20, 0.25, 0.4] -> 0.758
 
 
 python trace_od.py /home/bloodaxe/develop/Kaggle-2024-CryoET/runs/od_segresnetv2_fold_0_rc_ic_denoised/lightning_logs/version_1/checkpoints/segresnetv2_96_fold_0_2862-score-0.8466-at-0.234-0.325-0.278-0.234-0.759.ckpt /home/bloodaxe/develop/Kaggle-2024-CryoET/runs/od_segresnetv2_fold_1_rc_ic_denoised/lightning_logs/version_1/checkpoints/segresnetv2_96_fold_1_1590-score-0.8177-at-0.278-0.278-0.234-0.234-0.325.ckpt /home/bloodaxe/develop/Kaggle-2024-CryoET/runs/od_segresnetv2_fold_2_rc_ic_denoised/lightning_logs/version_1/checkpoints/segresnetv2_96_fold_2_1060-score-0.7953-at-0.430-0.234-0.278-0.234-0.489.ckpt /home/bloodaxe/develop/Kaggle-2024-CryoET/runs/od_segresnetv2_fold_3_rc_ic_denoised/lightning_logs/version_1/checkpoints/segresnetv2_96_fold_3_2438-score-0.8234-at-0.158-0.194-0.278-0.278-0.158.ckpt  /home/bloodaxe/develop/Kaggle-2024-CryoET/runs/od_segresnetv2_fold_4_rc_ic_denoised/lightning_logs/version_1/checkpoints/segresnetv2_96_fold_4_2226-score-0.8391-at-0.234-0.194-0.194-0.234-0.278.ckpt 
+
+
+# DynUnet
+
+
+| Fold | Score  | AFRT  | BGT   | RBSM  | TRGLB  | VLP    |
+|------|--------|-------|-------|-------|--------|--------|
+| 0    | 0.8354 | 0.278 | 0.278 | 0.126 | 0.278  | 0.194  | /home/bloodaxe/develop/Kaggle-2024-CryoET/runs/od_dynunet_fold_0_rc_ic_denoised/lightning_logs/version_0/checkpoints/dynunet_128_fold_0_1360-score-0.8354-at-0.278-0.278-0.126-0.278-0.194.ckpt 
+| 1    | 0.8050 | 0.278 | 0.126 | 0.126 | 0.234  | 0.430  | /home/bloodaxe/develop/Kaggle-2024-CryoET/runs/od_dynunet_fold_1_rc_ic_denoised/lightning_logs/version_0/checkpoints/dynunet_128_fold_1_1360-score-0.8050-at-0.278-0.126-0.126-0.234-0.430.ckpt 
+| 2    | 0.7980 | 0.278 | 0.126 | 0.158 | 0.126  | 0.278  | /home/bloodaxe/develop/Kaggle-2024-CryoET/runs/od_dynunet_fold_2_rc_ic_denoised/lightning_logs/version_0/checkpoints/dynunet_128_fold_2_2560-score-0.7980-at-0.278-0.126-0.158-0.126-0.278.ckpt 
+| 3    | 0.8420 | 0.430 | 0.278 | 0.126 | 0.234  | 0.072  | /home/bloodaxe/develop/Kaggle-2024-CryoET/runs/od_dynunet_fold_3_rc_ic_denoised/lightning_logs/version_0/checkpoints/dynunet_128_fold_3_880-score-0.8420-at-0.430-0.278-0.126-0.234-0.072.ckpt 
+| 4    | 0.8324 | 0.194 | 0.158 | 0.072 | 0.194  | 0.097  | /home/bloodaxe/develop/Kaggle-2024-CryoET/runs/od_dynunet_fold_4_rc_ic_denoised/lightning_logs/version_0/checkpoints/dynunet_128_fold_4_880-score-0.8324-at-0.194-0.158-0.072-0.194-0.097.ckpt 
+| Mean | 0,82   | 0,29  | 0,19  | 0,12  | 0,21   | 0,21   | 
+
+python trace_od_dynunet.py /home/bloodaxe/develop/Kaggle-2024-CryoET/runs/od_dynunet_fold_0_rc_ic_denoised/lightning_logs/version_0/checkpoints/dynunet_128_fold_0_1360-score-0.8354-at-0.278-0.278-0.126-0.278-0.194.ckpt  /home/bloodaxe/develop/Kaggle-2024-CryoET/runs/od_dynunet_fold_1_rc_ic_denoised/lightning_logs/version_0/checkpoints/dynunet_128_fold_1_1360-score-0.8050-at-0.278-0.126-0.126-0.234-0.430.ckpt /home/bloodaxe/develop/Kaggle-2024-CryoET/runs/od_dynunet_fold_2_rc_ic_denoised/lightning_logs/version_0/checkpoints/dynunet_128_fold_2_2560-score-0.7980-at-0.278-0.126-0.158-0.126-0.278.ckpt /home/bloodaxe/develop/Kaggle-2024-CryoET/runs/od_dynunet_fold_3_rc_ic_denoised/lightning_logs/version_0/checkpoints/dynunet_128_fold_3_880-score-0.8420-at-0.430-0.278-0.126-0.234-0.072.ckpt  /home/bloodaxe/develop/Kaggle-2024-CryoET/runs/od_dynunet_fold_4_rc_ic_denoised/lightning_logs/version_0/checkpoints/dynunet_128_fold_4_880-score-0.8324-at-0.194-0.158-0.072-0.194-0.097.ckpt 
+
+CV: 0.82 +- 0.019
+
+LB [0.20, 0.20, 0.20, 0.20, 0.35] -> 
 
 # Ideas
 
