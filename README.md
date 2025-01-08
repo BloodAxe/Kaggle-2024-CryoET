@@ -109,8 +109,8 @@ LB [0.20, 0.20, 0.20, 0.20, 0.35] ->
 ## Models
 
 - Bigger models
-- Stride 4 only
-- Stride 2 only
+- Stride 4 only - It seems that it is worse than using strides 4 & 2
+- Stride 2 only - It seems that it is worse than using strides 4 & 2
 - DynUnet
 
 ## Training
