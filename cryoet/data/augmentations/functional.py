@@ -258,7 +258,12 @@ def random_flip_volume(volume: np.ndarray, heatmap: Optional[np.ndarray] = None,
 
 
 def erase_objects(
-    volume: np.ndarray, centers_px: np.ndarray, radius_px: np.ndarray, labels: np.ndarray, mask: np.ndarray, remove_overlap=True
+    volume: np.ndarray,
+    centers_px: np.ndarray,
+    radius_px: np.ndarray,
+    labels: np.ndarray,
+    keep_mask: np.ndarray,
+    remove_overlap=True,
 ):
     """
     Erase objects from the volume and given centers.
@@ -269,21 +274,24 @@ def erase_objects(
     :param centers_px: The centers of the objects to erase. Shape: (N, 3). Each row is (x, y, z)
     :param radius_px: The radius of the objects to erase. Shape: (N,)
     :param labels: The labels of the objects to erase. Shape: (N,)
-    :param mask: The keep points mask.
+    :param keep_mask: The keep points mask.
     Note, if other points are inside the radius of point being removed - they are removed too.
 
     """
+    if len(centers_px) != len(radius_px) or len(centers_px) != len(labels) or len(centers_px) != len(keep_mask):
+        raise ValueError("centers_px, radius_px and labels must have the same length.")
 
     # Compute a volume mask for erasion.
     # Step 1 - build meshgrid of the volume
     z, y, x = volume.shape
-    x, y, z = np.meshgrid(np.arange(x), np.arange(y), np.arange(z), indexing="ij")
+    z, y, x = np.meshgrid(np.arange(z), np.arange(y), np.arange(x), indexing="ij")
 
     grid = np.stack([x, y, z], axis=-1)
     radius_sqr = radius_px**2
 
+    erase_mask = ~keep_mask
     mask_volume = np.zeros_like(volume, dtype=bool)
-    for center, radius_squared in zip(centers_px[mask], radius_sqr[mask]):
+    for center, radius_squared in zip(centers_px[erase_mask], radius_sqr[erase_mask]):
         distances_sqr = np.sum((grid - center[None, None, None, :]) ** 2, axis=-1)
         mask_volume |= distances_sqr < radius_squared
 
@@ -296,12 +304,13 @@ def erase_objects(
         np.fill_diagonal(distances_sqr_mask, False)
 
         # Update mask to remove points that are inside the radius of the point being removed
-        overlap_mask = np.any(distances_sqr_mask & mask[:, None], axis=0)
+        overlap_mask = np.any(distances_sqr_mask, axis=0) & keep_mask
 
         # mask out everything that overlaps
-        mask = mask & overlap_mask
+        erase_mask = erase_mask | overlap_mask
 
-    return dict(volume=volume, centers=centers_px[mask], radius=radius_px[mask], labels=labels[mask])
+    keep_mask = ~erase_mask
+    return dict(volume=volume, centers=centers_px[keep_mask], radius=radius_px[keep_mask], labels=labels[keep_mask])
 
 
 def random_erase_objects(volume: np.ndarray, centers_px: np.ndarray, radius_px: np.ndarray, labels: np.ndarray, prob: float):
