@@ -281,18 +281,21 @@ def erase_objects(volume: np.ndarray, centers_px: np.ndarray, radius_px: np.ndar
     radius_sqr = radius_px**2
 
     mask_volume = np.zeros_like(volume, dtype=bool)
-    for center, radius in zip(centers_px[mask], radius_px[mask]):
+    for center, radius_squared in zip(centers_px[mask], radius_sqr[mask]):
         distances_sqr = np.sum((grid - center[None, None, None, :]) ** 2, axis=-1)
-        mask_volume |= distances_sqr < radius
+        mask_volume |= distances_sqr < radius_squared
+
+    volume = volume.copy()
     volume[mask_volume] = 0
 
     # Compute matrix of pairwise distances
-    distances_sqr = np.sum((centers_px[:, None] - centers_px[None, :]) ** 2, axis=-1)
+    distances_sqr_mask = np.sum((centers_px[:, None] - centers_px[None, :]) ** 2, axis=-1) < radius_sqr[:, None]
+    np.fill_diagonal(distances_sqr_mask, False)
 
     # Update mask to remove points that are inside the radius of the point being removed
-    overlap_mask = distances_sqr < (radius_px[:, None]) ** 2
+    overlap_mask = np.any(distances_sqr_mask & mask[:, None], axis=0)
 
     # mask out everything that overlaps
-    new_mask = mask & ~np.any(overlap_mask, axis=0)
+    mask = mask & overlap_mask
 
-    return dict(volume=volume, centers=centers_px[new_mask], radius=radius_px[new_mask], labels=labels[new_mask])
+    return dict(volume=volume, centers=centers_px[mask], radius=radius_px[mask], labels=labels[mask])
