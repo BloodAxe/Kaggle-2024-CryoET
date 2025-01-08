@@ -302,6 +302,13 @@ def erase_objects(volume: np.ndarray, centers_px: np.ndarray, radius_px: np.ndar
 
 
 def random_erase_objects(volume: np.ndarray, centers_px: np.ndarray, radius_px: np.ndarray, labels: np.ndarray, prob: float):
-    mask = np.array([(random.random() < prob) for _ in range(len(centers_px))], dtype=bool)
-    data = erase_objects(volume, centers_px, radius_px, labels, mask)
+    """
+    :param volume: The volume to erase objects from. Shape: (D, H, W)
+    :param centers_px: The centers of the objects to erase. Shape: (N, 3). Each row is (x, y, z)
+    :param radius_px: The radius of the objects to erase. Shape: (N,)
+    :param labels: The labels of the objects to erase. Shape: (N,)
+    :param prob: The probability of erasing each object.
+    """
+    keep_mask = 1.0 - np.array([(random.random() < prob) for _ in range(len(centers_px))], dtype=bool)
+    data = erase_objects(volume, centers_px, radius_px, labels, keep_mask)
     return data["volume"], data["centers"], data["radius"], data["labels"]

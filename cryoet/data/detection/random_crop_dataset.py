@@ -1,12 +1,9 @@
 import random
 
-import numpy as np
-
 from cryoet.data.augmentations.functional import (
     rotate_and_scale_volume,
     get_points_mask_within_cube,
     random_flip_volume,
-    erase_objects,
     random_erase_objects,
 )
 from .detection_dataset import CryoETObjectDetectionDataset
