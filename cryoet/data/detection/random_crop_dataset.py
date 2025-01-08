@@ -7,6 +7,7 @@ from cryoet.data.augmentations.functional import (
     get_points_mask_within_cube,
     random_flip_volume,
     erase_objects,
+    random_erase_objects,
 )
 from .detection_dataset import CryoETObjectDetectionDataset
 from .mixin import ObjectDetectionMixin
@@ -66,9 +67,9 @@ class RandomCropForPointDetectionDataset(CryoETObjectDetectionDataset, ObjectDet
             volume, centers_px = data["volume"], data["centers"]
 
         if self.data_args.random_erase_prob > 0:
-            mask = np.array([(random.random() < self.data_args.random_erase_prob) for _ in range(len(centers_px))], dtype=bool)
-            data = erase_objects(volume, centers_px, radii_px, object_labels, mask)
-            volume, centers_px, radii_px, object_labels = data["volume"], data["centers"], data["radii"], data["labels"]
+            volume, centers_px, radii_px, object_labels = random_erase_objects(
+                volume, centers_px, radii_px, object_labels, self.data_args.random_erase_prob
+            )
 
         data = self.convert_to_dict(
             volume=volume,
