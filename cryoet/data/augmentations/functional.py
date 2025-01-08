@@ -257,12 +257,6 @@ def random_flip_volume(volume: np.ndarray, heatmap: Optional[np.ndarray] = None,
     return dict(volume=np.ascontiguousarray(volume), heatmap=heatmap, centers=centers)
 
 
-def random_erase_objects(volume: np.ndarray, centers_px: np.ndarray, radius_px: np.ndarray, labels: np.ndarray, prob: float):
-    mask = np.array([(random.random() < prob) for _ in range(len(centers_px))], dtype=bool)
-    data = erase_objects(volume, centers_px, radius_px, labels, mask)
-    return data["volume"], data["centers"], data["radii"], data["labels"]
-
-
 def erase_objects(volume: np.ndarray, centers_px: np.ndarray, radius_px: np.ndarray, labels: np.ndarray, mask: np.ndarray):
     """
     Erase objects from the volume and given centers.
@@ -305,3 +299,9 @@ def erase_objects(volume: np.ndarray, centers_px: np.ndarray, radius_px: np.ndar
     mask = mask & overlap_mask
 
     return dict(volume=volume, centers=centers_px[mask], radius=radius_px[mask], labels=labels[mask])
+
+
+def random_erase_objects(volume: np.ndarray, centers_px: np.ndarray, radius_px: np.ndarray, labels: np.ndarray, prob: float):
+    mask = np.array([(random.random() < prob) for _ in range(len(centers_px))], dtype=bool)
+    data = erase_objects(volume, centers_px, radius_px, labels, mask)
+    return data["volume"], data["centers"], data["radius"], data["labels"]
