@@ -103,11 +103,15 @@ LB [0.20, 0.20, 0.20, 0.20, 0.35] ->
 - Flips augmentations - Helps
 - Slight rotations along Y & X - Helps
 - Noise augmentations
-- Copy-paste & random erase
+- Copy-paste
+- Random erase
 
 ## Models
 
 - Bigger models
+- Stride 4 only
+- Stride 2 only
+- DynUnet
 
 ## Training
 

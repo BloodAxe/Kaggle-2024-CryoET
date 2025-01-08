@@ -75,7 +75,7 @@ def main():
         config = MaxVitUnet25dConfig(img_size=model_args.window_size)
         model = MaxVitUnet25d(config)
     elif model_args.model_name == "dynunet":
-        config = DynUNetForObjectDetectionConfig()
+        config = DynUNetForObjectDetectionConfig(use_stride2=model_args.use_stride2, use_stride4=model_args.use_stride4)
         model = DynUNetForObjectDetection(config)
     elif model_args.model_name == "unet3d-fat":
         config = UNet3DForObjectDetectionConfig(
