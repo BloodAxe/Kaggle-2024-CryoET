@@ -15,7 +15,10 @@ from cryoet.data.detection.data_module import ObjectDetectionDataModule
 from cryoet.modelling.detection.dynunet import DynUNetForObjectDetectionConfig, DynUNetForObjectDetection
 from cryoet.modelling.detection.maxvit_unet25d import MaxVitUnet25d, MaxVitUnet25dConfig
 from cryoet.modelling.detection.segresnet_object_detection import SegResNetForObjectDetection, SegResNetForObjectDetectionConfig
-from cryoet.modelling.detection.segresnet_object_detection_v2 import SegResNetForObjectDetectionV2
+from cryoet.modelling.detection.segresnet_object_detection_v2 import (
+    SegResNetForObjectDetectionV2,
+    SegResNetForObjectDetectionV2Config,
+)
 from cryoet.modelling.detection.unet3d_detection import UNet3DForObjectDetection, UNet3DForObjectDetectionConfig
 from cryoet.modelling.detection.unetr import SwinUNETRForObjectDetection, SwinUNETRForObjectDetectionConfig
 
@@ -29,6 +32,7 @@ def main():
     parser = HfArgumentParser((MyTrainingArguments, ModelArguments, DataArguments))
     training_args, model_args, data_args = parser.parse_args_into_dataclasses()
     training_args = typing.cast(MyTrainingArguments, training_args)
+    model_args = typing.cast(ModelArguments, model_args)
 
     data_args = typing.cast(DataArguments, data_args)
 
@@ -60,7 +64,9 @@ def main():
         config = SegResNetForObjectDetectionConfig(window_size=model_args.window_size)
         model = SegResNetForObjectDetection(config)
     elif model_args.model_name == "segresnetv2":
-        config = SegResNetForObjectDetectionConfig(window_size=model_args.window_size)
+        config = SegResNetForObjectDetectionV2Config(
+            window_size=model_args.window_size, use_stride2=model_args.use_stride2, use_stride4=model_args.use_stride4
+        )
         model = SegResNetForObjectDetectionV2(config)
     elif model_args.model_name == "unet3d":
         config = UNet3DForObjectDetectionConfig(window_size=model_args.window_size)
