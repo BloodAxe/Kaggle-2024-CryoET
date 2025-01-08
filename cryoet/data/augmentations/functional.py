@@ -294,8 +294,10 @@ def erase_objects(
     volume[mask_volume] = 0
 
     if remove_overlap:
+        half_radius_sqr = (radius_sqr * 0.5) ** 2
+
         # Compute matrix of pairwise distances
-        distances_sqr_mask = np.sum((centers_px[:, None] - centers_px[None, :]) ** 2, axis=-1) < radius_sqr[:, None]
+        distances_sqr_mask = np.sum((centers_px[:, None] - centers_px[None, :]) ** 2, axis=-1) < half_radius_sqr[:, None]
         np.fill_diagonal(distances_sqr_mask, False)
 
         # Update mask to remove points that are inside the radius of the point being removed
@@ -317,5 +319,5 @@ def random_erase_objects(volume: np.ndarray, centers_px: np.ndarray, radius_px: 
     :param prob: The probability of erasing each object.
     """
     keep_mask = ~np.array([(random.random() < prob) for _ in range(len(centers_px))], dtype=bool)
-    data = erase_objects(volume, centers_px, radius_px, labels, keep_mask, remove_overlap=False)
+    data = erase_objects(volume, centers_px, radius_px, labels, keep_mask, remove_overlap=True)
     return data["volume"], data["centers"], data["radius"], data["labels"]
