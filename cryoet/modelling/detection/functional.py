@@ -219,6 +219,7 @@ def decode_detections_with_nms(
     min_score: Union[float, List[float]],
     class_sigmas: List[float],
     iou_threshold: float = 0.25,
+    use_single_label_per_anchor: bool = True,
     use_centernet_nms: bool = False,
     pre_nms_top_k: Optional[int] = None,
 ) -> Tuple[torch.Tensor, torch.Tensor, torch.Tensor]:
@@ -253,10 +254,7 @@ def decode_detections_with_nms(
     scores = scores.squeeze(0)
     centers = centers.squeeze(0)
 
-    # max_scores: shape [D*H*W], class_labels: shape [D*H*W]
-    max_scores = scores.max(dim=1)
-    labels = max_scores.indices
-    scores = max_scores.values
+    labels_of_max_score = scores.argmax(dim=1)
 
     # Prepare final outputs
     final_labels_list = []
@@ -267,14 +265,18 @@ def decode_detections_with_nms(
     for class_index in range(num_classes):
         sigma_value = float(class_sigmas[class_index])  # Get the sigma for this class
         score_threshold = float(min_score[class_index])
-        class_mask = labels == class_index  # Pick out only detections of this class
-        score_mask = scores >= score_threshold  # Filter out low-scoring detections
-        mask = class_mask & score_mask
+        class_mask = labels_of_max_score.eq(class_index)  # Pick out only detections of this class
+        score_mask = scores[:, class_index] >= score_threshold  # Filter out low-scoring detections
+
+        if use_single_label_per_anchor:
+            mask = class_mask & score_mask
+        else:
+            mask = score_mask
 
         if not mask.any():
             continue
 
-        class_scores = scores[mask]  # shape: [Nc]
+        class_scores = scores[mask, class_index]  # shape: [Nc]
         class_centers = centers[mask]  # shape: [Nc, 3]
 
         if pre_nms_top_k is not None and len(class_scores) > pre_nms_top_k:

@@ -150,6 +150,7 @@ class ObjectDetectionModel(L.LightningModule):
                 min_score=score_thresholds.min(),
                 iou_threshold=0.6,
                 use_centernet_nms=self.model_args.use_centernet_nms,
+                use_single_label_per_anchor=self.model_args.use_single_label_per_anchor,
                 pre_nms_top_k=16536,
             )
             topk_scores = topk_scores.float().cpu().numpy()

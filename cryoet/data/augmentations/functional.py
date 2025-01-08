@@ -1,14 +1,9 @@
 import random
-
-import numpy as np
-
-import numpy as np
-from scipy.ndimage import affine_transform
-from typing import Tuple, Optional
-
-import numpy as np
-from scipy.ndimage import affine_transform
+from typing import Optional
 from typing import Tuple
+
+import numpy as np
+from scipy.ndimage import affine_transform
 
 
 def get_points_mask_within_cube(points, cube_shape):
