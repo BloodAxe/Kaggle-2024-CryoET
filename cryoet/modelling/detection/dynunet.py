@@ -72,6 +72,7 @@ class DynUNetForObjectDetectionConfig(PretrainedConfig):
 class DynUNetForObjectDetection(nn.Module):
     def __init__(self, config: DynUNetForObjectDetectionConfig):
         super().__init__()
+        self.config = config
         kernels, strides = get_kernels_strides([128, 128, 128], [1, 1, 1])
 
         # kernels = [[3, 3, 3]] * 4
@@ -108,7 +109,7 @@ class DynUNetForObjectDetection(nn.Module):
             )
 
     def forward(self, volume, labels=None, **loss_kwargs):
-        [fm4, fm2] = self.backbone(volume)
+        [fm2, fm4] = self.backbone(volume)
 
         logits = []
         offsets = []
