@@ -257,7 +257,9 @@ def random_flip_volume(volume: np.ndarray, heatmap: Optional[np.ndarray] = None,
     return dict(volume=np.ascontiguousarray(volume), heatmap=heatmap, centers=centers)
 
 
-def erase_objects(volume: np.ndarray, centers_px: np.ndarray, radius_px: np.ndarray, labels: np.ndarray, mask: np.ndarray):
+def erase_objects(
+    volume: np.ndarray, centers_px: np.ndarray, radius_px: np.ndarray, labels: np.ndarray, mask: np.ndarray, remove_overlap=True
+):
     """
     Erase objects from the volume and given centers.
     Returns new volume, centers, radius and labels.
@@ -288,15 +290,16 @@ def erase_objects(volume: np.ndarray, centers_px: np.ndarray, radius_px: np.ndar
     volume = volume.copy()
     volume[mask_volume] = 0
 
-    # Compute matrix of pairwise distances
-    distances_sqr_mask = np.sum((centers_px[:, None] - centers_px[None, :]) ** 2, axis=-1) < radius_sqr[:, None]
-    np.fill_diagonal(distances_sqr_mask, False)
+    if remove_overlap:
+        # Compute matrix of pairwise distances
+        distances_sqr_mask = np.sum((centers_px[:, None] - centers_px[None, :]) ** 2, axis=-1) < radius_sqr[:, None]
+        np.fill_diagonal(distances_sqr_mask, False)
 
-    # Update mask to remove points that are inside the radius of the point being removed
-    overlap_mask = np.any(distances_sqr_mask & mask[:, None], axis=0)
+        # Update mask to remove points that are inside the radius of the point being removed
+        overlap_mask = np.any(distances_sqr_mask & mask[:, None], axis=0)
 
-    # mask out everything that overlaps
-    mask = mask & overlap_mask
+        # mask out everything that overlaps
+        mask = mask & overlap_mask
 
     return dict(volume=volume, centers=centers_px[mask], radius=radius_px[mask], labels=labels[mask])
 
@@ -310,5 +313,5 @@ def random_erase_objects(volume: np.ndarray, centers_px: np.ndarray, radius_px: 
     :param prob: The probability of erasing each object.
     """
     keep_mask = ~np.array([(random.random() < prob) for _ in range(len(centers_px))], dtype=bool)
-    data = erase_objects(volume, centers_px, radius_px, labels, keep_mask)
+    data = erase_objects(volume, centers_px, radius_px, labels, keep_mask, remove_overlap=False)
     return data["volume"], data["centers"], data["radius"], data["labels"]
