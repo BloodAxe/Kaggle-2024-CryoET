@@ -27,6 +27,9 @@ class ModelArguments:
         default=True, metadata={"help": "Enable CenterNet NMS when decoding. Relevant only for OD models."}
     )
 
+    use_stride4: bool = field(default=True)
+    use_stride2: bool = field(default=True)
+
 
 def data_root_default_factory():
     return os.environ.get("CRYOET_DATA_ROOT", None)

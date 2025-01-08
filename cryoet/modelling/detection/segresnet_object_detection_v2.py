@@ -4,7 +4,6 @@ import torch.jit
 from monai.networks.blocks import ResBlock
 from monai.networks.blocks.segresnet_block import get_conv_layer, get_upsample_layer
 from monai.networks.layers import get_norm_layer, get_act_layer, Dropout
-from monai.networks.nets import SegResNet
 from monai.utils import UpsampleMode
 from torch import nn, Tensor
 
@@ -171,7 +170,7 @@ class SegResNetBackbone(nn.Module):
         return x
 
 
-class SegResNetForObjectDetectionConfig(PretrainedConfig):
+class SegResNetForObjectDetectionV2Config(PretrainedConfig):
     def __init__(
         self,
         spatial_dims=3,
@@ -182,6 +181,8 @@ class SegResNetForObjectDetectionConfig(PretrainedConfig):
         blocks_up=(1, 1, 1),
         dropout_prob=0.2,
         num_classes=5,
+        use_stride4: bool = True,
+        use_stride2: bool = True,
         **kwargs,
     ):
         super().__init__(**kwargs)
@@ -193,12 +194,14 @@ class SegResNetForObjectDetectionConfig(PretrainedConfig):
         self.blocks_up = blocks_up
         self.dropout_prob = dropout_prob
         self.num_classes = num_classes
+        self.use_stride4 = use_stride4
+        self.use_stride2 = use_stride2
 
 
 class SegResNetForObjectDetectionV2(nn.Module):
-    def __init__(self, config: SegResNetForObjectDetectionConfig):
+    def __init__(self, config: SegResNetForObjectDetectionV2Config):
         super().__init__()
-
+        self.config = config
         self.backbone = SegResNetBackbone(
             spatial_dims=config.spatial_dims,
             in_channels=config.in_channels,
@@ -209,28 +212,46 @@ class SegResNetForObjectDetectionV2(nn.Module):
             dropout_prob=config.dropout_prob,
         )
 
-        self.head2 = ObjectDetectionHead(
-            in_channels=64, num_classes=config.num_classes, stride=2, intermediate_channels=48, offset_intermediate_channels=16
-        )
-        self.head4 = ObjectDetectionHead(
-            in_channels=128, num_classes=config.num_classes, stride=4, intermediate_channels=64, offset_intermediate_channels=32
-        )
+        if self.config.use_stride2:
+            self.head2 = ObjectDetectionHead(
+                in_channels=64,
+                num_classes=config.num_classes,
+                stride=2,
+                intermediate_channels=48,
+                offset_intermediate_channels=16,
+            )
+
+        if self.config.use_stride4:
+            self.head4 = ObjectDetectionHead(
+                in_channels=128,
+                num_classes=config.num_classes,
+                stride=4,
+                intermediate_channels=64,
+                offset_intermediate_channels=32,
+            )
 
     def forward(self, volume, labels=None, **loss_kwargs):
         _, feature_maps = self.backbone(volume)
         fm4, fm2 = feature_maps[-3], feature_maps[-2]
 
-        output4 = self.head4(fm4)
-        output2 = self.head2(fm2)
+        logits = []
+        offsets = []
+        strides = []
+
+        if self.config.use_stride4:
+            output4 = self.head4(fm4)
+            logits.append(output4.logits)
+            offsets.append(output4.offsets)
+            strides.append(self.head4.stride)
+
+        if self.config.use_stride2:
+            output2 = self.head2(fm2)
+            logits.append(output2.logits)
+            offsets.append(output2.offsets)
+            strides.append(self.head2.stride)
 
         if torch.jit.is_tracing():
-            logits4, offsets4 = output4
-            logits2, offsets2 = output2
-            return (logits4, logits2), (offsets4, offsets2)
-
-        logits = [output4.logits, output2.logits]
-        offsets = [output4.offsets, output2.offsets]
-        strides = [self.head4.stride, self.head2.stride]
+            return logits, offsets
 
         loss = None
         loss_dict = None
