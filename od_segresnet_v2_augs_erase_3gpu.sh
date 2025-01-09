@@ -1,7 +1,7 @@
 torchrun --standalone --nproc-per-node=3 train_od.py \
 --model_name=segresnetv2 \
 --pretrained_backbone_path=pretrained/wholeBody_ct_segmentation/models/model.pt \
---per_device_train_batch_size=12 --learning_rate=1e-4 \
+--per_device_train_batch_size=16 --learning_rate=1e-4 \
 --adam_beta1=0.95 --adam_beta2=0.99 \
 --dataloader_num_workers=4 --dataloader_persistent_workers=True --dataloader_pin_memory=True \
 --y_rotation_limit=10 --x_rotation_limit=10 \
