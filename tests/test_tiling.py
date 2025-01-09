@@ -26,18 +26,6 @@ def test_tiling():
     tiles = list(tiles)
     print(len(tiles), tiles[-1])
 
-    # tiles = compute_tiles(volume_shape, window_size=(96, 96, 96), stride=(64, 67, 67))
-    # tiles = list(tiles)
-    # print(len(tiles), tiles[-1])
-    #
-    # tiles = compute_tiles(volume_shape, window_size=(96, 96, 96), stride=(64, 66, 66))
-    # tiles = list(tiles)
-    # print(len(tiles), tiles[-1])
-    #
-    # tiles = compute_tiles(volume_shape, window_size=(96, 96, 96), stride=(64, 65, 65))
-    # tiles = list(tiles)
-    # print(len(tiles), tiles[-1])
-    #
-    # tiles = compute_tiles(volume_shape, window_size=(96, 96, 96), stride=(64, 64, 64))
-    # tiles = list(tiles)
-    # print(len(tiles), tiles[-1])
+    tiles = compute_tiles(volume_shape, window_size=(128, 128, 128), stride=(84, 90, 90))
+    tiles = list(tiles)
+    print(len(tiles), tiles[-1])

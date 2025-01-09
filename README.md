@@ -71,14 +71,16 @@ LB: [0.20, 0.20, 0.20, 0.15, 0.4] -> 0.740
 LB: [0.20, 0.20, 0.20, 0.25, 0.4] -> 0.758
 
 
-LB: [0.20, 0.25, 0.20, 0.25, 0.4] -> 0.758
+LB: [0.20, 0.20, 0.20, 0.20, 0.35] -> 0.752
 
+LB: [0.20, 0.30, 0.20, 0.20, 0.4] -> 0.755
+LB: [0.20, 0.20, 0.20, 0.30, 0.4] -> 0.753
+LB: [0.20, 0.20, 0.20, 0.20, 0.5] -> 0.751
 
 python trace_od.py /home/bloodaxe/develop/Kaggle-2024-CryoET/runs/od_segresnetv2_fold_0_rc_ic_denoised/lightning_logs/version_1/checkpoints/segresnetv2_96_fold_0_2862-score-0.8466-at-0.234-0.325-0.278-0.234-0.759.ckpt /home/bloodaxe/develop/Kaggle-2024-CryoET/runs/od_segresnetv2_fold_1_rc_ic_denoised/lightning_logs/version_1/checkpoints/segresnetv2_96_fold_1_1590-score-0.8177-at-0.278-0.278-0.234-0.234-0.325.ckpt /home/bloodaxe/develop/Kaggle-2024-CryoET/runs/od_segresnetv2_fold_2_rc_ic_denoised/lightning_logs/version_1/checkpoints/segresnetv2_96_fold_2_1060-score-0.7953-at-0.430-0.234-0.278-0.234-0.489.ckpt /home/bloodaxe/develop/Kaggle-2024-CryoET/runs/od_segresnetv2_fold_3_rc_ic_denoised/lightning_logs/version_1/checkpoints/segresnetv2_96_fold_3_2438-score-0.8234-at-0.158-0.194-0.278-0.278-0.158.ckpt  /home/bloodaxe/develop/Kaggle-2024-CryoET/runs/od_segresnetv2_fold_4_rc_ic_denoised/lightning_logs/version_1/checkpoints/segresnetv2_96_fold_4_2226-score-0.8391-at-0.234-0.194-0.194-0.234-0.278.ckpt 
 
 
 # DynUnet
-
 
 | Fold | Score  | AFRT  | BGT   | RBSM  | TRGLB  | VLP    |
 |------|--------|-------|-------|-------|--------|--------|
@@ -93,7 +95,31 @@ python trace_od_dynunet.py /home/bloodaxe/develop/Kaggle-2024-CryoET/runs/od_dyn
 
 CV: 0.82 +- 0.019
 
-LB [0.20, 0.20, 0.20, 0.20, 0.35] -> 
+LB [0.20, 0.20, 0.20, 0.20, 0.35] -> 0.741
+
+## DynUnet (Stride 4 & 2)
+
+| Fold | Score  | AFRT  | BGT   | RBSM  | TRGLB | VLP   |
+|------|--------|-------|-------|-------|-------|-------|
+| 0    | 0.8496 | 0.234 | 0.430 | 0.194 | 0.234 | 0.616 |
+| 1    | 0.8079 | 0.325 | 0.234 | 0.376 | 0.278 | 0.551 |
+| 2    | 0.7689 | 0.430 | 0.278 | 0.194 | 0.278 | 0.489 |
+| 3    | 0.8307 | 0.430 | 0.278 | 0.126 | 0.158 | 0.234 |
+| 4    | 0.8263 | 0.325 | 0.278 | 0.126 | 0.194 | 0.126 |
+
+CV 0.81668
+
+0.8496-at-0.234-0.430-0.194-0.234-0.616.ckpt
+0.8079-at-0.325-0.234-0.376-0.278-0.551.ckpt
+0.7689-at-0.430-0.278-0.194-0.278-0.489.ckpt
+0.8307-at-0.430-0.278-0.126-0.158-0.234.ckpt
+0.8263-at-0.325-0.278-0.126-0.194-0.126.ckpt
+
+/home/bloodaxe/develop/Kaggle-2024-CryoET/runs/od_dynunet_fold_0_rc_ic_denoised/lightning_logs/version_2/checkpoints/dynunet_128_fold_0_1166-score-0.8496-at-0.234-0.430-0.194-0.234-0.616.ckpt
+/home/bloodaxe/develop/Kaggle-2024-CryoET/runs/od_dynunet_fold_1_rc_ic_denoised/lightning_logs/version_1/checkpoints/dynunet_128_fold_1_1060-score-0.8079-at-0.325-0.234-0.376-0.278-0.551.ckpt
+/home/bloodaxe/develop/Kaggle-2024-CryoET/runs/od_dynunet_fold_2_rc_ic_denoised/lightning_logs/version_1/checkpoints/dynunet_128_fold_2_636-score-0.7689-at-0.430-0.278-0.194-0.278-0.489.ckpt
+/home/bloodaxe/develop/Kaggle-2024-CryoET/runs/od_dynunet_fold_3_rc_ic_denoised/lightning_logs/version_1/checkpoints/dynunet_128_fold_3_1696-score-0.8307-at-0.430-0.278-0.126-0.158-0.234.ckpt
+/home/bloodaxe/develop/Kaggle-2024-CryoET/runs/od_dynunet_fold_4_rc_ic_denoised/lightning_logs/version_1/checkpoints/dynunet_128_fold_4_848-score-0.8263-at-0.325-0.278-0.126-0.194-0.126.ckpt
 
 # Ideas
 
@@ -104,7 +130,7 @@ LB [0.20, 0.20, 0.20, 0.20, 0.35] ->
 - Slight rotations along Y & X - Helps
 - Noise augmentations
 - Copy-paste
-- Random erase
+- Random erase - Much lower score (?) 0.85 -> 0.75 on fold 0 (maybe bug?)
 
 ## Models
 

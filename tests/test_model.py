@@ -4,7 +4,7 @@ from pytorch_toolbelt.utils import count_parameters
 from cryoet.modelling.detection.dynunet import DynUNetForObjectDetectionConfig, DynUNetForObjectDetection
 from cryoet.modelling.detection.maxvit_unet25d import MaxVitUnet25d, MaxVitUnet25dConfig
 from cryoet.modelling.detection.segresnet_object_detection_v2 import (
-    SegResNetForObjectDetectionConfig,
+    SegResNetForObjectDetectionV2Config,
     SegResNetForObjectDetectionV2,
 )
 from cryoet.modelling.detection.unet3d_detection import UNet3DForObjectDetectionConfig, UNet3DForObjectDetection
@@ -13,7 +13,7 @@ from cryoet.modelling.detection.unetr import SwinUNETRForObjectDetectionConfig, 
 
 
 def test_segresnetv2():
-    config = SegResNetForObjectDetectionConfig(window_size=96)
+    config = SegResNetForObjectDetectionV2Config(window_size=96)
     model = SegResNetForObjectDetectionV2(config)
     x = torch.randn(2, 1, 96, 96, 96)
     out = model(x)
