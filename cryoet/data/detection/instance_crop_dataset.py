@@ -11,22 +11,20 @@ from cryoet.data.augmentations.functional import (
 )
 from .detection_dataset import CryoETObjectDetectionDataset
 from .mixin import ObjectDetectionMixin
+from ..parsers import AnnotatedVolume
 from ...training.args import DataArguments
 
 
 class InstanceCropDatasetForPointDetection(CryoETObjectDetectionDataset, ObjectDetectionMixin):
     def __init__(
         self,
+        sample: AnnotatedVolume,
         window_size: int,
-        root,
-        study,
-        mode,
         num_crops: int,
         data_args: DataArguments,
-        split="train",
         balance_classes: bool = True,
     ):
-        super().__init__(root=root, study=study, mode=mode, split=split)
+        super().__init__(sample)
         self.window_size = window_size
         self.num_crops = num_crops
         self.data_args = data_args

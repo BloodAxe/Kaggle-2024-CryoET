@@ -9,7 +9,7 @@ from torch.nn.utils.rnn import pad_sequence
 from torch.utils.data import ConcatDataset, DataLoader, default_collate
 
 from cryoet.data.cross_validation import split_data_into_folds
-from cryoet.data.parsers import CLASS_LABEL_TO_CLASS_NAME
+from cryoet.data.parsers import CLASS_LABEL_TO_CLASS_NAME, read_annotated_volume, AnnotatedVolume
 from cryoet.training.args import DataArguments, MyTrainingArguments
 from .instance_crop_dataset import InstanceCropDatasetForPointDetection
 from .random_crop_dataset import RandomCropForPointDetectionDataset
@@ -49,75 +49,93 @@ class ObjectDetectionDataModule(L.LightningDataModule):
         self.train = None
         self.val = None
         self.solution = None
+        self.train_solution = None
 
-    def setup(self, stage):
-        train_datasets = []
-        for train_study in self.train_studies:
-            for mode in self.train_modes:
-                if self.data_args.use_sliding_crops:
-                    sliding_dataset = SlidingWindowCryoETObjectDetectionDataset(
-                        window_size=self.window_size,
-                        stride=self.stride,
-                        root=self.root,
-                        study=train_study,
-                        mode=mode,
-                        split="train",
-                        data_args=self.data_args,
-                    )
-                    train_datasets.append(sliding_dataset)
-
-                if self.data_args.use_random_crops:
-                    random_crop_dataset = RandomCropForPointDetectionDataset(
-                        num_crops=self.data_args.num_crops_per_study,
-                        window_size=self.window_size,
-                        root=self.root,
-                        study=train_study,
-                        mode=mode,
-                        split="train",
-                        data_args=self.data_args,
-                    )
-                    train_datasets.append(random_crop_dataset)
-
-                if self.data_args.use_instance_crops:
-                    crop_around_dataset = InstanceCropDatasetForPointDetection(
-                        num_crops=self.data_args.num_crops_per_study,
-                        window_size=self.window_size,
-                        root=self.root,
-                        study=train_study,
-                        mode=mode,
-                        split="train",
-                        data_args=self.data_args,
-                    )
-                    train_datasets.append(crop_around_dataset)
-
+    @classmethod
+    def build_dataset_from_samples(
+        cls,
+        samples: List[AnnotatedVolume],
+        use_sliding_crops,
+        use_random_crops,
+        use_instance_crops,
+        window_size,
+        stride,
+        data_args,
+    ):
+        datasets = []
         solution = defaultdict(list)
 
-        valid_datasets = []
+        for sample in samples:
+
+            for i, (center, label, radius) in enumerate(zip(sample.centers, sample.labels, sample.radius)):
+                solution["experiment"].append(sample.study)
+                solution["particle_type"].append(CLASS_LABEL_TO_CLASS_NAME[label])
+                solution["x"].append(float(center[0]))
+                solution["y"].append(float(center[1]))
+                solution["z"].append(float(center[2]))
+
+            if use_sliding_crops:
+                sliding_dataset = SlidingWindowCryoETObjectDetectionDataset(
+                    sample=sample,
+                    window_size=window_size,
+                    stride=stride,
+                    data_args=data_args,
+                )
+                datasets.append(sliding_dataset)
+
+            if use_random_crops:
+                random_crop_dataset = RandomCropForPointDetectionDataset(
+                    sample=sample,
+                    num_crops=data_args.num_crops_per_study,
+                    window_size=window_size,
+                    data_args=data_args,
+                )
+                datasets.append(random_crop_dataset)
+
+            if use_instance_crops:
+                crop_around_dataset = InstanceCropDatasetForPointDetection(
+                    sample=sample,
+                    num_crops=data_args.num_crops_per_study,
+                    window_size=window_size,
+                    data_args=data_args,
+                )
+                datasets.append(crop_around_dataset)
+
+        dataset = ConcatDataset(datasets)
+        solution = pd.DataFrame.from_dict(solution)
+        return dataset, solution
+
+    def setup(self, stage):
+        train_samples = []
+        for train_study in self.train_studies:
+            for mode in self.train_modes:
+                sample = read_annotated_volume(root=self.root, study=train_study, mode=mode, split="train")
+                train_samples.append(sample)
+
+        valid_samples = []
         for study_name in self.valid_studies:
             for mode in self.valid_modes:
-                dataset = SlidingWindowCryoETObjectDetectionDataset(
-                    window_size=self.window_size,
-                    stride=self.stride,
-                    root=self.root,
-                    study=study_name,
-                    mode=mode,
-                    split="train",
-                    data_args=self.data_args,
-                )
-                valid_datasets.append(dataset)
+                sample = read_annotated_volume(root=self.root, study=study_name, mode=mode, split="train")
+                valid_samples.append(sample)
 
-                for i, (center, label, radius) in enumerate(
-                    zip(dataset.object_centers, dataset.object_labels, dataset.object_radii)
-                ):
-                    solution["experiment"].append(study_name)
-                    solution["particle_type"].append(CLASS_LABEL_TO_CLASS_NAME[label])
-                    solution["x"].append(float(center[0]))
-                    solution["y"].append(float(center[1]))
-                    solution["z"].append(float(center[2]))
-
-        self.train = ConcatDataset(train_datasets)
-        self.val = ConcatDataset(valid_datasets)
-        self.solution = pd.DataFrame.from_dict(solution)
+        self.train, self.train_solution = self.build_dataset_from_samples(
+            train_samples,
+            use_sliding_crops=self.data_args.use_sliding_crops,
+            use_instance_crops=self.data_args.use_instance_crops,
+            use_random_crops=self.data_args.use_random_crops,
+            window_size=self.window_size,
+            stride=self.stride,
+            data_args=self.data_args,
+        )
+        self.val, self.solution = self.build_dataset_from_samples(
+            valid_samples,
+            use_sliding_crops=True,
+            use_instance_crops=False,
+            use_random_crops=False,
+            window_size=self.window_size,
+            stride=self.stride,
+            data_args=self.data_args,
+        )
 
     def train_dataloader(self):
         return DataLoader(

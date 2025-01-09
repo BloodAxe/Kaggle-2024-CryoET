@@ -1,3 +1,4 @@
+import dataclasses
 import json
 import math
 import os
@@ -7,6 +8,8 @@ import matplotlib.pyplot as plt
 import numpy as np
 import zarr
 from matplotlib.patches import Circle
+
+from .functional import normalize_volume_to_unit_range
 
 ANGSTROMS_IN_PIXEL = 10.0
 
@@ -323,3 +326,40 @@ def visualize_slices_grid(
 
     # Return the figure so the caller can show/save
     return fig
+
+
+@dataclasses.dataclass
+class AnnotatedVolume:
+    study: str
+    mode: str
+    split: str
+
+    volume: np.ndarray
+
+    centers: np.ndarray
+    labels: np.ndarray
+    radius: np.ndarray
+
+    centers_px: np.ndarray
+    radius_px: np.ndarray
+
+
+def read_annotated_volume(root, study, mode, split="train"):
+    volume_data, object_centers, object_labels, object_radii = get_volume_and_objects(
+        root_dir=root,
+        study_name=study,
+        mode=mode,
+        split=split,
+    )
+
+    return AnnotatedVolume(
+        study=study,
+        split=split,
+        mode=mode,
+        volume=normalize_volume_to_unit_range(volume_data),
+        centers=object_centers,
+        labels=object_labels,
+        radius=object_radii,
+        centers_px=object_centers / ANGSTROMS_IN_PIXEL,
+        radius_px=object_radii / ANGSTROMS_IN_PIXEL,
+    )

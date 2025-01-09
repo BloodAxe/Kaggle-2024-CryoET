@@ -3,6 +3,7 @@ import numpy as np
 from .detection_dataset import CryoETObjectDetectionDataset
 from .mixin import ObjectDetectionMixin
 from ..functional import compute_tiles
+from ..parsers import AnnotatedVolume
 from ...training.args import DataArguments
 
 
@@ -12,18 +13,15 @@ class SlidingWindowCryoETObjectDetectionDataset(CryoETObjectDetectionDataset, Ob
 
     def __init__(
         self,
+        sample: AnnotatedVolume,
         window_size: int,
         stride: int,
-        root,
-        study,
-        mode,
         data_args: DataArguments,
-        split="train",
     ):
-        super().__init__(root, study, mode, split)
+        super().__init__(sample)
         self.window_size = window_size
         self.stride = stride
-        self.tiles = list(compute_tiles(self.volume_data.shape, window_size, stride))
+        self.tiles = list(compute_tiles(self.sample.volume.shape, window_size, stride))
         self.data_args = data_args
 
     def __getitem__(self, idx):
