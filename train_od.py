@@ -51,11 +51,6 @@ def main():
 
         training_args.output_dir = output_dir_name
 
-    # Save hyperparams
-    config = {**training_args.to_dict(), **model_args.to_dict(), **data_args.to_dict()}
-    with open(os.path.join(training_args.output_dir, "config.json"), "w") as f:
-        json.dump(config, f, indent=4, sort_keys=True)
-
     training_args.master_print(f"Training arguments: {training_args}")
 
     extra_model_args = {}
@@ -186,6 +181,11 @@ def main():
     )
 
     trainer.fit(model_module, datamodule=data_module)
+
+    # Save hyperparams
+    config = {**training_args.to_dict(), **model_args.to_dict(), **data_args.to_dict()}
+    with open(os.path.join(training_args.output_dir, "config.json"), "w") as f:
+        json.dump(config, f, indent=4, sort_keys=True)
 
 
 def infer_strategy(training_args, fabric):
