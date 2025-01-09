@@ -1,4 +1,5 @@
 import random
+from typing import List
 
 from cryoet.data.augmentations.functional import (
     rotate_and_scale_volume,
@@ -17,6 +18,7 @@ class RandomCropForPointDetectionDataset(CryoETObjectDetectionDataset, ObjectDet
     def __init__(
         self,
         sample: AnnotatedVolume,
+        copy_paste_samples: List[AnnotatedVolume],
         window_size: int,
         num_crops: int,
         data_args: DataArguments,
@@ -25,6 +27,7 @@ class RandomCropForPointDetectionDataset(CryoETObjectDetectionDataset, ObjectDet
         self.window_size = window_size
         self.num_crops = num_crops
         self.data_args = data_args
+        self.copy_paste_samples = copy_paste_samples
 
     def __getitem__(self, idx):
         centers_px = self.object_centers_px  # x y z

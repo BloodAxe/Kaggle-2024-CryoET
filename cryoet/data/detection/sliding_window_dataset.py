@@ -14,6 +14,7 @@ class SlidingWindowCryoETObjectDetectionDataset(CryoETObjectDetectionDataset, Ob
     def __init__(
         self,
         sample: AnnotatedVolume,
+        copy_paste_samples,
         window_size: int,
         stride: int,
         data_args: DataArguments,
@@ -23,6 +24,7 @@ class SlidingWindowCryoETObjectDetectionDataset(CryoETObjectDetectionDataset, Ob
         self.stride = stride
         self.tiles = list(compute_tiles(self.sample.volume.shape, window_size, stride))
         self.data_args = data_args
+        self.copy_paste_samples = copy_paste_samples
 
     def __getitem__(self, idx):
         tile = self.tiles[idx]  # tiles are z y x order

@@ -1,9 +1,17 @@
 import random
-from typing import Optional
+from typing import Optional, List
 from typing import Tuple
 
 import numpy as np
 from scipy.ndimage import affine_transform
+
+from cryoet.data.parsers import AnnotatedVolume, NUM_CLASSES
+from .copy_paste_merge import (
+    merge_volume_using_derivatives,
+    merge_volume_using_grad_mag,
+    merge_volume_using_mean,
+    merge_volume_using_max,
+)
 
 
 def get_points_mask_within_cube(points, cube_shape):
@@ -334,3 +342,64 @@ def gaussian_noise(volume: np.ndarray, sigma: float) -> np.ndarray:
     """
     noise = np.random.normal(0, sigma, volume.shape)
     return volume + noise
+
+
+def copy_paste_augmentation(
+    volume: np.ndarray,
+    centers_px: np.ndarray,
+    radius_px: np.ndarray,
+    labels: np.ndarray,
+    samples: List[AnnotatedVolume],
+    scale: float,
+):
+    sample: AnnotatedVolume = random.choice(samples)  # Pick random sample
+
+    # Pick random class
+    class_to_paste = random.randrange(0, NUM_CLASSES)
+
+    # Pick random object from that class
+    object_index = random.choice(np.flatnonzero(sample.labels == class_to_paste))
+    object_radius = sample.radius_px[object_index]
+    object_center = sample.centers_px[object_index]
+
+    volume_to_paste, rotated_centers = rotate_and_scale_volume(
+        volume=sample.volume,
+        points=sample.centers_px,
+        scale=scale,
+        angles=(0, 0, 0),
+        center_zyx=(object_center[2], object_center[1], object_center[0]),
+        output_shape=(2 * object_radius + 1, 2 * object_radius + 1, 2 * object_radius + 1),
+    )
+
+    mask = get_points_mask_within_cube(rotated_centers, volume_to_paste.shape)
+    centers_to_paste_px = rotated_centers[mask]
+    labels_to_paste_px = sample.labels[mask]
+    radius_to_paste_px = sample.radius_px[mask]
+
+    freedom_z = volume.shape[0] - volume_to_paste.shape[0]
+    freedom_y = volume.shape[1] - volume_to_paste.shape[1]
+    freedom_x = volume.shape[2] - volume_to_paste.shape[2]
+
+    start_x = random.randint(0, freedom_x)
+    start_y = random.randint(0, freedom_y)
+    start_z = random.randint(0, freedom_z)
+
+    dst_volume_view = volume[
+        start_z : start_z + volume_to_paste.shape[0],
+        start_y : start_y + volume_to_paste.shape[1],
+        start_x : start_x + volume_to_paste.shape[2],
+    ]
+
+    volume = volume.copy()
+    volume[
+        start_z : start_z + volume_to_paste.shape[0],
+        start_y : start_y + volume_to_paste.shape[1],
+        start_x : start_x + volume_to_paste.shape[2],
+    ] = merge_volume_using_max(dst_volume_view, volume_to_paste)
+
+    offset = np.array([start_x, start_y, start_z]).reshape(1, 3)
+    centers_px = np.concatenate([centers_px, centers_to_paste_px + offset], axis=0)
+    radius_px = np.concatenate([radius_px, radius_to_paste_px], axis=0)
+    labels = np.concatenate([labels, labels_to_paste_px], axis=0)
+
+    return dict(volume=volume, centers=centers_px, radius=radius_px, labels=labels)

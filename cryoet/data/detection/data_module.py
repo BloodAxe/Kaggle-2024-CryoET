@@ -80,6 +80,7 @@ class ObjectDetectionDataModule(L.LightningDataModule):
                     window_size=window_size,
                     stride=stride,
                     data_args=data_args,
+                    copy_paste_samples=samples,
                 )
                 datasets.append(sliding_dataset)
 
@@ -89,6 +90,7 @@ class ObjectDetectionDataModule(L.LightningDataModule):
                     num_crops=data_args.num_crops_per_study,
                     window_size=window_size,
                     data_args=data_args,
+                    copy_paste_samples=samples,
                 )
                 datasets.append(random_crop_dataset)
 
@@ -98,6 +100,7 @@ class ObjectDetectionDataModule(L.LightningDataModule):
                     num_crops=data_args.num_crops_per_study,
                     window_size=window_size,
                     data_args=data_args,
+                    copy_paste_samples=samples,
                 )
                 datasets.append(crop_around_dataset)
 

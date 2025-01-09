@@ -1,4 +1,5 @@
 import random
+from typing import List
 
 from sklearn.utils import compute_sample_weight
 
@@ -8,6 +9,7 @@ from cryoet.data.augmentations.functional import (
     random_flip_volume,
     random_erase_objects,
     gaussian_noise,
+    copy_paste_augmentation,
 )
 from .detection_dataset import CryoETObjectDetectionDataset
 from .mixin import ObjectDetectionMixin
@@ -19,6 +21,7 @@ class InstanceCropDatasetForPointDetection(CryoETObjectDetectionDataset, ObjectD
     def __init__(
         self,
         sample: AnnotatedVolume,
+        copy_paste_samples: List[AnnotatedVolume],
         window_size: int,
         num_crops: int,
         data_args: DataArguments,
@@ -29,6 +32,8 @@ class InstanceCropDatasetForPointDetection(CryoETObjectDetectionDataset, ObjectD
         self.num_crops = num_crops
         self.data_args = data_args
         self.balance_classes = balance_classes
+        self.copy_paste_samples = copy_paste_samples
+
         if balance_classes:
             self.weights = compute_sample_weight("balanced", self.object_labels)
         else:
@@ -80,6 +85,18 @@ class InstanceCropDatasetForPointDetection(CryoETObjectDetectionDataset, ObjectD
             volume, centers_px, radii_px, object_labels = random_erase_objects(
                 volume, centers_px, radii_px, object_labels, self.data_args.random_erase_prob
             )
+
+        if self.data_args.copy_paste_prob > 0:
+            for _ in range(random.randint(1, self.data_args.copy_paste_limit)):
+                data = copy_paste_augmentation(
+                    volume,
+                    centers_px,
+                    radii_px,
+                    object_labels,
+                    samples=self.copy_paste_samples,
+                    scale=scale,
+                )
+                volume, centers_px, radii_px, object_labels = data["volume"], data["centers"], data["radii"], data["labels"]
 
         if self.data_args.gaussian_noise_sigma > 0:
             volume = gaussian_noise(volume, sigma=self.data_args.gaussian_noise_sigma)
