@@ -54,4 +54,4 @@ def apply_augmentations(data, data_args: DataArguments, copy_paste_samples, scal
     if data_args.gaussian_noise_sigma > 0:
         data = gaussian_noise(**data, sigma=data_args.gaussian_noise_sigma)
 
-    return data_args
+    return data

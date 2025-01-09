@@ -74,7 +74,7 @@ class InstanceCropDatasetForPointDetection(CryoETObjectDetectionDataset, ObjectD
         object_labels = object_labels[keep_mask].copy()
 
         data = dict(volume=volume, centers=centers_px, labels=object_labels, radius=radii_px)
-        data = apply_augmentations(data, self.data_args, self.copy_paste_samples, scale=scale)
+        data = apply_augmentations(data, data_args=self.data_args, copy_paste_samples=self.copy_paste_samples, scale=scale)
 
         data = self.convert_to_dict(
             volume=data["volume"],
