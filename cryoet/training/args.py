@@ -34,6 +34,8 @@ class ModelArguments:
     use_stride4: bool = field(default=True)
     use_stride2: bool = field(default=True)
 
+    apply_loss_on_each_stride: bool = field(default=False)
+
 
 def data_root_default_factory():
     return os.environ.get("CRYOET_DATA_ROOT", None)

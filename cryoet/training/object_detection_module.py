@@ -45,6 +45,7 @@ class ObjectDetectionModel(L.LightningModule):
         return self.model(
             volume=volume,
             labels=labels,
+            apply_loss_on_each_stride=self.model_args.apply_loss_on_each_stride,
             average_tokens_across_devices=self.average_tokens_across_devices,
             use_l1_loss=self.train_args.use_l1_loss,
             **loss_kwargs,

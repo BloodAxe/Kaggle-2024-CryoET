@@ -138,6 +138,8 @@ CV 0.81668
 - Stride 4 only - It seems that it is worse than using strides 4 & 2
 - Stride 2 only - It seems that it is worse than using strides 4 & 2
 - DynUnet
+- Stride 4 for Ribosome & Virus-like particle, Stride 2 for the rest
+- (--apply_loss_on_each_stride) Independent detection losses on stride 4 and stride 2 (To ensure all channels are used on both strides)
 
 ## Training
 

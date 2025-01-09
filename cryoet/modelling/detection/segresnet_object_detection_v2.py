@@ -230,7 +230,7 @@ class SegResNetForObjectDetectionV2(nn.Module):
                 offset_intermediate_channels=32,
             )
 
-    def forward(self, volume, labels=None, **loss_kwargs):
+    def forward(self, volume, labels=None, apply_loss_on_each_stride: bool = False, **loss_kwargs):
         _, feature_maps = self.backbone(volume)
         fm4, fm2 = feature_maps[-3], feature_maps[-2]
 
@@ -256,6 +256,19 @@ class SegResNetForObjectDetectionV2(nn.Module):
         loss = None
         loss_dict = None
         if labels is not None:
-            loss, loss_dict = object_detection_loss(logits, offsets, strides, labels, **loss_kwargs)
+            loss = 0
+            loss_dict = {}
+
+            if apply_loss_on_each_stride:
+                for l, o, s in zip(logits, offsets, strides):
+                    loss_per_stride, loss_dict_per_stride = object_detection_loss(l, o, s, labels, **loss_kwargs)
+                    loss = loss + loss_per_stride
+                    for k, v in loss_dict_per_stride.items():
+                        if k in loss_dict:
+                            loss_dict[k] = loss_dict[k] + v
+                        else:
+                            loss_dict[k] = v
+            else:
+                loss, loss_dict = object_detection_loss(logits, offsets, strides, labels, **loss_kwargs)
 
         return ObjectDetectionOutput(logits=logits, offsets=offsets, strides=strides, loss=loss, loss_dict=loss_dict)
