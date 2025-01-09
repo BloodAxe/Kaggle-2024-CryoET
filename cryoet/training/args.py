@@ -1,9 +1,14 @@
 import os
 import typing
-from dataclasses import dataclass, field
-from typing import Optional
+from dataclasses import dataclass, field, fields
+from enum import Enum
+from typing import Optional, Any, Dict
 
 from transformers import TrainingArguments
+
+
+def data_root_default_factory():
+    return os.environ.get("CRYOET_DATA_ROOT", None)
 
 
 @dataclass
@@ -36,9 +41,36 @@ class ModelArguments:
 
     apply_loss_on_each_stride: bool = field(default=False)
 
+    def _dict_torch_dtype_to_str(self, d: Dict[str, Any]) -> None:
+        """
+        Checks whether the passed dictionary and its nested dicts have a *torch_dtype* key and if it's not None,
+        converts torch.dtype to a string of just the type. For example, `torch.float32` get converted into *"float32"*
+        string, which can then be stored in the json format.
+        """
+        if d.get("torch_dtype", None) is not None and not isinstance(d["torch_dtype"], str):
+            d["torch_dtype"] = str(d["torch_dtype"]).split(".")[1]
+        for value in d.values():
+            if isinstance(value, dict):
+                self._dict_torch_dtype_to_str(value)
 
-def data_root_default_factory():
-    return os.environ.get("CRYOET_DATA_ROOT", None)
+    def to_dict(self):
+        """
+        Serializes this instance while replace `Enum` by their values (for JSON serialization support). It obfuscates
+        the token values by removing their value.
+        """
+        # filter out fields that are defined as field(init=False)
+        d = {field.name: getattr(self, field.name) for field in fields(self) if field.init}
+
+        for k, v in d.items():
+            if isinstance(v, Enum):
+                d[k] = v.value
+            if isinstance(v, list) and len(v) > 0 and isinstance(v[0], Enum):
+                d[k] = [x.value for x in v]
+            if k.endswith("_token"):
+                d[k] = f"<{k.upper()}>"
+        self._dict_torch_dtype_to_str(d)
+
+        return d
 
 
 @dataclass
@@ -69,6 +101,38 @@ class DataArguments:
     copy_paste_limit: int = field(default=1)
 
     gaussian_noise_sigma: float = field(default=0.0)
+
+    def _dict_torch_dtype_to_str(self, d: Dict[str, Any]) -> None:
+        """
+        Checks whether the passed dictionary and its nested dicts have a *torch_dtype* key and if it's not None,
+        converts torch.dtype to a string of just the type. For example, `torch.float32` get converted into *"float32"*
+        string, which can then be stored in the json format.
+        """
+        if d.get("torch_dtype", None) is not None and not isinstance(d["torch_dtype"], str):
+            d["torch_dtype"] = str(d["torch_dtype"]).split(".")[1]
+        for value in d.values():
+            if isinstance(value, dict):
+                self._dict_torch_dtype_to_str(value)
+
+    def to_dict(self):
+        """
+        Serializes this instance while replace `Enum` by their values (for JSON serialization support). It obfuscates
+        the token values by removing their value.
+        """
+        # filter out fields that are defined as field(init=False)
+        d = {field.name: getattr(self, field.name) for field in fields(self) if field.init}
+
+        for k, v in d.items():
+            if isinstance(v, Enum):
+                d[k] = v.value
+            if isinstance(v, list) and len(v) > 0 and isinstance(v[0], Enum):
+                d[k] = [x.value for x in v]
+            if k.endswith("_token"):
+                d[k] = f"<{k.upper()}>"
+
+        self._dict_torch_dtype_to_str(d)
+
+        return d
 
 
 @dataclass

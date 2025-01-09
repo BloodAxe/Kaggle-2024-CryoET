@@ -1,3 +1,5 @@
+import json
+import os
 import typing
 
 import lightning as L
@@ -48,6 +50,11 @@ def main():
         output_dir_name += "_" + data_args.train_modes.replace(",", "_")
 
         training_args.output_dir = output_dir_name
+
+    # Save hyperparams
+    config = {**training_args.to_dict(), **model_args.to_dict(), **data_args.to_dict()}
+    with open(os.path.join(training_args.output_dir, "config.json"), "w") as f:
+        json.dump(config, f, indent=4, sort_keys=True)
 
     training_args.master_print(f"Training arguments: {training_args}")
 
