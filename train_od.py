@@ -6,7 +6,7 @@ from dotenv import load_dotenv
 from lightning.fabric import Fabric
 from lightning.pytorch.callbacks import ModelCheckpoint, LearningRateMonitor, EarlyStopping
 from lightning.pytorch.loggers import TensorBoardLogger, WandbLogger
-from pytorch_toolbelt.utils import count_parameters
+from pytorch_toolbelt.utils import count_parameters, transfer_weights
 from transformers import (
     HfArgumentParser,
 )
@@ -112,6 +112,11 @@ def main():
         )
 
     model_module = ObjectDetectionModel(model=model, data_args=data_args, model_args=model_args, train_args=training_args)
+
+    if training_args.transfer_weights is not None:
+        checkpoint = torch.load(training_args.transfer_weights, map_location="cpu")
+        transfer_weights(model_module, checkpoint["state_dict"])
+        training_args.master_print(f"Loaded weights from {training_args.transfer_weights}")
 
     checkpoint_callback = ModelCheckpoint(
         monitor="val/score",

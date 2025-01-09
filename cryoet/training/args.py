@@ -116,6 +116,8 @@ class MyTrainingArguments(TrainingArguments):
 
     use_l1_loss: bool = field(default=False, metadata={"help": "If true, adds L1 loss on offsets prediction"})
 
+    transfer_weights: Optional[str] = field(default=None, metadata={"help": "Path to the weights to transfer"})
+
     def master_print(self, *args):
         if self.process_index == 0:
             print(*args)
