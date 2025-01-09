@@ -46,7 +46,10 @@ def main():
             output_dir_name += "_rc"
         if data_args.use_instance_crops:
             output_dir_name += "_ic"
-
+        if model_args.use_stride2 and not model_args.use_stride4:
+            output_dir_name += "_s2"
+        if model_args.use_stride4 and not model_args.use_stride2:
+            output_dir_name += "_s4"
         output_dir_name += "_" + data_args.train_modes.replace(",", "_")
 
         training_args.output_dir = output_dir_name
