@@ -324,3 +324,13 @@ def random_erase_objects(volume: np.ndarray, centers_px: np.ndarray, radius_px: 
     keep_mask = ~np.array([(random.random() < prob) for _ in range(len(centers_px))], dtype=bool)
     data = erase_objects(volume, centers_px, radius_px, labels, keep_mask, remove_overlap=True)
     return data["volume"], data["centers"], data["radius"], data["labels"]
+
+
+def gaussian_noise(volume: np.ndarray, sigma: float) -> np.ndarray:
+    """
+    Add Gaussian noise to the volume.
+    :param volume: The volume to add noise to. Shape: (D, H, W)
+    :param sigma: The standard deviation of the Gaussian noise.
+    """
+    noise = np.random.normal(0, sigma, volume.shape)
+    return volume + noise

@@ -5,6 +5,7 @@ from cryoet.data.augmentations.functional import (
     get_points_mask_within_cube,
     random_flip_volume,
     random_erase_objects,
+    gaussian_noise,
 )
 from .detection_dataset import CryoETObjectDetectionDataset
 from .mixin import ObjectDetectionMixin
@@ -67,6 +68,9 @@ class RandomCropForPointDetectionDataset(CryoETObjectDetectionDataset, ObjectDet
             volume, centers_px, radii_px, object_labels = random_erase_objects(
                 volume, centers_px, radii_px, object_labels, self.data_args.random_erase_prob
             )
+
+        if self.data_args.gaussian_noise_sigma > 0:
+            volume = gaussian_noise(volume, sigma=self.data_args.gaussian_noise_sigma)
 
         data = self.convert_to_dict(
             volume=volume,
