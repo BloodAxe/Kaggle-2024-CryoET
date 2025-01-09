@@ -6,12 +6,8 @@ from sklearn.utils import compute_sample_weight
 from cryoet.data.augmentations.functional import (
     rotate_and_scale_volume,
     get_points_mask_within_cube,
-    random_flip_volume,
-    random_erase_objects,
-    gaussian_noise,
-    copy_paste_augmentation,
 )
-from .detection_dataset import CryoETObjectDetectionDataset
+from .detection_dataset import CryoETObjectDetectionDataset, apply_augmentations
 from .mixin import ObjectDetectionMixin
 from ..parsers import AnnotatedVolume
 from ...training.args import DataArguments
@@ -78,23 +74,7 @@ class InstanceCropDatasetForPointDetection(CryoETObjectDetectionDataset, ObjectD
         object_labels = object_labels[keep_mask].copy()
 
         data = dict(volume=volume, centers=centers_px, labels=object_labels, radius=radii_px)
-
-        if self.data_args.use_random_flips:
-            data = random_flip_volume(**data)
-
-        if self.data_args.random_erase_prob > 0:
-            data = random_erase_objects(**data, prob=self.data_args.random_erase_prob)
-
-        if self.data_args.copy_paste_prob > 0 and random.random() < self.data_args.copy_paste_prob:
-            for _ in range(random.randint(1, self.data_args.copy_paste_limit)):
-                data = copy_paste_augmentation(
-                    **data,
-                    samples=self.copy_paste_samples,
-                    scale=scale,
-                )
-
-        if self.data_args.gaussian_noise_sigma > 0:
-            data = gaussian_noise(**data, sigma=self.data_args.gaussian_noise_sigma)
+        data = apply_augmentations(data, self.data_args, self.copy_paste_samples, scale=scale)
 
         data = self.convert_to_dict(
             volume=data["volume"],

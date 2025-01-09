@@ -351,6 +351,9 @@ def copy_paste_augmentation(
     labels: np.ndarray,
     samples: List[AnnotatedVolume],
     scale: float,
+    z_rotation_limit: float,
+    y_rotation_limit: float,
+    x_rotation_limit: float,
 ):
     sample: AnnotatedVolume = random.choice(samples)  # Pick random sample
 
@@ -366,7 +369,11 @@ def copy_paste_augmentation(
         volume=sample.volume,
         points=sample.centers_px,
         scale=scale,
-        angles=(0, 0, 0),
+        angles=(
+            random.uniform(-z_rotation_limit, z_rotation_limit),
+            random.uniform(-y_rotation_limit, y_rotation_limit),
+            random.uniform(-x_rotation_limit, x_rotation_limit),
+        ),
         center_zyx=(object_center[2], object_center[1], object_center[0]),
         output_shape=(output_size, output_size, output_size),
     )
