@@ -319,5 +319,5 @@ def random_erase_objects(volume: np.ndarray, centers_px: np.ndarray, radius_px: 
     :param prob: The probability of erasing each object.
     """
     keep_mask = ~np.array([(random.random() < prob) for _ in range(len(centers_px))], dtype=bool)
-    data = erase_objects(volume, centers_px, radius_px, labels, keep_mask, remove_overlap=True)
+    data = erase_objects(volume, centers_px, radius_px, labels, keep_mask, remove_overlap=False)
     return data["volume"], data["centers"], data["radius"], data["labels"]
