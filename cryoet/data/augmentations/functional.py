@@ -226,7 +226,7 @@ def random_rotate90_volume(volume, labels):
     return np.ascontiguousarray(volume), np.ascontiguousarray(labels)
 
 
-def random_flip_volume(volume: np.ndarray, heatmap: Optional[np.ndarray] = None, centers: Optional[np.ndarray] = None):
+def random_flip_volume(volume: np.ndarray, centers: Optional[np.ndarray], **kwargs):
     """Randomly flip the volume and labels.
     :param volume: The volume to rotate. Shape: (D, H, W)
     :param heatmap: The labels to rotate. Shape: (C, D, H, W)
@@ -237,27 +237,27 @@ def random_flip_volume(volume: np.ndarray, heatmap: Optional[np.ndarray] = None,
 
     if random.random() < 0.5:
         volume = np.flip(volume, axis=0)
-        if heatmap is not None:
-            heatmap = np.flip(heatmap, axis=1)
+        # if heatmap is not None:
+        #     heatmap = np.flip(heatmap, axis=1)
 
         if centers is not None:
             centers[:, 2] = (volume.shape[0] - 1) - centers[:, 2]
 
     if random.random() < 0.5:
         volume = np.flip(volume, axis=1)
-        if heatmap is not None:
-            heatmap = np.flip(heatmap, axis=2)
+        # if heatmap is not None:
+        #     heatmap = np.flip(heatmap, axis=2)
         if centers is not None:
             centers[:, 1] = (volume.shape[1] - 1) - centers[:, 1]
 
     if random.random() < 0.5:
         volume = np.flip(volume, axis=2)
-        if heatmap is not None:
-            heatmap = np.flip(heatmap, axis=3)
+        # if heatmap is not None:
+        #     heatmap = np.flip(heatmap, axis=3)
         if centers is not None:
             centers[:, 0] = (volume.shape[2] - 1) - centers[:, 0]
 
-    return dict(volume=np.ascontiguousarray(volume), heatmap=heatmap, centers=centers)
+    return dict(volume=np.ascontiguousarray(volume), centers=centers, **kwargs)
 
 
 def erase_objects(
@@ -321,33 +321,33 @@ def erase_objects(
     return dict(volume=volume, centers=centers_px[keep_mask], radius=radius_px[keep_mask], labels=labels[keep_mask])
 
 
-def random_erase_objects(volume: np.ndarray, centers_px: np.ndarray, radius_px: np.ndarray, labels: np.ndarray, prob: float):
+def random_erase_objects(volume: np.ndarray, centers: np.ndarray, radius: np.ndarray, labels: np.ndarray, prob: float):
     """
     :param volume: The volume to erase objects from. Shape: (D, H, W)
-    :param centers_px: The centers of the objects to erase. Shape: (N, 3). Each row is (x, y, z)
-    :param radius_px: The radius of the objects to erase. Shape: (N,)
+    :param centers: The centers of the objects to erase. Shape: (N, 3). Each row is (x, y, z)
+    :param radius: The radius of the objects to erase. Shape: (N,)
     :param labels: The labels of the objects to erase. Shape: (N,)
     :param prob: The probability of erasing each object.
     """
-    keep_mask = ~np.array([(random.random() < prob) for _ in range(len(centers_px))], dtype=bool)
-    data = erase_objects(volume, centers_px, radius_px, labels, keep_mask, remove_overlap=True)
-    return data["volume"], data["centers"], data["radius"], data["labels"]
+    keep_mask = ~np.array([(random.random() < prob) for _ in range(len(centers))], dtype=bool)
+    data = erase_objects(volume, centers, radius, labels, keep_mask, remove_overlap=True)
+    return data
 
 
-def gaussian_noise(volume: np.ndarray, sigma: float) -> np.ndarray:
+def gaussian_noise(volume: np.ndarray, sigma: float, **kwargs):
     """
     Add Gaussian noise to the volume.
     :param volume: The volume to add noise to. Shape: (D, H, W)
     :param sigma: The standard deviation of the Gaussian noise.
     """
     noise = np.random.normal(0, sigma, volume.shape)
-    return volume + noise
+    return dict(volume=volume + noise, **kwargs)
 
 
 def copy_paste_augmentation(
     volume: np.ndarray,
-    centers_px: np.ndarray,
-    radius_px: np.ndarray,
+    centers: np.ndarray,
+    radius: np.ndarray,
     labels: np.ndarray,
     samples: List[AnnotatedVolume],
     scale: float,
@@ -358,17 +358,17 @@ def copy_paste_augmentation(
     class_to_paste = random.randrange(0, NUM_CLASSES)
 
     # Pick random object from that class
-    object_index = random.choice(np.flatnonzero(sample.labels == class_to_paste))
+    object_index = random.choice(list(np.flatnonzero(sample.labels == class_to_paste)))
     object_radius = sample.radius_px[object_index]
     object_center = sample.centers_px[object_index]
-
+    output_size = int(2 * object_radius + 1)
     volume_to_paste, rotated_centers = rotate_and_scale_volume(
         volume=sample.volume,
         points=sample.centers_px,
         scale=scale,
         angles=(0, 0, 0),
         center_zyx=(object_center[2], object_center[1], object_center[0]),
-        output_shape=(2 * object_radius + 1, 2 * object_radius + 1, 2 * object_radius + 1),
+        output_shape=(output_size, output_size, output_size),
     )
 
     mask = get_points_mask_within_cube(rotated_centers, volume_to_paste.shape)
@@ -398,8 +398,8 @@ def copy_paste_augmentation(
     ] = merge_volume_using_max(dst_volume_view, volume_to_paste)
 
     offset = np.array([start_x, start_y, start_z]).reshape(1, 3)
-    centers_px = np.concatenate([centers_px, centers_to_paste_px + offset], axis=0)
-    radius_px = np.concatenate([radius_px, radius_to_paste_px], axis=0)
+    centers = np.concatenate([centers, centers_to_paste_px + offset], axis=0)
+    radius = np.concatenate([radius, radius_to_paste_px], axis=0)
     labels = np.concatenate([labels, labels_to_paste_px], axis=0)
 
-    return dict(volume=volume, centers=centers_px, radius=radius_px, labels=labels)
+    return dict(volume=volume, centers=centers, radius=radius, labels=labels)

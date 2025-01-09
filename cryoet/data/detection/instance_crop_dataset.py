@@ -77,35 +77,30 @@ class InstanceCropDatasetForPointDetection(CryoETObjectDetectionDataset, ObjectD
         radii_px = radii_px[keep_mask].copy()
         object_labels = object_labels[keep_mask].copy()
 
+        data = dict(volume=volume, centers=centers_px, labels=object_labels, radius=radii_px)
+
         if self.data_args.use_random_flips:
-            data = random_flip_volume(volume, centers=centers_px)
-            volume, centers_px = data["volume"], data["centers"]
+            data = random_flip_volume(**data)
 
         if self.data_args.random_erase_prob > 0:
-            volume, centers_px, radii_px, object_labels = random_erase_objects(
-                volume, centers_px, radii_px, object_labels, self.data_args.random_erase_prob
-            )
+            data = random_erase_objects(**data, prob=self.data_args.random_erase_prob)
 
-        if self.data_args.copy_paste_prob > 0:
+        if self.data_args.copy_paste_prob > 0 and random.random() < self.data_args.copy_paste_prob:
             for _ in range(random.randint(1, self.data_args.copy_paste_limit)):
                 data = copy_paste_augmentation(
-                    volume,
-                    centers_px,
-                    radii_px,
-                    object_labels,
+                    **data,
                     samples=self.copy_paste_samples,
                     scale=scale,
                 )
-                volume, centers_px, radii_px, object_labels = data["volume"], data["centers"], data["radii"], data["labels"]
 
         if self.data_args.gaussian_noise_sigma > 0:
-            volume = gaussian_noise(volume, sigma=self.data_args.gaussian_noise_sigma)
+            data = gaussian_noise(**data, sigma=self.data_args.gaussian_noise_sigma)
 
         data = self.convert_to_dict(
-            volume=volume,
-            centers=centers_px,
-            labels=object_labels,
-            radii=radii_px,
+            volume=data["volume"],
+            centers=data["centers"],
+            labels=data["labels"],
+            radii=data["radius"],
             tile_offsets_zyx=(0, 0, 0),
             study_name=self.study,
             mode=self.mode,
