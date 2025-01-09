@@ -61,21 +61,25 @@ LB: [0.20, 0.20, 0.20, 0.20, 0.4] -> 0.752
 LB: [0.25, 0.20, 0.20, 0.20, 0.4] -> 0.752
 
 LB: [0.20, 0.15, 0.20, 0.20, 0.4] -> 0.738
-
 LB: [0.20, 0.25, 0.20, 0.20, 0.4] -> 0.758
+LB: [0.20, 0.30, 0.20, 0.20, 0.4] -> 0.755
 
 LB: [0.20, 0.20, 0.15, 0.20, 0.4] -> 0.751
 LB: [0.20, 0.20, 0.25, 0.20, 0.4] -> 0.752
 
 LB: [0.20, 0.20, 0.20, 0.15, 0.4] -> 0.740
 LB: [0.20, 0.20, 0.20, 0.25, 0.4] -> 0.758
-
+LB: [0.20, 0.20, 0.20, 0.30, 0.4] -> 0.753
 
 LB: [0.20, 0.20, 0.20, 0.20, 0.35] -> 0.752
+LB: [0.20, 0.20, 0.20, 0.20, 0.40] -> 0.752
+LB: [0.20, 0.20, 0.20, 0.20, 0.50] -> 0.751
 
-LB: [0.20, 0.30, 0.20, 0.20, 0.4] -> 0.755
-LB: [0.20, 0.20, 0.20, 0.30, 0.4] -> 0.753
-LB: [0.20, 0.20, 0.20, 0.20, 0.5] -> 0.751
+LB: [0.20, 0.25, 0.20, 0.25, 0.40] -> 0.763
+LB: [0.20, 0.25, 0.20, 0.25, 0.25] -> ???
+LB: [0.30, 0.25, 0.20, 0.25, 0.40] -> 
+LB: [0.20, 0.30, 0.20, 0.25, 0.40] -> 
+LB: [0.20, 0.20, 0.20, 0.20, 0.3] -> 
 
 python trace_od.py /home/bloodaxe/develop/Kaggle-2024-CryoET/runs/od_segresnetv2_fold_0_rc_ic_denoised/lightning_logs/version_1/checkpoints/segresnetv2_96_fold_0_2862-score-0.8466-at-0.234-0.325-0.278-0.234-0.759.ckpt /home/bloodaxe/develop/Kaggle-2024-CryoET/runs/od_segresnetv2_fold_1_rc_ic_denoised/lightning_logs/version_1/checkpoints/segresnetv2_96_fold_1_1590-score-0.8177-at-0.278-0.278-0.234-0.234-0.325.ckpt /home/bloodaxe/develop/Kaggle-2024-CryoET/runs/od_segresnetv2_fold_2_rc_ic_denoised/lightning_logs/version_1/checkpoints/segresnetv2_96_fold_2_1060-score-0.7953-at-0.430-0.234-0.278-0.234-0.489.ckpt /home/bloodaxe/develop/Kaggle-2024-CryoET/runs/od_segresnetv2_fold_3_rc_ic_denoised/lightning_logs/version_1/checkpoints/segresnetv2_96_fold_3_2438-score-0.8234-at-0.158-0.194-0.278-0.278-0.158.ckpt  /home/bloodaxe/develop/Kaggle-2024-CryoET/runs/od_segresnetv2_fold_4_rc_ic_denoised/lightning_logs/version_1/checkpoints/segresnetv2_96_fold_4_2226-score-0.8391-at-0.234-0.194-0.194-0.234-0.278.ckpt 
 
@@ -131,6 +135,7 @@ CV 0.81668
 - Noise augmentations
 - Copy-paste
 - Random erase - Much lower score (?) 0.85 -> 0.75 on fold 0 (maybe bug?)
+- Pretrain on other modalities and then fine-tune on 'denoised' (--transfer_weights)
 
 ## Models
 
@@ -149,4 +154,5 @@ CV 0.81668
 
 ## Postprocessing
 
-- Winner takes all (current) vs multiple classes per anchor
+- Individual thresholds per class (Helps!!)
+- (--use_single_label_per_anchor) Winner takes all (current) vs multiple classes per anchor. --use_single_label_per_anchor=False does not seems to improve score
