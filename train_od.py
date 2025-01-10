@@ -80,6 +80,11 @@ def main():
     elif model_args.model_name == "dynunet":
         config = DynUNetForObjectDetectionConfig(use_stride2=model_args.use_stride2, use_stride4=model_args.use_stride4)
         model = DynUNetForObjectDetection(config)
+    elif model_args.model_name == "dynunet_v2":
+        config = DynUNetForObjectDetectionConfig(
+            act_name="gelu", dropout=0.1, res_block=True, use_stride2=model_args.use_stride2, use_stride4=model_args.use_stride4
+        )
+        model = DynUNetForObjectDetection(config)
     elif model_args.model_name == "unet3d-fat":
         config = UNet3DForObjectDetectionConfig(
             encoder_channels=[32, 64, 128, 256],

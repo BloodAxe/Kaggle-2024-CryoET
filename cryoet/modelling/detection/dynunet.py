@@ -58,6 +58,9 @@ class DynUNetForObjectDetectionConfig(PretrainedConfig):
         norm_name: str = "instance",
         use_stride4: bool = True,
         use_stride2: bool = True,
+        res_block: bool = False,
+        act_name: str = ("leakyrelu", {"inplace": True, "negative_slope": 0.01}),
+        dropout=None,
         **kwargs,
     ):
         super().__init__(**kwargs)
@@ -67,6 +70,9 @@ class DynUNetForObjectDetectionConfig(PretrainedConfig):
         self.norm_name = norm_name
         self.use_stride4 = use_stride4
         self.use_stride2 = use_stride2
+        self.res_block = res_block
+        self.act_name = act_name
+        self.dropout = dropout
 
 
 class DynUNetForObjectDetection(nn.Module):
@@ -88,6 +94,9 @@ class DynUNetForObjectDetection(nn.Module):
             norm_name=config.norm_name,
             deep_supervision=True,
             deep_supr_num=2,
+            dropout=config.dropout,
+            res_block=config.res_block,
+            act_name=config.act_name,
         )
 
         if self.config.use_stride2:
