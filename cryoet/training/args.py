@@ -26,7 +26,11 @@ class ModelArguments:
 
     use_qfl_loss: bool = field(default=False)
 
-    window_size: int = field(default=96)
+    spatial_window_size: int = field(default=128)
+    depth_window_size: int = field(default=96)
+
+    spatial_window_step: int = field(default=90)
+    depth_window_step: int = field(default=62)
 
     use_centernet_nms: bool = field(
         default=True, metadata={"help": "Enable CenterNet NMS when decoding. Relevant only for OD models."}

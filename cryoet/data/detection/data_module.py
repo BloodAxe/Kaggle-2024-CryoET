@@ -10,7 +10,7 @@ from torch.utils.data import ConcatDataset, DataLoader, default_collate
 
 from cryoet.data.cross_validation import split_data_into_folds
 from cryoet.data.parsers import CLASS_LABEL_TO_CLASS_NAME, read_annotated_volume, AnnotatedVolume
-from cryoet.training.args import DataArguments, MyTrainingArguments
+from cryoet.training.args import DataArguments, MyTrainingArguments, ModelArguments
 from .instance_crop_dataset import InstanceCropDatasetForPointDetection
 from .random_crop_dataset import RandomCropForPointDetectionDataset
 
@@ -22,8 +22,7 @@ class ObjectDetectionDataModule(L.LightningDataModule):
         self,
         train_args: MyTrainingArguments,
         data_args: DataArguments,
-        window_size: int,
-        stride: int,
+        model_args: ModelArguments,
     ):
         super().__init__()
 
@@ -34,8 +33,6 @@ class ObjectDetectionDataModule(L.LightningDataModule):
         self.runs_dir = self.root / "train" / "static" / "ExperimentRuns"
         self.train_modes = train_modes.split(",") if isinstance(train_modes, str) else list(train_modes)
         self.valid_modes = valid_modes.split(",") if isinstance(valid_modes, str) else list(valid_modes)
-        self.window_size = window_size
-        self.stride = stride
         self.train_batch_size = train_args.per_device_train_batch_size
         self.valid_batch_size = train_args.per_device_eval_batch_size
         self.dataloader_num_workers = train_args.dataloader_num_workers
@@ -45,6 +42,7 @@ class ObjectDetectionDataModule(L.LightningDataModule):
 
         self.train_studies, self.valid_studies = split_data_into_folds(self.runs_dir)[self.fold]
         self.data_args = data_args
+        self.model_args = model_args
         self.train_args = train_args
         self.train = None
         self.val = None
@@ -58,8 +56,7 @@ class ObjectDetectionDataModule(L.LightningDataModule):
         use_sliding_crops,
         use_random_crops,
         use_instance_crops,
-        window_size,
-        stride,
+        model_args,
         data_args,
     ):
         datasets = []
@@ -77,9 +74,8 @@ class ObjectDetectionDataModule(L.LightningDataModule):
             if use_sliding_crops:
                 sliding_dataset = SlidingWindowCryoETObjectDetectionDataset(
                     sample=sample,
-                    window_size=window_size,
-                    stride=stride,
                     data_args=data_args,
+                    model_args=model_args,
                     copy_paste_samples=samples,
                 )
                 datasets.append(sliding_dataset)
@@ -88,7 +84,7 @@ class ObjectDetectionDataModule(L.LightningDataModule):
                 random_crop_dataset = RandomCropForPointDetectionDataset(
                     sample=sample,
                     num_crops=data_args.num_crops_per_study,
-                    window_size=window_size,
+                    model_args=model_args,
                     data_args=data_args,
                     copy_paste_samples=samples,
                 )
@@ -98,7 +94,7 @@ class ObjectDetectionDataModule(L.LightningDataModule):
                 crop_around_dataset = InstanceCropDatasetForPointDetection(
                     sample=sample,
                     num_crops=data_args.num_crops_per_study,
-                    window_size=window_size,
+                    model_args=model_args,
                     data_args=data_args,
                     copy_paste_samples=samples,
                 )
@@ -126,8 +122,7 @@ class ObjectDetectionDataModule(L.LightningDataModule):
             use_sliding_crops=self.data_args.use_sliding_crops,
             use_instance_crops=self.data_args.use_instance_crops,
             use_random_crops=self.data_args.use_random_crops,
-            window_size=self.window_size,
-            stride=self.stride,
+            model_args=self.model_args,
             data_args=self.data_args,
         )
         self.val, self.solution = self.build_dataset_from_samples(
@@ -135,8 +130,7 @@ class ObjectDetectionDataModule(L.LightningDataModule):
             use_sliding_crops=True,
             use_instance_crops=False,
             use_random_crops=False,
-            window_size=self.window_size,
-            stride=self.stride,
+            model_args=self.model_args,
             data_args=self.data_args,
         )
 

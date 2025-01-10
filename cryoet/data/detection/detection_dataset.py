@@ -3,11 +3,8 @@ import random
 from torch.utils.data import Dataset
 
 from cryoet.data.augmentations.functional import random_flip_volume, random_erase_objects, copy_paste_augmentation, gaussian_noise
-from cryoet.data.functional import normalize_volume_to_unit_range
 from cryoet.data.parsers import (
-    get_volume_and_objects,
     TARGET_CLASSES,
-    ANGSTROMS_IN_PIXEL,
     AnnotatedVolume,
 )
 from cryoet.training.args import DataArguments
@@ -22,7 +19,7 @@ class CryoETObjectDetectionDataset(Dataset):
         self.split = sample.split
         self.mode = sample.mode
         self.volume_data = sample.volume
-        self.volume_shape = sample.volume.shape
+        self.volume_shape = sample.volume_shape
         self.object_centers = sample.centers
         self.object_labels = sample.labels
         self.object_radii = sample.radius

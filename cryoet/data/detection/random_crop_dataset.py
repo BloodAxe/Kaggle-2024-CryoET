@@ -8,7 +8,7 @@ from cryoet.data.augmentations.functional import (
 from .detection_dataset import CryoETObjectDetectionDataset, apply_augmentations
 from .mixin import ObjectDetectionMixin
 from ..parsers import AnnotatedVolume
-from ...training.args import DataArguments
+from ...training.args import DataArguments, ModelArguments
 
 
 class RandomCropForPointDetectionDataset(CryoETObjectDetectionDataset, ObjectDetectionMixin):
@@ -16,13 +16,14 @@ class RandomCropForPointDetectionDataset(CryoETObjectDetectionDataset, ObjectDet
         self,
         sample: AnnotatedVolume,
         copy_paste_samples: List[AnnotatedVolume],
-        window_size: int,
         num_crops: int,
+        model_args: ModelArguments,
         data_args: DataArguments,
     ):
         super().__init__(sample)
-        self.window_size = window_size
+        self.window_size = model_args.depth_window_size, model_args.spatial_window_size, model_args.spatial_window_size
         self.num_crops = num_crops
+        self.model_args = model_args
         self.data_args = data_args
         self.copy_paste_samples = copy_paste_samples
 
@@ -46,7 +47,7 @@ class RandomCropForPointDetectionDataset(CryoETObjectDetectionDataset, ObjectDet
                 random.random() * self.volume_shape[1],
                 random.random() * self.volume_shape[2],
             ),
-            output_shape=(self.window_size, self.window_size, self.window_size),
+            output_shape=self.window_size,
         )
 
         radii_px = radii_px * scale

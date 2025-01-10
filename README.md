@@ -56,6 +56,8 @@ LB: [0.20, 0.20, 0.20, 0.20, 0.4] -> 0.745
 
 CV: 0.8244
 
+LB: [0.20, 0.20, 0.20, 0.20, 0.4] -> 0.752 BASELINE SUB
+
 LB: [0.15, 0.20, 0.20, 0.20, 0.4] -> 0.752
 LB: [0.20, 0.20, 0.20, 0.20, 0.4] -> 0.752
 LB: [0.25, 0.20, 0.20, 0.20, 0.4] -> 0.752
@@ -76,10 +78,10 @@ LB: [0.20, 0.20, 0.20, 0.20, 0.40] -> 0.752
 LB: [0.20, 0.20, 0.20, 0.20, 0.50] -> 0.751
 
 LB: [0.20, 0.25, 0.20, 0.25, 0.40] -> 0.763
-LB: [0.20, 0.25, 0.20, 0.25, 0.25] -> ???
-LB: [0.30, 0.25, 0.20, 0.25, 0.40] -> 
-LB: [0.20, 0.30, 0.20, 0.25, 0.40] -> 
-LB: [0.20, 0.20, 0.20, 0.20, 0.3] -> 
+LB: [0.20, 0.25, 0.20, 0.25, 0.25] -> 0.764
+LB: [0.30, 0.25, 0.20, 0.25, 0.4] -> 0.762
+LB: [0.20, 0.20, 0.20, 0.20, 0.3] -> 0.754
+LB: [0.15, 0.20, 0.20, 0.20, 0.4] -> 0.752
 
 python trace_od.py /home/bloodaxe/develop/Kaggle-2024-CryoET/runs/od_segresnetv2_fold_0_rc_ic_denoised/lightning_logs/version_1/checkpoints/segresnetv2_96_fold_0_2862-score-0.8466-at-0.234-0.325-0.278-0.234-0.759.ckpt /home/bloodaxe/develop/Kaggle-2024-CryoET/runs/od_segresnetv2_fold_1_rc_ic_denoised/lightning_logs/version_1/checkpoints/segresnetv2_96_fold_1_1590-score-0.8177-at-0.278-0.278-0.234-0.234-0.325.ckpt /home/bloodaxe/develop/Kaggle-2024-CryoET/runs/od_segresnetv2_fold_2_rc_ic_denoised/lightning_logs/version_1/checkpoints/segresnetv2_96_fold_2_1060-score-0.7953-at-0.430-0.234-0.278-0.234-0.489.ckpt /home/bloodaxe/develop/Kaggle-2024-CryoET/runs/od_segresnetv2_fold_3_rc_ic_denoised/lightning_logs/version_1/checkpoints/segresnetv2_96_fold_3_2438-score-0.8234-at-0.158-0.194-0.278-0.278-0.158.ckpt  /home/bloodaxe/develop/Kaggle-2024-CryoET/runs/od_segresnetv2_fold_4_rc_ic_denoised/lightning_logs/version_1/checkpoints/segresnetv2_96_fold_4_2226-score-0.8391-at-0.234-0.194-0.194-0.234-0.278.ckpt 
 
@@ -124,6 +126,45 @@ CV 0.81668
 /home/bloodaxe/develop/Kaggle-2024-CryoET/runs/od_dynunet_fold_2_rc_ic_denoised/lightning_logs/version_1/checkpoints/dynunet_128_fold_2_636-score-0.7689-at-0.430-0.278-0.194-0.278-0.489.ckpt
 /home/bloodaxe/develop/Kaggle-2024-CryoET/runs/od_dynunet_fold_3_rc_ic_denoised/lightning_logs/version_1/checkpoints/dynunet_128_fold_3_1696-score-0.8307-at-0.430-0.278-0.126-0.158-0.234.ckpt
 /home/bloodaxe/develop/Kaggle-2024-CryoET/runs/od_dynunet_fold_4_rc_ic_denoised/lightning_logs/version_1/checkpoints/dynunet_128_fold_4_848-score-0.8263-at-0.325-0.278-0.126-0.194-0.126.ckpt
+
+
+## DynUnet (Stride 2)
+
+python trace_od_dynunet.py /home/bloodaxe/develop/Kaggle-2024-CryoET/runs/od_dynunet_fold_0_rc_ic_s2_denoised/lightning_logs/version_0/checkpoints/dynunet_128_fold_0_1590-score-0.8345-at-0.234-0.325-0.158-0.278-0.278.ckpt  /home/bloodaxe/develop/Kaggle-2024-CryoET/runs/od_dynunet_fold_1_rc_ic_s2_denoised/lightning_logs/version_0/checkpoints/dynunet_128_fold_1_2332-score-0.8102-at-0.278-0.126-0.194-0.158-0.376.ckpt  /home/bloodaxe/develop/Kaggle-2024-CryoET/runs/od_dynunet_fold_2_rc_ic_s2_denoised/lightning_logs/version_0/checkpoints/dynunet_128_fold_2_742-score-0.7732-at-0.325-0.234-0.158-0.278-0.194.ckpt  /home/bloodaxe/develop/Kaggle-2024-CryoET/runs/od_dynunet_fold_3_rc_ic_s2_denoised/lightning_logs/version_0/checkpoints/dynunet_128_fold_3_1378-score-0.8149-at-0.325-0.325-0.278-0.234-0.158.ckpt  /home/bloodaxe/develop/Kaggle-2024-CryoET/runs/od_dynunet_fold_4_rc_ic_s2_denoised/lightning_logs/version_0/checkpoints/dynunet_128_fold_4_2650-score-0.8236-at-0.194-0.126-0.126-0.194-0.097.ckpt
+
+| Fold | Score    | AFRT     | BGT      | RBSM     | TRGLB    | VLP      |
+|------|----------|----------|----------|----------|----------|----------|
+| 0    | 0.8345   | 0.234    | 0.325    | 0.158    | 0.278    | 0.278    |  
+| 1    | 0.8102   | 0.278    | 0.126    | 0.194    | 0.158    | 0.376    |  
+| 2    | 0.7732   | 0.325    | 0.234    | 0.158    | 0.278    | 0.194    |  
+| 3    | 0.8149   | 0.325    | 0.325    | 0.278    | 0.234    | 0.158    |
+| 4    | 0.8236   | 0.194    | 0.126    | 0.126    | 0.194    | 0.097    |
+|------|----------|----------|----------|----------|----------|----------|
+| MEAN | 0,811280 | 0,271200 | 0,227200 | 0,182800 | 0,228400 | 0,220600 |
+
+## SegResNet (Stride 2)
+
+python trace_od.py /home/ekhvedchenia/develop/Kaggle-2024-CryoET/runs/od_segresnetv2_fold_0_rc_ic_s2_denoised/lightning_logs/version_0/checkpoints/segresnetv2_96_fold_0_1562-score-0.8465-at-0.194-0.376-0.194-0.194-0.325.ckpt /home/ekhvedchenia/develop/Kaggle-2024-CryoET/runs/od_segresnetv2_fold_3_rc_ic_s2_denoised/lightning_logs/version_0/checkpoints/segresnetv2_96_fold_3_1846-score-0.8298-at-0.158-0.325-0.278-0.278-0.278.ckpt /home/ekhvedchenia/develop/Kaggle-2024-CryoET/runs/od_segresnetv2_fold_1_rc_ic_s2_denoised/lightning_logs/version_0/checkpoints/segresnetv2_96_fold_1_710-score-0.8239-at-0.376-0.430-0.234-0.234-0.278.ckpt /home/ekhvedchenia/develop/Kaggle-2024-CryoET/runs/od_segresnetv2_fold_2_rc_ic_s2_denoised/lightning_logs/version_0/checkpoints/segresnetv2_96_fold_2_1349-score-0.8109-at-0.278-0.234-0.234-0.325-0.234.ckpt /home/ekhvedchenia/develop/Kaggle-2024-CryoET/runs/od_segresnetv2_fold_4_rc_ic_s2_denoised/lightning_logs/version_0/checkpoints/segresnetv2_96_fold_4_1278-score-0.8137-at-0.158-0.234-0.194-0.194-0.376.ckpt
+
+| Fold | Score  | AFRT  | BGT   | RBSM       | TRGLB      | VLP        |
+|------|--------|-------|-------|------------|------------|------------|
+| 0    | 0.8465 | 0.194 | 0.376 | 0.194      | 0.194      | 0.325      |
+| 3    | 0.8298 | 0.158 | 0.325 | 0.278      | 0.278      | 0.278      |
+| 1    | 0.8239 | 0.376 | 0.430 | 0.234      | 0.234      | 0.278      |
+| 2    | 0.8109 | 0.278 | 0.234 | 0.234      | 0.325      | 0.234      |
+| 4    | 0.8137 | 0.158 | 0.234 | 0.194      | 0.194      | 0.376      |
+|------| ------ | ------| ----- | ---------- | ---------- | ---------- |
+| AVG  | 0,8249 | 0,232 | 0,319 | 0,226      | 0,2450     | 0,298      |
+
+
+Mean of two 
+0,818120 0,252000 0,273500 0,204800 0,236700 0,259400
+
+LB: [0.252, 0.273, 0.204, 0.236, 0.259] -> ???
+LB: [0.200, 0.273, 0.204, 0.236, 0.259] -> ???
+LB: [0.252, 0.250, 0.204, 0.236, 0.259] -> ???
+LB: [0.252, 0.273, 0.250, 0.236, 0.259] -> ???
+LB: [0.252, 0.273, 0.204, 0.200, 0.259] -> ???
 
 # Ideas
 

@@ -3,6 +3,7 @@ import json
 import math
 import os
 from pathlib import Path
+from typing import Tuple
 
 import matplotlib.pyplot as plt
 import numpy as np
@@ -342,6 +343,11 @@ class AnnotatedVolume:
 
     centers_px: np.ndarray
     radius_px: np.ndarray
+
+    @property
+    def volume_shape(self) -> Tuple[int, int, int]:
+        depth, height, width = self.volume.shape
+        return (depth, height, width)
 
 
 def read_annotated_volume(root, study, mode, split="train"):

@@ -10,7 +10,7 @@ from cryoet.data.augmentations.functional import (
 from .detection_dataset import CryoETObjectDetectionDataset, apply_augmentations
 from .mixin import ObjectDetectionMixin
 from ..parsers import AnnotatedVolume
-from ...training.args import DataArguments
+from ...training.args import DataArguments, ModelArguments
 
 
 class InstanceCropDatasetForPointDetection(CryoETObjectDetectionDataset, ObjectDetectionMixin):
@@ -18,13 +18,13 @@ class InstanceCropDatasetForPointDetection(CryoETObjectDetectionDataset, ObjectD
         self,
         sample: AnnotatedVolume,
         copy_paste_samples: List[AnnotatedVolume],
-        window_size: int,
         num_crops: int,
+        model_args: ModelArguments,
         data_args: DataArguments,
         balance_classes: bool = True,
     ):
         super().__init__(sample)
-        self.window_size = window_size
+        self.window_size = model_args.depth_window_size, model_args.spatial_window_size, model_args.spatial_window_size
         self.num_crops = num_crops
         self.data_args = data_args
         self.balance_classes = balance_classes
@@ -57,11 +57,11 @@ class InstanceCropDatasetForPointDetection(CryoETObjectDetectionDataset, ObjectD
             ),
             scale=scale,
             center_zyx=(
-                center[2] + (random.random() - 0.5) * self.window_size / 5,
-                center[1] + (random.random() - 0.5) * self.window_size / 5,
-                center[0] + (random.random() - 0.5) * self.window_size / 5,
+                center[2] + (random.random() - 0.5) * self.window_size[0] / 5,
+                center[1] + (random.random() - 0.5) * self.window_size[1] / 5,
+                center[0] + (random.random() - 0.5) * self.window_size[2] / 5,
             ),
-            output_shape=(self.window_size, self.window_size, self.window_size),
+            output_shape=self.window_size,
         )
 
         radii_px = radii_px * scale

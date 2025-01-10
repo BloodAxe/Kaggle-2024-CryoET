@@ -4,25 +4,25 @@ from .detection_dataset import CryoETObjectDetectionDataset
 from .mixin import ObjectDetectionMixin
 from ..functional import compute_tiles
 from ..parsers import AnnotatedVolume
-from ...training.args import DataArguments
+from ...training.args import DataArguments, ModelArguments
 
 
 class SlidingWindowCryoETObjectDetectionDataset(CryoETObjectDetectionDataset, ObjectDetectionMixin):
     def __repr__(self):
-        return f"{self.__class__.__name__}(window_size={self.window_size}, stride={self.stride}, study={self.study}, mode={self.mode}, split={self.split}) [{len(self)}]"
+        return f"{self.__class__.__name__}(window_size={self.window_size}, stride={self.window_step}, study={self.study}, mode={self.mode}, split={self.split}) [{len(self)}]"
 
     def __init__(
         self,
         sample: AnnotatedVolume,
         copy_paste_samples,
-        window_size: int,
-        stride: int,
         data_args: DataArguments,
+        model_args: ModelArguments,
     ):
         super().__init__(sample)
-        self.window_size = window_size
-        self.stride = stride
-        self.tiles = list(compute_tiles(self.sample.volume.shape, window_size, stride))
+        self.window_size = model_args.depth_window_size, model_args.spatial_window_size, model_args.spatial_window_size
+        self.window_step = model_args.depth_window_step, model_args.spatial_window_step, model_args.spatial_window_step
+
+        self.tiles = list(compute_tiles(self.sample.volume_shape, self.window_size, self.window_step))
         self.data_args = data_args
         self.copy_paste_samples = copy_paste_samples
 
@@ -48,9 +48,9 @@ class SlidingWindowCryoETObjectDetectionDataset(CryoETObjectDetectionDataset, Ob
         object_labels = object_labels[keep_mask].copy()
 
         # Pad the volume to the window size
-        pad_z = self.window_size - volume.shape[0]
-        pad_y = self.window_size - volume.shape[1]
-        pad_x = self.window_size - volume.shape[2]
+        pad_z = self.window_size[0] - volume.shape[0]
+        pad_y = self.window_size[1] - volume.shape[1]
+        pad_x = self.window_size[2] - volume.shape[2]
 
         volume = np.pad(
             volume,

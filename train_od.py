@@ -69,9 +69,7 @@ def main():
         config = SegResNetForObjectDetectionConfig(window_size=model_args.window_size)
         model = SegResNetForObjectDetection(config)
     elif model_args.model_name == "segresnetv2":
-        config = SegResNetForObjectDetectionV2Config(
-            window_size=model_args.window_size, use_stride2=model_args.use_stride2, use_stride4=model_args.use_stride4
-        )
+        config = SegResNetForObjectDetectionV2Config(use_stride2=model_args.use_stride2, use_stride4=model_args.use_stride4)
         model = SegResNetForObjectDetectionV2(config)
     elif model_args.model_name == "unet3d":
         config = UNet3DForObjectDetectionConfig(window_size=model_args.window_size)
@@ -112,8 +110,7 @@ def main():
         data_module = ObjectDetectionDataModule(
             data_args=data_args,
             train_args=training_args,
-            window_size=model_args.window_size,
-            stride=70,
+            model_args=model_args,
         )
 
     model_module = ObjectDetectionModel(model=model, data_args=data_args, model_args=model_args, train_args=training_args)
@@ -129,7 +126,7 @@ def main():
         save_last=True,
         auto_insert_metric_name=False,
         save_top_k=5,
-        filename=f"{model_args.model_name}_{model_args.window_size}_fold_{data_args.fold}"
+        filename=f"{model_args.model_name}_{model_args.depth_window_size}x{model_args.spatial_window_size}x{model_args.spatial_window_size}_fold_{data_args.fold}"
         + "_{step:03d}-score-{val/score:0.4f}-at-{val/apo-ferritin_threshold:0.3f}-{val/beta-galactosidase_threshold:0.3f}-{val/ribosome_threshold:0.3f}-{val/thyroglobulin_threshold:0.3f}-{val/virus-like-particle_threshold:0.3f}",
         # + "_{step:03d}-score-{val/score:0.4f}",
     )
