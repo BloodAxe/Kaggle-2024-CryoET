@@ -84,7 +84,7 @@ def main():
         config = DynUNetForObjectDetectionConfig(
             # act_name="gelu",
             # dropout=0.1,
-            # res_block=True,
+            res_block=True,
             use_stride2=model_args.use_stride2,
             use_stride4=model_args.use_stride4,
         )
