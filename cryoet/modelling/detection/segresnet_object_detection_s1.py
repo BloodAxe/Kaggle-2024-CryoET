@@ -45,7 +45,9 @@ class SegResNetForObjectDetectionS1(nn.Module):
             dropout_prob=config.dropout_prob,
         )
 
-        self.head = ObjectDetectionHead(in_channels=config.out_channels, num_classes=config.num_classes, stride=1)
+        self.head = ObjectDetectionHead(
+            in_channels=32, num_classes=config.num_classes, intermediate_channels=32, offset_intermediate_channels=16, stride=1
+        )
 
     def forward(self, volume, labels=None, **loss_kwargs):
         _, feature_maps = self.backbone(volume)
