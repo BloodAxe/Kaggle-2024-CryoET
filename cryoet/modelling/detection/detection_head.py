@@ -59,9 +59,6 @@ class ObjectDetectionHead(nn.Module):
         logits = self.cls_head(self.cls_stem(features))
         offsets = self.offset_head(self.offset_stem(features)).tanh() * self.stride
 
-        if torch.jit.is_tracing():
-            return logits, offsets
-
         loss = None
         loss_dict = None
         if labels is not None:
