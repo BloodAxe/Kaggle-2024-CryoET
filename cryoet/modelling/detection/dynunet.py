@@ -125,15 +125,15 @@ class DynUNetForObjectDetection(nn.Module):
         strides = []
 
         if self.config.use_stride4:
-            output4 = self.head4(fm4)
-            logits.append(output4.logits)
-            offsets.append(output4.offsets)
+            logits4, offsets4 = self.head4(fm4)
+            logits.append(logits4)
+            offsets.append(offsets4)
             strides.append(self.head4.stride)
 
         if self.config.use_stride2:
-            output2 = self.head2(fm2)
-            logits.append(output2.logits)
-            offsets.append(output2.offsets)
+            logits2, offsets2 = self.head2(fm2)
+            logits.append(logits2)
+            offsets.append(offsets2)
             strides.append(self.head2.stride)
 
         if torch.jit.is_tracing():

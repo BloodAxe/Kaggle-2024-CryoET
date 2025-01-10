@@ -1,9 +1,10 @@
-import torch
-from torch import nn, Tensor
 import dataclasses
 from typing import Optional, Dict, List
 
-from .functional import anchors_for_offsets_feature_map, object_detection_loss
+import torch
+from torch import nn, Tensor
+
+from .functional import object_detection_loss
 
 
 @dataclasses.dataclass
@@ -55,13 +56,7 @@ class ObjectDetectionHead(nn.Module):
         torch.nn.init.zeros_(self.cls_head.weight)
         torch.nn.init.constant_(self.cls_head.bias, -4)
 
-    def forward(self, features, labels=None, **loss_kwargs):
+    def forward(self, features):
         logits = self.cls_head(self.cls_stem(features))
         offsets = self.offset_head(self.offset_stem(features)).tanh() * self.stride
-
-        loss = None
-        loss_dict = None
-        if labels is not None:
-            loss, loss_dict = object_detection_loss(logits.float(), offsets.float(), self.stride, labels, **loss_kwargs)
-
-        return ObjectDetectionOutput(logits=logits, offsets=offsets, strides=self.stride, loss=loss, loss_dict=loss_dict)
+        return logits, offsets
