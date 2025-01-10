@@ -51,7 +51,7 @@ class SegResNetForObjectDetectionS1(nn.Module):
         _, feature_maps = self.backbone(volume)
         fm1 = feature_maps[-1]
 
-        [logits], [offsets] = self.head2(fm1)
+        [logits], [offsets] = self.head(fm1)
         strides = [self.head.stride]
 
         if torch.jit.is_tracing():
