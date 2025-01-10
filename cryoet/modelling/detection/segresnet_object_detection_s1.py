@@ -42,9 +42,8 @@ class SegResNetForObjectDetectionS1(nn.Module):
             init_filters=config.init_filters,
             blocks_down=config.blocks_down,
             blocks_up=config.blocks_up,
-            dropout_prob=config.dropout_prob,
         )
-
+        self.drop2d = nn.Dropout2d(p=config.dropout_prob)
         self.head = ObjectDetectionHead(
             in_channels=32, num_classes=config.num_classes, intermediate_channels=32, offset_intermediate_channels=16, stride=1
         )
@@ -53,7 +52,7 @@ class SegResNetForObjectDetectionS1(nn.Module):
         _, feature_maps = self.backbone(volume)
         fm1 = feature_maps[-1]
 
-        [logits], [offsets] = self.head(fm1)
+        [logits], [offsets] = self.head(self.drop2d(fm1))
         strides = [self.head.stride]
 
         if torch.jit.is_tracing():
