@@ -38,8 +38,9 @@ def main():
     training_args, model_args, data_args = parser.parse_args_into_dataclasses()
     training_args = typing.cast(MyTrainingArguments, training_args)
     model_args = typing.cast(ModelArguments, model_args)
-
     data_args = typing.cast(DataArguments, data_args)
+
+    L.seed_everything(training_args.seed)
 
     if training_args.output_dir is None:
         output_dir_name = f"runs/od_{model_args.model_name}_fold_{data_args.fold}"
