@@ -1,12 +1,13 @@
-from monai.networks.nets import SegResNet
+import torch
 from torch import nn
-
-from .detection_head import ObjectDetectionHead
-
 from transformers import PretrainedConfig
 
+from .detection_head import ObjectDetectionHead, ObjectDetectionOutput
+from .functional import object_detection_loss
+from .segresnet_object_detection_v2 import SegResNetBackbone
 
-class SegResNetForObjectDetectionConfig(PretrainedConfig):
+
+class SegResNetForObjectDetectionS1Config(PretrainedConfig):
     def __init__(
         self,
         spatial_dims=3,
@@ -15,9 +16,8 @@ class SegResNetForObjectDetectionConfig(PretrainedConfig):
         init_filters=32,
         blocks_down=(1, 2, 2, 4),
         blocks_up=(1, 1, 1),
-        dropout_prob=0.2,
+        dropout_prob=0.1,
         num_classes=5,
-        use_qfl_loss: bool = False,
         **kwargs,
     ):
         super().__init__(**kwargs)
@@ -29,14 +29,13 @@ class SegResNetForObjectDetectionConfig(PretrainedConfig):
         self.blocks_up = blocks_up
         self.dropout_prob = dropout_prob
         self.num_classes = num_classes
-        self.use_qfl_loss = use_qfl_loss
 
 
-class SegResNetForObjectDetection(nn.Module):
-    def __init__(self, config: SegResNetForObjectDetectionConfig):
+class SegResNetForObjectDetectionS1(nn.Module):
+    def __init__(self, config: SegResNetForObjectDetectionS1Config):
         super().__init__()
-
-        self.backbone = SegResNet(
+        self.config = config
+        self.backbone = SegResNetBackbone(
             spatial_dims=config.spatial_dims,
             in_channels=config.in_channels,
             out_channels=config.out_channels,
@@ -49,5 +48,18 @@ class SegResNetForObjectDetection(nn.Module):
         self.head = ObjectDetectionHead(in_channels=config.out_channels, num_classes=config.num_classes, stride=1)
 
     def forward(self, volume, labels=None, **loss_kwargs):
-        features = self.backbone(volume)
-        return self.head(features, labels, **loss_kwargs)
+        _, feature_maps = self.backbone(volume)
+        fm1 = feature_maps[-1]
+
+        [logits], [offsets] = self.head2(fm1)
+        strides = [self.head.stride]
+
+        if torch.jit.is_tracing():
+            return logits, offsets
+
+        loss = None
+        loss_dict = None
+        if labels is not None:
+            loss, loss_dict = object_detection_loss(logits, offsets, strides, labels, **loss_kwargs)
+
+        return ObjectDetectionOutput(logits=logits, offsets=offsets, strides=strides, loss=loss, loss_dict=loss_dict)

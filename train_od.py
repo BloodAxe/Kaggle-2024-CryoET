@@ -16,7 +16,10 @@ from transformers import (
 from cryoet.data.detection.data_module import ObjectDetectionDataModule
 from cryoet.modelling.detection.dynunet import DynUNetForObjectDetectionConfig, DynUNetForObjectDetection
 from cryoet.modelling.detection.maxvit_unet25d import MaxVitUnet25d, MaxVitUnet25dConfig
-from cryoet.modelling.detection.segresnet_object_detection import SegResNetForObjectDetection, SegResNetForObjectDetectionConfig
+from cryoet.modelling.detection.segresnet_object_detection_s1 import (
+    SegResNetForObjectDetectionS1,
+    SegResNetForObjectDetectionS1Config,
+)
 from cryoet.modelling.detection.segresnet_object_detection_v2 import (
     SegResNetForObjectDetectionV2,
     SegResNetForObjectDetectionV2Config,
@@ -65,9 +68,9 @@ def main():
     model_kwargs = {}
     training_args.master_print(f"Model kwargs: {model_kwargs}")
 
-    if model_args.model_name == "segresnet":
-        config = SegResNetForObjectDetectionConfig(window_size=model_args.window_size)
-        model = SegResNetForObjectDetection(config)
+    if model_args.model_name == "segresnet_s1":
+        config = SegResNetForObjectDetectionS1Config()
+        model = SegResNetForObjectDetectionS1(config)
     elif model_args.model_name == "segresnetv2":
         config = SegResNetForObjectDetectionV2Config(use_stride2=model_args.use_stride2, use_stride4=model_args.use_stride4)
         model = SegResNetForObjectDetectionV2(config)
