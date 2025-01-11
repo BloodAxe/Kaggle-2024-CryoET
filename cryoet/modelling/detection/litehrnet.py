@@ -120,14 +120,15 @@ class HRNetv2ForObjectDetection(nn.Module):
         )
         self.backbone = convert_2d_to_3d(backbone)
 
-        # self.up = nn.Sequential(nn.Conv3d(270, 64 * 8, kernel_size=1), PixelShuffle3d(2))
+        self.up = nn.Sequential(nn.Conv3d(128, 32 * 8, kernel_size=1), PixelShuffle3d(2))
         self.head = ObjectDetectionHead(
-            in_channels=128, num_classes=5, intermediate_channels=64, offset_intermediate_channels=16, stride=4
+            in_channels=128, num_classes=5, intermediate_channels=32, offset_intermediate_channels=16, stride=2
         )
 
     def forward(self, volume, labels=None, **loss_kwargs):
         x = self.backbone(volume)
-        logits, offsets = self.head(x[0])
+        x = self.up(x[0])
+        logits, offsets = self.head(x)
 
         logits = [logits]
         offsets = [offsets]
