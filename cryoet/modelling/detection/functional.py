@@ -117,9 +117,12 @@ def object_detection_loss(
     logits: Tensor | List[Tensor],
     offsets: Tensor | List[Tensor],
     strides: int | List[int],
-    labels,
+    labels: Tensor,
     average_tokens_across_devices: bool = False,
     use_l1_loss: bool = False,
+    assigner_max_anchors_per_point: int = 13,
+    assigner_alpha=1.0,
+    assigner_beta=6.0,
     **kwargs,
 ):
     """
@@ -152,7 +155,12 @@ def object_detection_loss(
     true_sigmas = labels[:, :, 4:5]  # [B, n, 1]
 
     # 4) Perform dynamic anchor assignment
-    assigner = TaskAlignedAssigner()
+    assigner = TaskAlignedAssigner(
+        max_anchors_per_point=assigner_max_anchors_per_point,
+        alpha=assigner_alpha,
+        beta=assigner_beta,
+    )
+
     assigned_labels, assigned_centers, assigned_scores, assigned_sigmas = assigner(
         pred_scores=pred_logits.detach().sigmoid(),
         pred_centers=pred_centers,

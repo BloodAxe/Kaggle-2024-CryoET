@@ -43,6 +43,10 @@ class ModelArguments:
     use_stride4: bool = field(default=True)
     use_stride2: bool = field(default=True)
 
+    assigner_max_anchors_per_point: int = field(default=13, metadata={"help": "Maximum number of anchors per point"})
+    assigner_alpha: float = field(default=1.0, metadata={"help": "Alpha"})
+    assigner_beta: float = field(default=6.0, metadata={"help": "Beta"})
+
     apply_loss_on_each_stride: bool = field(default=False)
 
     def _dict_torch_dtype_to_str(self, d: Dict[str, Any]) -> None:

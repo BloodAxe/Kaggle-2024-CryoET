@@ -82,16 +82,16 @@ def check_points_inside_bboxes(anchor_points: Tensor, gt_centers: Tensor, gt_rad
 
 class TaskAlignedAssigner(nn.Module):
 
-    def __init__(self, topk=13, alpha=1.0, beta=6.0, eps=1e-9):
+    def __init__(self, max_anchors_per_point=13, alpha=1.0, beta=6.0, eps=1e-9):
         """
 
-        :param topk: Maximum number of achors that is selected for each gt box
+        :param max_anchors_per_point: Maximum number of achors that is selected for each gt box
         :param alpha: Power factor for class probabilities of predicted boxes (Used compute alignment metric)
         :param beta: Power factor for IoU score of predicted boxes (Used compute alignment metric)
         :param eps: Small constant for numerical stability
         """
         super(TaskAlignedAssigner, self).__init__()
-        self.topk = topk
+        self.topk = max_anchors_per_point
         self.alpha = alpha
         self.beta = beta
         self.eps = eps

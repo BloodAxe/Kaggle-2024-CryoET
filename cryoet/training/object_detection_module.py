@@ -48,6 +48,9 @@ class ObjectDetectionModel(L.LightningModule):
             apply_loss_on_each_stride=self.model_args.apply_loss_on_each_stride,
             average_tokens_across_devices=self.average_tokens_across_devices,
             use_l1_loss=self.train_args.use_l1_loss,
+            assigner_max_anchors_per_point=self.model_args.assigner_max_anchors_per_point,
+            assigner_alpha=self.model_args.assigner_alpha,
+            assigner_beta=self.model_args.assigner_beta,
             **loss_kwargs,
         )
 
