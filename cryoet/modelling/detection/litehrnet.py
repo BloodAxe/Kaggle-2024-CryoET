@@ -101,6 +101,9 @@ def convert_2d_to_3d(model: nn.Module) -> nn.Module:
             # Replace the BatchNorm2d with BatchNorm3d
             setattr(model, name, new_bn)
 
+        elif isinstance(module, nn.ReLU):
+            # Replace with SILU
+            setattr(model, name, nn.SiLU(inplace=True))
         else:
             # Recursively convert children
             convert_2d_to_3d(module)
