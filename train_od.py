@@ -15,7 +15,7 @@ from transformers import (
 
 from cryoet.data.detection.data_module import ObjectDetectionDataModule
 from cryoet.modelling.detection.dynunet import DynUNetForObjectDetectionConfig, DynUNetForObjectDetection
-from cryoet.modelling.detection.litehrnet import HRNetv2ForObjectDetection, HRNetConfig
+from cryoet.modelling.detection.litehrnet import HRNetv2ForObjectDetection
 from cryoet.modelling.detection.maxvit_unet25d import MaxVitUnet25d, MaxVitUnet25dConfig
 from cryoet.modelling.detection.segresnet_object_detection_s1 import (
     SegResNetForObjectDetectionS1,
@@ -86,8 +86,7 @@ def main():
         config = DynUNetForObjectDetectionConfig(use_stride2=model_args.use_stride2, use_stride4=model_args.use_stride4)
         model = DynUNetForObjectDetection(config)
     elif model_args.model_name == "hrnet":
-        config = HRNetConfig()
-        model = HRNetv2ForObjectDetection(config)
+        model = HRNetv2ForObjectDetection()
     elif model_args.model_name == "dynunet_v2":
         config = DynUNetForObjectDetectionConfig(
             act_name="gelu",

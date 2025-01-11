@@ -180,7 +180,7 @@ LB: [0.252, 0.273, 0.204, 0.236, 0.300] -> ???
 | --copy_paste_prob=0.25                      | 0    | 0.8343 |
 | --y_rotation_limit=20 --x_rotation_limit=20 | 0    | 0.8447 |
 | --use_single_label_per_anchor=False         | 0    | 0.8388 |
-| --use_centernet_nms=False                   | 0    | ???    |
+| --use_centernet_nms=False                   | 0    | 0.841  |
 
 # Ideas
 
