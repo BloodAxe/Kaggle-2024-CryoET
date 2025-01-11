@@ -122,7 +122,7 @@ class HRNetv2ForObjectDetection(nn.Module):
 
         self.up = nn.Sequential(nn.Conv3d(128, 32 * 8, kernel_size=1), PixelShuffle3d(2))
         self.head = ObjectDetectionHead(
-            in_channels=128, num_classes=5, intermediate_channels=32, offset_intermediate_channels=16, stride=2
+            in_channels=32, num_classes=5, intermediate_channels=32, offset_intermediate_channels=16, stride=2
         )
 
     def forward(self, volume, labels=None, **loss_kwargs):
