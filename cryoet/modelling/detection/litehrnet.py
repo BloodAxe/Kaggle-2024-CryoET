@@ -82,22 +82,22 @@ def convert_2d_to_3d(model: nn.Module) -> nn.Module:
 
         # If we find a BatchNorm2d, replace it with a BatchNorm3d.
         elif isinstance(module, nn.BatchNorm2d):
-            new_bn = nn.BatchNorm3d(
+            new_bn = nn.InstanceNorm3d(
                 num_features=module.num_features,
                 eps=module.eps,
                 momentum=module.momentum,
                 affine=module.affine,
-                track_running_stats=module.track_running_stats,
+                # track_running_stats=module.track_running_stats,
             )
 
             # Copy running statistics and affine parameters
-            with torch.no_grad():
-                if module.affine:
-                    new_bn.weight.copy_(module.weight)
-                    new_bn.bias.copy_(module.bias)
-                new_bn.running_mean.copy_(module.running_mean)
-                new_bn.running_var.copy_(module.running_var)
-
+            # with torch.no_grad():
+            #     if module.affine:
+            #         new_bn.weight.copy_(module.weight)
+            #         new_bn.bias.copy_(module.bias)
+            #     new_bn.running_mean.copy_(module.running_mean)
+            #     new_bn.running_var.copy_(module.running_var)
+            #
             # Replace the BatchNorm2d with BatchNorm3d
             setattr(model, name, new_bn)
 
