@@ -10,7 +10,7 @@ from cryoet.modelling.detection.detection_head import ObjectDetectionHead, Objec
 from cryoet.modelling.detection.functional import object_detection_loss
 import einops
 
-from timm.models.hrnet import hrnet_w18_small_v2
+from timm.models.hrnet import hrnet_w18_small_v2, hrnet_w32
 
 
 class PixelShuffle3d(nn.Module):
@@ -115,7 +115,7 @@ class HRNetv2ForObjectDetection(nn.Module):
     def __init__(self):
         super().__init__()
         backbone = timm.create_model(
-            "hrnet_w18_small_v2.ms_in1k",
+            "hrnet_w48_ssld.paddle_in1k",
             in_chans=1,
             pretrained=True,
             features_only=True,
