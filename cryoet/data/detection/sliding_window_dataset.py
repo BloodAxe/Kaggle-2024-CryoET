@@ -2,7 +2,7 @@ import numpy as np
 
 from .detection_dataset import CryoETObjectDetectionDataset
 from .mixin import ObjectDetectionMixin
-from ..functional import compute_tiles
+from ..functional import compute_better_tiles
 from ..parsers import AnnotatedVolume
 from ...training.args import DataArguments, ModelArguments
 
@@ -22,7 +22,7 @@ class SlidingWindowCryoETObjectDetectionDataset(CryoETObjectDetectionDataset, Ob
         self.window_size = model_args.depth_window_size, model_args.spatial_window_size, model_args.spatial_window_size
         self.window_step = model_args.depth_window_step, model_args.spatial_window_step, model_args.spatial_window_step
 
-        self.tiles = list(compute_tiles(self.sample.volume_shape, self.window_size, self.window_step))
+        self.tiles = list(compute_better_tiles(self.sample.volume_shape, self.window_size, self.window_step))
         self.data_args = data_args
         self.copy_paste_samples = copy_paste_samples
 
