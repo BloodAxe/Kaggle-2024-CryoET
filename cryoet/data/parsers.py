@@ -12,7 +12,7 @@ from matplotlib.patches import Circle
 
 from .functional import normalize_volume_to_unit_range
 
-ANGSTROMS_IN_PIXEL = 10.0
+ANGSTROMS_IN_PIXEL = 10.012
 
 TARGET_CLASSES = (
     {
