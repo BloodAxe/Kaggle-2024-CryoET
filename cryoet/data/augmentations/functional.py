@@ -354,11 +354,15 @@ def copy_paste_augmentation(
     z_rotation_limit: float,
     y_rotation_limit: float,
     x_rotation_limit: float,
+    classes_to_paste=None,
 ):
     sample: AnnotatedVolume = random.choice(samples)  # Pick random sample
 
-    # Pick random class
-    class_to_paste = random.randrange(0, NUM_CLASSES)
+    if classes_to_paste is None:
+        # Pick random class
+        class_to_paste = random.randrange(0, NUM_CLASSES)
+    else:
+        class_to_paste = random.choice(list(classes_to_paste))
 
     # Pick random object from that class
     object_index = random.choice(list(np.flatnonzero(sample.labels == class_to_paste)))
@@ -402,7 +406,7 @@ def copy_paste_augmentation(
         start_z : start_z + volume_to_paste.shape[0],
         start_y : start_y + volume_to_paste.shape[1],
         start_x : start_x + volume_to_paste.shape[2],
-    ] = merge_volume_using_max(dst_volume_view, volume_to_paste)
+    ] = merge_volume_using_grad_mag(dst_volume_view, volume_to_paste)
 
     offset = np.array([start_x, start_y, start_z]).reshape(1, 3)
     centers = np.concatenate([centers, centers_to_paste_px + offset], axis=0)
