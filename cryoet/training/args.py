@@ -171,8 +171,6 @@ class MyTrainingArguments(TrainingArguments):
 
     report_to: typing.Union[str, typing.List[str]] = field(default="tensorboard", metadata={"help": "Report to"})
 
-    optim: str = field(default="adamw_torch")
-
     output_dir: str = None
 
     adam_beta1: float = field(default=0.9, metadata={"help": "Adam beta1"})

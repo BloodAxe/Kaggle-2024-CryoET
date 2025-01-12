@@ -46,19 +46,42 @@ def main():
 
     if training_args.output_dir is None:
         output_dir_name = f"runs/od_{model_args.model_name}_fold_{data_args.fold}"
-        if data_args.use_sliding_crops:
-            output_dir_name += "_sc"
-        if data_args.use_random_crops:
-            output_dir_name += "_rc"
-        if data_args.use_instance_crops:
-            output_dir_name += "_ic"
-        if model_args.use_stride2 and not model_args.use_stride4:
-            output_dir_name += "_s2"
-        if model_args.use_stride4 and not model_args.use_stride2:
-            output_dir_name += "_s4"
-        output_dir_name += "_" + data_args.train_modes.replace(",", "_")
+        model_args_str = ""
 
-        training_args.output_dir = output_dir_name
+        if data_args.use_sliding_crops:
+            model_args_str += "_sc"
+        if data_args.use_random_crops:
+            model_args_str += "_rc"
+        if data_args.use_instance_crops:
+            model_args_str += "_ic"
+        if model_args.use_stride2:
+            model_args_str += "_s2"
+        if model_args.use_stride4:
+            model_args_str += "_s4"
+
+        if model_args.use_single_label_per_anchor:
+            model_args_str += "_slpa"
+        else:
+            model_args_str += "_mlpa"
+
+        if model_args.use_centernet_nms:
+            model_args_str += "_cnms"
+
+        if model_args.apply_loss_on_each_stride:
+            model_args_str += "_loss_each_stride"
+
+        if data_args.copy_paste_prob > 0:
+            model_args_str += f"_copy_{data_args.copy_paste_prob}x{data_args.copy_paste_limit}"
+        if data_args.random_erase_prob > 0:
+            model_args_str += f"_drop_{data_args.random_erase_prob}"
+
+        model_args_str += "_" + data_args.train_modes.replace(",", "_")
+
+        training_args_str = f"{training_args.optim.value}_{training_args.learning_rate:.0e}_{training_args.weight_decay}"
+        if training_args.ema:
+            training_args_str += f"_ema_{training_args.ema_decay}_{training_args.ema_beta}"
+
+        training_args.output_dir = os.path.join(output_dir_name, training_args_str, model_args_str)
 
     training_args.master_print(f"Training arguments: {training_args}")
 
