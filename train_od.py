@@ -98,7 +98,11 @@ def main():
         config = SegResNetForObjectDetectionS1Config()
         model = SegResNetForObjectDetectionS1(config)
     elif model_args.model_name == "segresnetv2":
-        config = SegResNetForObjectDetectionV2Config(use_stride2=model_args.use_stride2, use_stride4=model_args.use_stride4)
+        config = SegResNetForObjectDetectionV2Config(
+            use_stride2=model_args.use_stride2,
+            use_stride4=model_args.use_stride4,
+            use_offset_head=model_args.use_offset_head,
+        )
         model = SegResNetForObjectDetectionV2(config)
     elif model_args.model_name == "unet3d":
         config = UNet3DForObjectDetectionConfig(window_size=model_args.window_size)

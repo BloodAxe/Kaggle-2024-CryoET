@@ -183,6 +183,7 @@ class SegResNetForObjectDetectionV2Config(PretrainedConfig):
         num_classes=5,
         use_stride4: bool = True,
         use_stride2: bool = True,
+        use_offset_head: bool = True,
         **kwargs,
     ):
         super().__init__(**kwargs)
@@ -196,6 +197,7 @@ class SegResNetForObjectDetectionV2Config(PretrainedConfig):
         self.num_classes = num_classes
         self.use_stride4 = use_stride4
         self.use_stride2 = use_stride2
+        self.use_offset_head = use_offset_head
 
 
 class SegResNetForObjectDetectionV2(nn.Module):
@@ -219,6 +221,7 @@ class SegResNetForObjectDetectionV2(nn.Module):
                 stride=2,
                 intermediate_channels=48,
                 offset_intermediate_channels=16,
+                use_offset_head=config.use_offset_head,
             )
 
         if self.config.use_stride4:
@@ -228,6 +231,7 @@ class SegResNetForObjectDetectionV2(nn.Module):
                 stride=4,
                 intermediate_channels=64,
                 offset_intermediate_channels=32,
+                use_offset_head=config.use_offset_head,
             )
 
     def forward(self, volume, labels=None, apply_loss_on_each_stride: bool = False, **loss_kwargs):

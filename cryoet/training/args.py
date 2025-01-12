@@ -40,6 +40,8 @@ class ModelArguments:
         default=True, metadata={"help": "If true, only one label per anchor is used in post-processing"}
     )
 
+    use_offset_head: bool = field(default=True)
+
     use_stride4: bool = field(default=True)
     use_stride2: bool = field(default=True)
 

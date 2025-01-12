@@ -120,6 +120,7 @@ def object_detection_loss(
     labels: Tensor,
     average_tokens_across_devices: bool = False,
     use_l1_loss: bool = False,
+    use_offset_head: bool = True,
     assigner_max_anchors_per_point: int = 13,
     assigner_alpha=1.0,
     assigner_beta=6.0,
@@ -187,14 +188,17 @@ def object_detection_loss(
     # if not torch.isfinite(cls_loss).all():
     #     print("Classification loss is not finite")
 
-    reg_loss = iou_loss(
-        pred_centers=pred_centers,
-        assigned_centers=assigned_centers,
-        assigned_scores=assigned_scores,
-        assigned_sigmas=assigned_sigmas,
-        mask_positive=assigned_labels != num_classes,
-        use_l1_loss=use_l1_loss,
-    )
+    if use_offset_head:
+        reg_loss = iou_loss(
+            pred_centers=pred_centers,
+            assigned_centers=assigned_centers,
+            assigned_scores=assigned_scores,
+            assigned_sigmas=assigned_sigmas,
+            mask_positive=assigned_labels != num_classes,
+            use_l1_loss=use_l1_loss,
+        )
+    else:
+        reg_loss = torch.tensor(0.0, device=pred_centers.device)
 
     divisor = assigned_scores.sum()
 
@@ -211,10 +215,10 @@ def object_detection_loss(
     loss = cls_loss + reg_loss
 
     loss_dict = {
-        "loss": loss.detach(),
-        "cls_loss": cls_loss.detach(),
-        "reg_loss": reg_loss.detach(),
-        "num_items_in_batch": divisor,
+        "loss": float(loss),
+        "cls_loss": float(cls_loss),
+        "reg_loss": float(reg_loss),
+        "num_items_in_batch": float(divisor),
     }
     return loss, loss_dict
 
