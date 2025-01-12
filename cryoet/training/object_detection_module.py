@@ -169,11 +169,11 @@ class ObjectDetectionModel(L.LightningModule):
                 submission["y"].append(float(coord[1]))
                 submission["z"].append(float(coord[2]))
 
-            print("Added predictions for", study_name, "to dataframe")
+            # print("Added predictions for", study_name, "to dataframe")
 
         submission = pd.DataFrame.from_dict(submission)
 
-        self.trainer.print(submission.sort_values(by="score", ascending=False).head(20))
+        # self.trainer.print(submission.sort_values(by="score", ascending=False).head(20))
 
         score_values = []
         score_details = []
@@ -202,7 +202,8 @@ class ObjectDetectionModel(L.LightningModule):
         best_score_per_class = np.array([per_class_scores[i, j] for j, i in enumerate(best_index_per_class)])  # [class]
         averaged_score = np.sum([weights[k] * best_score_per_class[i] for i, k in enumerate(keys)]) / sum(weights.values())
 
-        print("Scores", list(zip(score_values, score_thresholds)))
+        if self.trainer.is_global_zero:
+            print("Scores", list(zip(score_values, score_thresholds)))
 
         self.log_plots(
             dict((key, (score_thresholds, per_class_scores[:, i])) for i, key in enumerate(keys)), "Threshold", "Score"
