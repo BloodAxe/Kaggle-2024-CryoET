@@ -119,18 +119,42 @@ class HRNetv2ForObjectDetection(nn.Module):
             in_chans=1,
             pretrained=True,
             features_only=True,
-            out_indices=(1, 2, 3, 4),
+            out_indices=(0, 1, 2, 3, 4),
         )
         self.backbone = convert_2d_to_3d(backbone)
 
-        self.up = nn.Sequential(nn.Conv3d(128, 64 * 8, kernel_size=1), PixelShuffle3d(2))
+        self.up_32 = nn.Sequential(
+            nn.InstanceNorm3d(1024),
+            nn.Conv3d(1024, 512, kernel_size=1),
+            nn.SiLU(inplace=True),
+            nn.Upsample(scale_factor=2, mode="trilinear"),
+        )
+        self.up_16 = nn.Sequential(
+            nn.InstanceNorm3d(512),
+            nn.Conv3d(512, 256, kernel_size=1),
+            nn.SiLU(inplace=True),
+            nn.Upsample(scale_factor=2, mode="trilinear"),
+        )
+        self.up_8 = nn.Sequential(
+            nn.InstanceNorm3d(256),
+            nn.Conv3d(256, 128, kernel_size=1),
+            nn.SiLU(inplace=True),
+            nn.Upsample(scale_factor=2, mode="trilinear"),
+        )
+        self.up_4 = nn.Sequential(
+            nn.InstanceNorm3d(128),
+            nn.Conv3d(128, 64, kernel_size=1),
+            nn.SiLU(inplace=True),
+            nn.Upsample(scale_factor=2, mode="trilinear"),
+        )
         self.head = ObjectDetectionHead(
             in_channels=64, num_classes=5, intermediate_channels=64, offset_intermediate_channels=8, stride=2
         )
 
     def forward(self, volume, labels=None, **loss_kwargs):
-        x = self.backbone(volume)
-        x = self.up(x[0])
+        fm2, fm4, fm8, fm16, fm32 = self.backbone(volume)
+
+        x = fm2 + self.up_4(fm4 + self.up_8(fm8 + self.up_16(fm16 + self.up_32(fm32))))
         logits, offsets = self.head(x)
 
         logits = [logits]
