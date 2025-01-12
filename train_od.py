@@ -1,6 +1,7 @@
 import json
 import os
 import typing
+from pathlib import Path
 
 import lightning as L
 import torch
@@ -202,6 +203,19 @@ def main():
     config = {**training_args.to_dict(), **model_args.to_dict(), **data_args.to_dict()}
     with open(os.path.join(training_args.output_dir, "config.json"), "w") as f:
         json.dump(config, f, indent=4, sort_keys=True)
+
+    # Trace & Save
+    best_state_dict = torch.load(checkpoint_callback.best_model_path, map_location=model_module.device)
+    model_module.load_state_dict(best_state_dict["state_dict"])
+
+    traced_checkpoint_path = Path(best_state_dict).with_suffix(".jit")
+
+    with torch.no_grad():
+        example_input = torch.randn(
+            1, 1, model_args.depth_window_size, model_args.spatial_window_size, model_args.spatial_window_size
+        ).to(model_module.device)
+        traced_model = torch.jit.trace(model_module, example_input)
+        torch.jit.save(traced_model, str(traced_checkpoint_path))
 
 
 def infer_strategy(training_args, fabric):
