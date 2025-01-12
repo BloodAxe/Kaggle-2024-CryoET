@@ -182,6 +182,16 @@ LB: [0.252, 0.273, 0.204, 0.236, 0.300] -> 0.772
 | --use_single_label_per_anchor=False         | 0    | 0.8388 |
 | --use_centernet_nms=False                   | 0    | 0.841  |
 
+## od_segresnet_fold_0_rc_ic_denoised Ablation
+
+| Experiment                         | Fold | Score |
+|------------------------------------|------|-------|
+| --use_stride4=False                | 0    |       |
+| --use_stride2=False                | 0    |       |
+| All strides (baseline)             | 0    |       |
+| All strides with loss per stride   | 0    |       |
+| --copy_paste_prob=0.25 (Only rare) | 0    |       |
+
 # Ideas
 
 ## Data

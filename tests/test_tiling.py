@@ -11,11 +11,11 @@ def test_tiling():
 
     print()
 
-    tiles = compute_tilets(volume_shape, window_size=(96, 128, 128), stride=(62, 90, 90))
+    tiles = compute_tiles(volume_shape, window_size=(96, 128, 128), stride=(62, 80, 80))
     tiles = list(tiles)
     print(len(tiles), tiles[-1])
 
-    tiles = compute_better_tiles(volume_shape, window_size=(96, 128, 128), window_step=(62, 90, 90))
+    tiles = compute_better_tiles(volume_shape, window_size=(96, 128, 128), window_step=(62, 80, 80))
     tiles = list(tiles)
     print(len(tiles), tiles[-1])
 
