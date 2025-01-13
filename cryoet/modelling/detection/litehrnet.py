@@ -115,11 +115,12 @@ class HRNetv2ForObjectDetection(nn.Module):
     def __init__(self):
         super().__init__()
         backbone = timm.create_model(
-            "hrnet_w48_ssld.paddle_in1k",
+            "hrnet_w18_small_v2.ms_in1k",
             in_chans=1,
             pretrained=True,
             features_only=True,
-            out_indices=(0, 1, 2, 3, 4),
+            out_indices=(1, 2, 3, 4),
+            use_incre_features=False,
         )
         self.backbone = convert_2d_to_3d(backbone)
 
@@ -143,18 +144,19 @@ class HRNetv2ForObjectDetection(nn.Module):
         )
         self.up_4 = nn.Sequential(
             nn.InstanceNorm3d(128),
-            nn.Conv3d(128, 64, kernel_size=1),
+            nn.Conv3d(128, 64 * 8, kernel_size=1),
             nn.SiLU(inplace=True),
-            nn.Upsample(scale_factor=2, mode="trilinear"),
+            PixelShuffle3d(2),
+            # nn.Upsample(scale_factor=2, mode="trilinear"),
         )
         self.head = ObjectDetectionHead(
             in_channels=64, num_classes=5, intermediate_channels=64, offset_intermediate_channels=8, stride=2
         )
 
     def forward(self, volume, labels=None, **loss_kwargs):
-        fm2, fm4, fm8, fm16, fm32 = self.backbone(volume)
+        fm4, fm8, fm16, fm32 = self.backbone(volume)
 
-        x = fm2 + self.up_4(fm4 + self.up_8(fm8 + self.up_16(fm16 + self.up_32(fm32))))
+        x = self.up_4(fm4 + self.up_8(fm8 + self.up_16(fm16 + self.up_32(fm32))))
         logits, offsets = self.head(x)
 
         logits = [logits]
