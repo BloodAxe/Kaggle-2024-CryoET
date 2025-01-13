@@ -159,7 +159,7 @@ class HRNetv2ForObjectDetection(nn.Module):
             nn.InstanceNorm3d(128),
             nn.Conv3d(128, 64 * 8, kernel_size=1),
             nn.SiLU(inplace=True),
-            PixelShuffle3d(2),
+            PixelShuffle3d(64 * 8, 2),
             # nn.Upsample(scale_factor=2, mode="trilinear"),
         )
         self.head = ObjectDetectionHead(
