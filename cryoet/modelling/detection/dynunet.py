@@ -61,6 +61,8 @@ class DynUNetForObjectDetectionConfig(PretrainedConfig):
         res_block: bool = False,
         act_name: str = ("leakyrelu", {"inplace": True, "negative_slope": 0.01}),
         dropout=None,
+        intermediate_channels=48,
+        offset_intermediate_channels=16,
         **kwargs,
     ):
         super().__init__(**kwargs)
@@ -73,6 +75,8 @@ class DynUNetForObjectDetectionConfig(PretrainedConfig):
         self.res_block = res_block
         self.act_name = act_name
         self.dropout = dropout
+        self.intermediate_channels = intermediate_channels
+        self.offset_intermediate_channels = offset_intermediate_channels
 
 
 class DynUNetForObjectDetection(nn.Module):
@@ -104,8 +108,8 @@ class DynUNetForObjectDetection(nn.Module):
                 in_channels=config.out_channels,
                 num_classes=config.num_classes,
                 stride=2,
-                intermediate_channels=48,
-                offset_intermediate_channels=16,
+                intermediate_channels=config.intermediate_channels,
+                offset_intermediate_channels=config.offset_intermediate_channels,
             )
 
         if self.config.use_stride4:
@@ -113,8 +117,8 @@ class DynUNetForObjectDetection(nn.Module):
                 in_channels=config.out_channels,
                 num_classes=config.num_classes,
                 stride=4,
-                intermediate_channels=48,
-                offset_intermediate_channels=16,
+                intermediate_channels=config.intermediate_channels,
+                offset_intermediate_channels=config.offset_intermediate_channels,
             )
 
     def forward(self, volume, labels=None, **loss_kwargs):
