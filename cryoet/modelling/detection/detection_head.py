@@ -4,8 +4,6 @@ from typing import Optional, Dict, List
 import torch
 from torch import nn, Tensor
 
-from .functional import object_detection_loss
-
 
 @dataclasses.dataclass
 class ObjectDetectionOutput:

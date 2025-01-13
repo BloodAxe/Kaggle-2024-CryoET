@@ -2,27 +2,40 @@ import timm
 import torch
 import torch.nn as nn
 from pytorch_toolbelt.utils import count_parameters
-from pytorch_toolbelt.modules import get_activation_block
-from torch.nn import Conv3d, BatchNorm3d, Upsample, ConvTranspose2d
-from transformers import PretrainedConfig
 
 from cryoet.modelling.detection.detection_head import ObjectDetectionHead, ObjectDetectionOutput
 from cryoet.modelling.detection.functional import object_detection_loss
-import einops
-
-from timm.models.hrnet import hrnet_w18_small_v2, hrnet_w32
 
 
 class PixelShuffle3d(nn.Module):
-    def __init__(self, upscale_factor):
+    def __init__(self, in_channels, upscale_factor):
         super().__init__()
+        self.in_channels = in_channels
+        self.out_channels = in_channels // (upscale_factor**3)
         self.upscale_factor = upscale_factor
 
     def forward(self, x):
-        r = self.upscale_factor
-        b, c, d, h, w = x.shape
+        B, CRRR, D, H, W = x.shape
+        R = self.upscale_factor  # from your code, or compute it if known
+        C = self.out_channels
 
-        out = einops.rearrange(x, "b (c r1 r2 r3) d h w -> b c (d r1) (h r2) (w r3)", r1=r, r2=r, r3=r)
+        # 1) Split the (C*R*R*R) dimension into (C, R, R, R)
+        x_reshaped = x.reshape(B, C, R, R, R, D, H, W)
+
+        # 2) Permute to move the dimensions into the order (B, C, D, R, H, R, W, R)
+        x_permuted = x_reshaped.permute(0, 1, 5, 2, 6, 3, 7, 4)
+        # The indexing here is:
+        #   0 -> B
+        #   1 -> C
+        #   5 -> D
+        #   2 -> R (paired with D to form D*R)
+        #   6 -> H
+        #   3 -> R (paired with H to form H*R)
+        #   7 -> W
+        #   4 -> R (paired with W to form W*R)
+
+        # 3) Final reshape to [B, C, D*R, H*R, W*R]
+        out = x_permuted.reshape(B, C, D * R, H * R, W * R)
         return out
 
 

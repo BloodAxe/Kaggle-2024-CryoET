@@ -253,8 +253,18 @@ python trace_od_hrnet.py /home/bloodaxe/develop/Kaggle-2024-CryoET/runs/od_hrnet
 /home/bloodaxe/develop/Kaggle-2024-CryoET/runs/od_hrnet_fold_4/adamw_torch_5e-05_0.0001/_rc_ic_s2_s4_slpa_cnms_denoised/lightning_logs/version_0/checkpoints/hrnet_96x128x128_fold_4_6678-score-0.8254-at-0.234-0.158-0.194-0.194-0.097.ckpt
 
 
-| Fold | Score    | AFRT    | BGT     | RBSM    | TRGLB  | VLP    |
-|------|----------|---------|---------|---------|--------|--------|
+| Fold | Score  | AFRT   | BGT    | RBSM   | TRGLB  | VLP     |
+|------|--------|--------|--------|--------|--------|---------|
+| 0    | 0.8406 | 0.325  | 0.126  | 0.194  | 0.158  | 0.278   |
+| 1    | 0.7916 | 0.234  | 0.158  | 0.278  | 0.234  | 0.325   |
+| 2    | 0.7981 | 0.234  | 0.194  | 0.325  | 0.194  | 0.194   |
+| 3    | 0.8223 | 0.194  | 0.234  | 0.234  | 0.194  | 0.158   |
+| 4    | 0.8254 | 0.234  | 0.158  | 0.194  | 0.194  | 0.097   |
+| MEAN | 0.8156 | 0.2442 | 0.174 | 0.245 | 0.1948 | 0.2104 |
+
+3 Models average 
+
+0,82156	0,2763333333	0,2215333333	0,2451333333	0,2182	0,2886
 
 # Ideas
 
