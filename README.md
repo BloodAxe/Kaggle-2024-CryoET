@@ -198,7 +198,10 @@ LB: [0.252. 0.273. 0.204. 0.236. 0.300] -> 0.772
 - Validation uses same tiling scheme as inference kernel
 - 10.012 instead of 10.0
 
-### SegResNetV2 S2
+### V3 SegResNet S2 
+
+python trace_od_segresnet.py /home/bloodaxe/develop/Kaggle-2024-CryoET/runs/od_segresnetv2_fold_0/adamw_torch_1e-04_0.01/_rc_ic_s2_slpa_cnms_denoised/lightning_logs/version_0/checkpoints/segresnetv2_96x128x128_fold_0_1280-score-0.8429-at-0.325-0.278-0.194-0.278-0.551.ckpt /home/bloodaxe/develop/Kaggle-2024-CryoET/runs/od_segresnetv2_fold_1/adamw_torch_1e-04_0.01/_rc_ic_s2_slpa_cnms_denoised/lightning_logs/version_0/checkpoints/segresnetv2_96x128x128_fold_1_1440-score-0.8215-at-0.126-0.194-0.194-0.234-0.194.ckpt /home/bloodaxe/develop/Kaggle-2024-CryoET/runs/od_segresnetv2_fold_2/adamw_torch_1e-04_0.01/_rc_ic_s2_slpa_cnms_denoised/lightning_logs/version_0/checkpoints/segresnetv2_96x128x128_fold_2_4320-score-0.7893-at-0.234-0.158-0.278-0.194-0.325.ckpt /home/bloodaxe/develop/Kaggle-2024-CryoET/runs/od_segresnetv2_fold_3/adamw_torch_1e-04_0.01/_rc_ic_s2_slpa_cnms_denoised/lightning_logs/version_0/checkpoints/segresnetv2_96x128x128_fold_3_2560-score-0.8413-at-0.278-0.551-0.376-0.158-0.278.ckpt /home/bloodaxe/develop/Kaggle-2024-CryoET/runs/od_segresnetv2_fold_4/adamw_torch_1e-04_0.01/_rc_ic_s2_slpa_cnms_denoised/lightning_logs/version_0/checkpoints/segresnetv2_96x128x128_fold_4_3680-score-0.8426-at-0.278-0.194-0.158-0.126-0.158.ckpt
+
 
 /home/bloodaxe/develop/Kaggle-2024-CryoET/runs/od_segresnetv2_fold_0/adamw_torch_1e-04_0.01/_rc_ic_s2_slpa_cnms_denoised/lightning_logs/version_0/checkpoints/segresnetv2_96x128x128_fold_0_1280-score-0.8429-at-0.325-0.278-0.194-0.278-0.551.ckpt
 /home/bloodaxe/develop/Kaggle-2024-CryoET/runs/od_segresnetv2_fold_1/adamw_torch_1e-04_0.01/_rc_ic_s2_slpa_cnms_denoised/lightning_logs/version_0/checkpoints/segresnetv2_96x128x128_fold_1_1440-score-0.8215-at-0.126-0.194-0.194-0.234-0.194.ckpt
@@ -216,7 +219,9 @@ LB: [0.252. 0.273. 0.204. 0.236. 0.300] -> 0.772
 |------| -------- | ------- | -------- | -------- | --------- | ------- |
 | Mean | 0.82752  | 0.2482  | 0.275    | 0.24     | 0.198     | 0.3012  |
 
-### DynUnet S2
+### V3 DynUnet S2
+
+python trace_od_dynunet.py /home/bloodaxe/develop/Kaggle-2024-CryoET/runs/od_dynunet_fold_0/adamw_torch_3e-04_0.0001_ema_0.995_10/_rc_ic_s2_slpa_cnms_drop_0.05_denoised/lightning_logs/version_0/checkpoints/dynunet_96x128x128_fold_0_1590-score-0.8442-at-0.278-0.325-0.194-0.234-0.551.ckpt /home/bloodaxe/develop/Kaggle-2024-CryoET/runs/od_dynunet_fold_1/adamw_torch_3e-04_0.0001_ema_0.995_10/_rc_ic_s2_slpa_cnms_drop_0.05_denoised/lightning_logs/version_0/checkpoints/dynunet_96x128x128_fold_1_2332-score-0.8098-at-0.325-0.097-0.278-0.278-0.325.ckpt /home/bloodaxe/develop/Kaggle-2024-CryoET/runs/od_dynunet_fold_2/adamw_torch_3e-04_0.0001_ema_0.995_10/_rc_ic_s2_slpa_cnms_drop_0.05_denoised/lightning_logs/version_0/checkpoints/dynunet_96x128x128_fold_2_2120-score-0.8030-at-0.325-0.097-0.126-0.278-0.376.ckpt /home/bloodaxe/develop/Kaggle-2024-CryoET/runs/od_dynunet_fold_3/adamw_torch_3e-04_0.0001_ema_0.995_10/_rc_ic_s2_slpa_cnms_drop_0.05_denoised/lightning_logs/version_0/checkpoints/dynunet_96x128x128_fold_3_1802-score-0.8185-at-0.430-0.234-0.376-0.194-0.194.ckpt /home/bloodaxe/develop/Kaggle-2024-CryoET/runs/od_dynunet_fold_4/adamw_torch_3e-04_0.0001_ema_0.995_10/_rc_ic_s2_slpa_cnms_drop_0.05_denoised/lightning_logs/version_0/checkpoints/dynunet_96x128x128_fold_4_954-score-0.8323-at-0.325-0.325-0.278-0.325-0.325.ckpt
 
 /home/bloodaxe/develop/Kaggle-2024-CryoET/runs/od_dynunet_fold_0/adamw_torch_3e-04_0.0001_ema_0.995_10/_rc_ic_s2_slpa_cnms_drop_0.05_denoised/lightning_logs/version_0/checkpoints/dynunet_96x128x128_fold_0_1590-score-0.8442-at-0.278-0.325-0.194-0.234-0.551.ckpt
 /home/bloodaxe/develop/Kaggle-2024-CryoET/runs/od_dynunet_fold_1/adamw_torch_3e-04_0.0001_ema_0.995_10/_rc_ic_s2_slpa_cnms_drop_0.05_denoised/lightning_logs/version_0/checkpoints/dynunet_96x128x128_fold_1_2332-score-0.8098-at-0.325-0.097-0.278-0.278-0.325.ckpt
@@ -237,7 +242,19 @@ LB: [0.252. 0.273. 0.204. 0.236. 0.300] -> 0.772
 Mean of two
 0.82454 0.2924	0.2453	0.2452	0.2299	0.3277
 
-###
+### V3 HRNetW18 S2
+
+python trace_od_hrnet.py /home/bloodaxe/develop/Kaggle-2024-CryoET/runs/od_hrnet_fold_1/adamw_torch_5e-05_0.0001/_rc_ic_s2_s4_slpa_cnms_denoised/lightning_logs/version_0/checkpoints/hrnet_96x128x128_fold_1_4664-score-0.7916-at-0.234-0.158-0.278-0.234-0.325.ckpt  /home/bloodaxe/develop/Kaggle-2024-CryoET/runs/od_hrnet_fold_3/adamw_torch_5e-05_0.0001/_rc_ic_s2_s4_slpa_cnms_denoised/lightning_logs/version_0/checkpoints/hrnet_96x128x128_fold_3_7738-score-0.8223-at-0.194-0.234-0.234-0.194-0.158.ckpt /home/bloodaxe/develop/Kaggle-2024-CryoET/runs/od_hrnet_fold_2/adamw_torch_5e-05_0.0001/_rc_ic_s2_s4_slpa_cnms_denoised/lightning_logs/version_0/checkpoints/hrnet_96x128x128_fold_2_2650-score-0.7981-at-0.234-0.194-0.325-0.194-0.194.ckpt /home/bloodaxe/develop/Kaggle-2024-CryoET/runs/od_hrnet_fold_0/adamw_torch_5e-05_0.0001/_rc_ic_s2_s4_slpa_cnms_denoised/lightning_logs/version_0/checkpoints/hrnet_96x128x128_fold_0_6254-score-0.8406-at-0.325-0.126-0.194-0.158-0.278.ckpt /home/bloodaxe/develop/Kaggle-2024-CryoET/runs/od_hrnet_fold_4/adamw_torch_5e-05_0.0001/_rc_ic_s2_s4_slpa_cnms_denoised/lightning_logs/version_0/checkpoints/hrnet_96x128x128_fold_4_6678-score-0.8254-at-0.234-0.158-0.194-0.194-0.097.ckpt 
+
+/home/bloodaxe/develop/Kaggle-2024-CryoET/runs/od_hrnet_fold_1/adamw_torch_5e-05_0.0001/_rc_ic_s2_s4_slpa_cnms_denoised/lightning_logs/version_0/checkpoints/hrnet_96x128x128_fold_1_4664-score-0.7916-at-0.234-0.158-0.278-0.234-0.325.ckpt
+/home/bloodaxe/develop/Kaggle-2024-CryoET/runs/od_hrnet_fold_3/adamw_torch_5e-05_0.0001/_rc_ic_s2_s4_slpa_cnms_denoised/lightning_logs/version_0/checkpoints/hrnet_96x128x128_fold_3_7738-score-0.8223-at-0.194-0.234-0.234-0.194-0.158.ckpt
+/home/bloodaxe/develop/Kaggle-2024-CryoET/runs/od_hrnet_fold_2/adamw_torch_5e-05_0.0001/_rc_ic_s2_s4_slpa_cnms_denoised/lightning_logs/version_0/checkpoints/hrnet_96x128x128_fold_2_2650-score-0.7981-at-0.234-0.194-0.325-0.194-0.194.ckpt
+/home/bloodaxe/develop/Kaggle-2024-CryoET/runs/od_hrnet_fold_0/adamw_torch_5e-05_0.0001/_rc_ic_s2_s4_slpa_cnms_denoised/lightning_logs/version_0/checkpoints/hrnet_96x128x128_fold_0_6254-score-0.8406-at-0.325-0.126-0.194-0.158-0.278.ckpt
+/home/bloodaxe/develop/Kaggle-2024-CryoET/runs/od_hrnet_fold_4/adamw_torch_5e-05_0.0001/_rc_ic_s2_s4_slpa_cnms_denoised/lightning_logs/version_0/checkpoints/hrnet_96x128x128_fold_4_6678-score-0.8254-at-0.234-0.158-0.194-0.194-0.097.ckpt
+
+
+| Fold | Score    | AFRT    | BGT     | RBSM    | TRGLB  | VLP    |
+|------|----------|---------|---------|---------|--------|--------|
 
 # Ideas
 
