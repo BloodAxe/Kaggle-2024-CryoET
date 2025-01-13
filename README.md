@@ -9,7 +9,7 @@
 | 4    | 0.8135 | 0.0900     |
 
 CV: 0.775
-LB: 0.736 (Score 0.1, TopK 2048 per class)
+LB: 0.736 (Score 0.1. TopK 2048 per class)
 
 # Baseline Detection SegResNet
 
@@ -36,12 +36,12 @@ Do not fit into time limit
 
 CV: 0.81198
 
-LB: [0.20, 0.20, 0.20, 0.20, 0.5] -> 0.739
-LB: [0.20, 0.20, 0.20, 0.20, 0.6] -> 0.727
-LB: [0.20, 0.20, 0.20, 0.20, 0.7] -> 0.710
-LB: [0.15, 0.20, 0.20, 0.20, 0.5] -> 0.739
-LB: [0.25, 0.20, 0.20, 0.20, 0.5] -> 0.738
-LB: [0.20, 0.20, 0.20, 0.20, 0.4] -> 0.745
+LB: [0.20. 0.20. 0.20. 0.20. 0.5] -> 0.739
+LB: [0.20. 0.20. 0.20. 0.20. 0.6] -> 0.727
+LB: [0.20. 0.20. 0.20. 0.20. 0.7] -> 0.710
+LB: [0.15. 0.20. 0.20. 0.20. 0.5] -> 0.739
+LB: [0.25. 0.20. 0.20. 0.20. 0.5] -> 0.738
+LB: [0.20. 0.20. 0.20. 0.20. 0.4] -> 0.745
 
 # Baseline SegResNetV2 Flip Augs & Slight rotation along Y & X
 
@@ -56,32 +56,32 @@ LB: [0.20, 0.20, 0.20, 0.20, 0.4] -> 0.745
 
 CV: 0.8244
 
-LB: [0.20, 0.20, 0.20, 0.20, 0.4] -> 0.752 BASELINE SUB
+LB: [0.20. 0.20. 0.20. 0.20. 0.4] -> 0.752 BASELINE SUB
 
-LB: [0.15, 0.20, 0.20, 0.20, 0.4] -> 0.752
-LB: [0.20, 0.20, 0.20, 0.20, 0.4] -> 0.752
-LB: [0.25, 0.20, 0.20, 0.20, 0.4] -> 0.752
+LB: [0.15. 0.20. 0.20. 0.20. 0.4] -> 0.752
+LB: [0.20. 0.20. 0.20. 0.20. 0.4] -> 0.752
+LB: [0.25. 0.20. 0.20. 0.20. 0.4] -> 0.752
 
-LB: [0.20, 0.15, 0.20, 0.20, 0.4] -> 0.738
-LB: [0.20, 0.25, 0.20, 0.20, 0.4] -> 0.758
-LB: [0.20, 0.30, 0.20, 0.20, 0.4] -> 0.755
+LB: [0.20. 0.15. 0.20. 0.20. 0.4] -> 0.738
+LB: [0.20. 0.25. 0.20. 0.20. 0.4] -> 0.758
+LB: [0.20. 0.30. 0.20. 0.20. 0.4] -> 0.755
 
-LB: [0.20, 0.20, 0.15, 0.20, 0.4] -> 0.751
-LB: [0.20, 0.20, 0.25, 0.20, 0.4] -> 0.752
+LB: [0.20. 0.20. 0.15. 0.20. 0.4] -> 0.751
+LB: [0.20. 0.20. 0.25. 0.20. 0.4] -> 0.752
 
-LB: [0.20, 0.20, 0.20, 0.15, 0.4] -> 0.740
-LB: [0.20, 0.20, 0.20, 0.25, 0.4] -> 0.758
-LB: [0.20, 0.20, 0.20, 0.30, 0.4] -> 0.753
+LB: [0.20. 0.20. 0.20. 0.15. 0.4] -> 0.740
+LB: [0.20. 0.20. 0.20. 0.25. 0.4] -> 0.758
+LB: [0.20. 0.20. 0.20. 0.30. 0.4] -> 0.753
 
-LB: [0.20, 0.20, 0.20, 0.20, 0.35] -> 0.752
-LB: [0.20, 0.20, 0.20, 0.20, 0.40] -> 0.752
-LB: [0.20, 0.20, 0.20, 0.20, 0.50] -> 0.751
+LB: [0.20. 0.20. 0.20. 0.20. 0.35] -> 0.752
+LB: [0.20. 0.20. 0.20. 0.20. 0.40] -> 0.752
+LB: [0.20. 0.20. 0.20. 0.20. 0.50] -> 0.751
 
-LB: [0.20, 0.25, 0.20, 0.25, 0.40] -> 0.763
-LB: [0.20, 0.25, 0.20, 0.25, 0.25] -> 0.764
-LB: [0.30, 0.25, 0.20, 0.25, 0.4] -> 0.762
-LB: [0.20, 0.20, 0.20, 0.20, 0.3] -> 0.754
-LB: [0.15, 0.20, 0.20, 0.20, 0.4] -> 0.752
+LB: [0.20. 0.25. 0.20. 0.25. 0.40] -> 0.763
+LB: [0.20. 0.25. 0.20. 0.25. 0.25] -> 0.764
+LB: [0.30. 0.25. 0.20. 0.25. 0.4] -> 0.762
+LB: [0.20. 0.20. 0.20. 0.20. 0.3] -> 0.754
+LB: [0.15. 0.20. 0.20. 0.20. 0.4] -> 0.752
 
 python trace_od.py /home/bloodaxe/develop/Kaggle-2024-CryoET/runs/od_segresnetv2_fold_0_rc_ic_denoised/lightning_logs/version_1/checkpoints/segresnetv2_96_fold_0_2862-score-0.8466-at-0.234-0.325-0.278-0.234-0.759.ckpt /home/bloodaxe/develop/Kaggle-2024-CryoET/runs/od_segresnetv2_fold_1_rc_ic_denoised/lightning_logs/version_1/checkpoints/segresnetv2_96_fold_1_1590-score-0.8177-at-0.278-0.278-0.234-0.234-0.325.ckpt /home/bloodaxe/develop/Kaggle-2024-CryoET/runs/od_segresnetv2_fold_2_rc_ic_denoised/lightning_logs/version_1/checkpoints/segresnetv2_96_fold_2_1060-score-0.7953-at-0.430-0.234-0.278-0.234-0.489.ckpt /home/bloodaxe/develop/Kaggle-2024-CryoET/runs/od_segresnetv2_fold_3_rc_ic_denoised/lightning_logs/version_1/checkpoints/segresnetv2_96_fold_3_2438-score-0.8234-at-0.158-0.194-0.278-0.278-0.158.ckpt  /home/bloodaxe/develop/Kaggle-2024-CryoET/runs/od_segresnetv2_fold_4_rc_ic_denoised/lightning_logs/version_1/checkpoints/segresnetv2_96_fold_4_2226-score-0.8391-at-0.234-0.194-0.194-0.234-0.278.ckpt 
 
@@ -95,13 +95,13 @@ python trace_od.py /home/bloodaxe/develop/Kaggle-2024-CryoET/runs/od_segresnetv2
 | 2    | 0.7980 | 0.278 | 0.126 | 0.158 | 0.126  | 0.278  | /home/bloodaxe/develop/Kaggle-2024-CryoET/runs/od_dynunet_fold_2_rc_ic_denoised/lightning_logs/version_0/checkpoints/dynunet_128_fold_2_2560-score-0.7980-at-0.278-0.126-0.158-0.126-0.278.ckpt 
 | 3    | 0.8420 | 0.430 | 0.278 | 0.126 | 0.234  | 0.072  | /home/bloodaxe/develop/Kaggle-2024-CryoET/runs/od_dynunet_fold_3_rc_ic_denoised/lightning_logs/version_0/checkpoints/dynunet_128_fold_3_880-score-0.8420-at-0.430-0.278-0.126-0.234-0.072.ckpt 
 | 4    | 0.8324 | 0.194 | 0.158 | 0.072 | 0.194  | 0.097  | /home/bloodaxe/develop/Kaggle-2024-CryoET/runs/od_dynunet_fold_4_rc_ic_denoised/lightning_logs/version_0/checkpoints/dynunet_128_fold_4_880-score-0.8324-at-0.194-0.158-0.072-0.194-0.097.ckpt 
-| Mean | 0,82   | 0,29  | 0,19  | 0,12  | 0,21   | 0,21   | 
+| Mean | 0.82   | 0.29  | 0.19  | 0.12  | 0.21   | 0.21   | 
 
 python trace_od_dynunet.py /home/bloodaxe/develop/Kaggle-2024-CryoET/runs/od_dynunet_fold_0_rc_ic_denoised/lightning_logs/version_0/checkpoints/dynunet_128_fold_0_1360-score-0.8354-at-0.278-0.278-0.126-0.278-0.194.ckpt  /home/bloodaxe/develop/Kaggle-2024-CryoET/runs/od_dynunet_fold_1_rc_ic_denoised/lightning_logs/version_0/checkpoints/dynunet_128_fold_1_1360-score-0.8050-at-0.278-0.126-0.126-0.234-0.430.ckpt /home/bloodaxe/develop/Kaggle-2024-CryoET/runs/od_dynunet_fold_2_rc_ic_denoised/lightning_logs/version_0/checkpoints/dynunet_128_fold_2_2560-score-0.7980-at-0.278-0.126-0.158-0.126-0.278.ckpt /home/bloodaxe/develop/Kaggle-2024-CryoET/runs/od_dynunet_fold_3_rc_ic_denoised/lightning_logs/version_0/checkpoints/dynunet_128_fold_3_880-score-0.8420-at-0.430-0.278-0.126-0.234-0.072.ckpt  /home/bloodaxe/develop/Kaggle-2024-CryoET/runs/od_dynunet_fold_4_rc_ic_denoised/lightning_logs/version_0/checkpoints/dynunet_128_fold_4_880-score-0.8324-at-0.194-0.158-0.072-0.194-0.097.ckpt 
 
 CV: 0.82 +- 0.019
 
-LB [0.20, 0.20, 0.20, 0.20, 0.35] -> 0.741
+LB [0.20. 0.20. 0.20. 0.20. 0.35] -> 0.741
 
 ## DynUnet (Stride 4 & 2)
 
@@ -140,7 +140,7 @@ python trace_od_dynunet.py /home/bloodaxe/develop/Kaggle-2024-CryoET/runs/od_dyn
 | 3    | 0.8149   | 0.325    | 0.325    | 0.278    | 0.234    | 0.158    |
 | 4    | 0.8236   | 0.194    | 0.126    | 0.126    | 0.194    | 0.097    |
 |------|----------|----------|----------|----------|----------|----------|
-| MEAN | 0,811280 | 0,271200 | 0,227200 | 0,182800 | 0,228400 | 0,220600 |
+| MEAN | 0.811280 | 0.271200 | 0.227200 | 0.182800 | 0.228400 | 0.220600 |
 
 ## SegResNet (Stride 2)
 
@@ -154,21 +154,21 @@ python trace_od.py /home/ekhvedchenia/develop/Kaggle-2024-CryoET/runs/od_segresn
 | 2    | 0.8109 | 0.278 | 0.234 | 0.234      | 0.325      | 0.234      |
 | 4    | 0.8137 | 0.158 | 0.234 | 0.194      | 0.194      | 0.376      |
 |------| ------ | ------| ----- | ---------- | ---------- | ---------- |
-| AVG  | 0,8249 | 0,232 | 0,319 | 0,226      | 0,2450     | 0,298      |
+| AVG  | 0.8249 | 0.232 | 0.319 | 0.226      | 0.2450     | 0.298      |
 
 
 Mean of two 
-0,818120 0,252000 0,273500 0,204800 0,236700 0,259400
+0.818120 0.252000 0.273500 0.204800 0.236700 0.259400
 
-LB: [0.252, 0.273, 0.204, 0.236, 0.259] -> 0.774
-LB: [0.200, 0.273, 0.204, 0.236, 0.259] -> 0.774 (higher)
-LB: [0.252, 0.250, 0.204, 0.236, 0.259] -> 0.774 (lower)
-LB: [0.252, 0.273, 0.250, 0.236, 0.259] -> 0.772
-LB: [0.252, 0.273, 0.204, 0.200, 0.259] -> 0.772
-LB: [0.252, 0.273, 0.204, 0.300, 0.259] -> 0.770
-LB: [0.252, 0.300, 0.204, 0.236, 0.259] -> 0.773
-LB: [0.252, 0.273, 0.204, 0.236, 0.200] -> 0.773
-LB: [0.252, 0.273, 0.204, 0.236, 0.300] -> 0.772
+LB: [0.252. 0.273. 0.204. 0.236. 0.259] -> 0.774
+LB: [0.200. 0.273. 0.204. 0.236. 0.259] -> 0.774 (higher)
+LB: [0.252. 0.250. 0.204. 0.236. 0.259] -> 0.774 (lower)
+LB: [0.252. 0.273. 0.250. 0.236. 0.259] -> 0.772
+LB: [0.252. 0.273. 0.204. 0.200. 0.259] -> 0.772
+LB: [0.252. 0.273. 0.204. 0.300. 0.259] -> 0.770
+LB: [0.252. 0.300. 0.204. 0.236. 0.259] -> 0.773
+LB: [0.252. 0.273. 0.204. 0.236. 0.200] -> 0.773
+LB: [0.252. 0.273. 0.204. 0.236. 0.300] -> 0.772
 
 ## od_segresnet_s1_fold_0_rc_ic_denoised Ablation
 
@@ -192,6 +192,53 @@ LB: [0.252, 0.273, 0.204, 0.236, 0.300] -> 0.772
 | All strides with loss per stride   | 0    |       |
 | --copy_paste_prob=0.25 (Only rare) | 0    |       |
 
+
+## 13 Jan 2025
+
+- Validation uses same tiling scheme as inference kernel
+- 10.012 instead of 10.0
+
+### SegResNetV2 S2
+
+/home/bloodaxe/develop/Kaggle-2024-CryoET/runs/od_segresnetv2_fold_0/adamw_torch_1e-04_0.01/_rc_ic_s2_slpa_cnms_denoised/lightning_logs/version_0/checkpoints/segresnetv2_96x128x128_fold_0_1280-score-0.8429-at-0.325-0.278-0.194-0.278-0.551.ckpt
+/home/bloodaxe/develop/Kaggle-2024-CryoET/runs/od_segresnetv2_fold_1/adamw_torch_1e-04_0.01/_rc_ic_s2_slpa_cnms_denoised/lightning_logs/version_0/checkpoints/segresnetv2_96x128x128_fold_1_1440-score-0.8215-at-0.126-0.194-0.194-0.234-0.194.ckpt
+/home/bloodaxe/develop/Kaggle-2024-CryoET/runs/od_segresnetv2_fold_2/adamw_torch_1e-04_0.01/_rc_ic_s2_slpa_cnms_denoised/lightning_logs/version_0/checkpoints/segresnetv2_96x128x128_fold_2_4320-score-0.7893-at-0.234-0.158-0.278-0.194-0.325.ckpt
+/home/bloodaxe/develop/Kaggle-2024-CryoET/runs/od_segresnetv2_fold_3/adamw_torch_1e-04_0.01/_rc_ic_s2_slpa_cnms_denoised/lightning_logs/version_0/checkpoints/segresnetv2_96x128x128_fold_3_2560-score-0.8413-at-0.278-0.551-0.376-0.158-0.278.ckpt
+/home/bloodaxe/develop/Kaggle-2024-CryoET/runs/od_segresnetv2_fold_4/adamw_torch_1e-04_0.01/_rc_ic_s2_slpa_cnms_denoised/lightning_logs/version_0/checkpoints/segresnetv2_96x128x128_fold_4_3680-score-0.8426-at-0.278-0.194-0.158-0.126-0.158.ckpt
+
+| Fold | Score    | AFRT    | BGT      | RBSM     | TRGLB     | VLP     |
+|------|----------|---------|----------|----------|-----------|---------|
+| 0    | 0.8429   | 0.325   | 0.278    | 0.194    | 0.278     | 0.551   |
+| 1    | 0.8215   | 0.126   | 0.194    | 0.194    | 0.234     | 0.194   |
+| 2    | 0.7893   | 0.234   | 0.158    | 0.278    | 0.194     | 0.325   |
+| 3    | 0.8413   | 0.278   | 0.551    | 0.376    | 0.158     | 0.278   |
+| 4    | 0.8426   | 0.278   | 0.194    | 0.158    | 0.126     | 0.158   |
+|------| -------- | ------- | -------- | -------- | --------- | ------- |
+| Mean | 0.82752  | 0.2482  | 0.275    | 0.24     | 0.198     | 0.3012  |
+
+### DynUnet S2
+
+/home/bloodaxe/develop/Kaggle-2024-CryoET/runs/od_dynunet_fold_0/adamw_torch_3e-04_0.0001_ema_0.995_10/_rc_ic_s2_slpa_cnms_drop_0.05_denoised/lightning_logs/version_0/checkpoints/dynunet_96x128x128_fold_0_1590-score-0.8442-at-0.278-0.325-0.194-0.234-0.551.ckpt
+/home/bloodaxe/develop/Kaggle-2024-CryoET/runs/od_dynunet_fold_1/adamw_torch_3e-04_0.0001_ema_0.995_10/_rc_ic_s2_slpa_cnms_drop_0.05_denoised/lightning_logs/version_0/checkpoints/dynunet_96x128x128_fold_1_2332-score-0.8098-at-0.325-0.097-0.278-0.278-0.325.ckpt
+/home/bloodaxe/develop/Kaggle-2024-CryoET/runs/od_dynunet_fold_2/adamw_torch_3e-04_0.0001_ema_0.995_10/_rc_ic_s2_slpa_cnms_drop_0.05_denoised/lightning_logs/version_0/checkpoints/dynunet_96x128x128_fold_2_2120-score-0.8030-at-0.325-0.097-0.126-0.278-0.376.ckpt
+/home/bloodaxe/develop/Kaggle-2024-CryoET/runs/od_dynunet_fold_3/adamw_torch_3e-04_0.0001_ema_0.995_10/_rc_ic_s2_slpa_cnms_drop_0.05_denoised/lightning_logs/version_0/checkpoints/dynunet_96x128x128_fold_3_1802-score-0.8185-at-0.430-0.234-0.376-0.194-0.194.ckpt
+/home/bloodaxe/develop/Kaggle-2024-CryoET/runs/od_dynunet_fold_4/adamw_torch_3e-04_0.0001_ema_0.995_10/_rc_ic_s2_slpa_cnms_drop_0.05_denoised/lightning_logs/version_0/checkpoints/dynunet_96x128x128_fold_4_954-score-0.8323-at-0.325-0.325-0.278-0.325-0.325.ckpt
+
+| Fold | Score    | AFRT    | BGT     | RBSM    | TRGLB  | VLP    |
+|------|----------|---------|---------|---------|--------|--------|
+| 0    | 0.8442   | 0.278   | 0.325   | 0.194   | 0.234  | 0.551  |
+| 1    | 0.8098   | 0.325   | 0.097   | 0.278   | 0.278  | 0.325  |
+| 2    | 0.8030   | 0.325   | 0.097   | 0.126   | 0.278  | 0.376  |
+| 3    | 0.8185   | 0.430   | 0.234   | 0.376   | 0.194  | 0.194  |
+| 4    | 0.8323   | 0.325   | 0.325   | 0.278   | 0.325  | 0.325  |
+|------|----------|---------|---------|---------|--------|--------|
+| MEAN | 0.82156  | 0.3366  | 0.2156  | 0.2504  | 0.2618 | 0.3542 |
+
+Mean of two
+0.82454 0.2924	0.2453	0.2452	0.2299	0.3277
+
+###
+
 # Ideas
 
 ## Data
@@ -210,7 +257,7 @@ LB: [0.252, 0.273, 0.204, 0.236, 0.300] -> 0.772
 - Stride 4 only - It seems that it is worse than using strides 4 & 2
 - Stride 2 only - It seems that it is worse than using strides 4 & 2
 - DynUnet
-- Stride 4 for Ribosome & Virus-like particle, Stride 2 for the rest
+- Stride 4 for Ribosome & Virus-like particle. Stride 2 for the rest
 - (--apply_loss_on_each_stride) Independent detection losses on stride 4 and stride 2 (To ensure all channels are used on both strides)
 
 ## Training

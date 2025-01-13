@@ -15,7 +15,7 @@ def test_tiling():
     tiles = list(tiles)
     print(len(tiles), tiles[-1])
 
-    tiles = compute_better_tiles(volume_shape, window_size=(96, 128, 128), window_step=(62, 80, 80))
+    tiles = compute_better_tiles(volume_shape, window_size=(192, 128, 128), window_step=(192, 80, 80))
     tiles = list(tiles)
     print(len(tiles), tiles[-1])
 

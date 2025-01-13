@@ -11,7 +11,7 @@ from cryoet.modelling.detection.segresnet_object_detection_v2 import (
 def trace_and_save(checkpoint_path, traced_checkpoint_path, window_size=96):
     checkpoint = torch.load(str(checkpoint_path), weights_only=True)
 
-    config = SegResNetForObjectDetectionV2Config(window_size=window_size, use_stride4=False)
+    config = SegResNetForObjectDetectionV2Config(use_stride4=False)
     model = SegResNetForObjectDetectionV2(config).cuda().eval()
     model_state_dict = checkpoint["state_dict"]
     model_state_dict = {k.replace("model.", ""): v for k, v in model_state_dict.items()}
