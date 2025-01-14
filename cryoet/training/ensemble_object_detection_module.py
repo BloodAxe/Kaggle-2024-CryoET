@@ -130,7 +130,7 @@ class EnsembleObjectDetectionModel(L.LightningModule):
 
         scores = []
         offsets = []
-        num_feature_maps = len(scores)
+        num_feature_maps = len(outputs[0].logits)
 
         for i in range(num_feature_maps):
             averaged_probs = torch.stack([torch.sigmoid(output.logits[i]) for output in outputs], dim=0).mean(dim=0)
