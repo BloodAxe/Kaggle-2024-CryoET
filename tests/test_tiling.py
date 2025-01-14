@@ -15,9 +15,10 @@ def test_tiling():
     tiles = list(tiles)
     print(len(tiles), tiles[-1])
 
-    tiles = compute_better_tiles(volume_shape, window_size=(192, 128, 128), window_step=(192, 80, 80))
-    tiles = list(tiles)
-    print(len(tiles), tiles[-1])
+    for i in range(90, 128):
+        tiles = compute_better_tiles(volume_shape, window_size=(192, 128, 128), window_step=(192, i, i))
+        tiles = list(tiles)
+        print(i, len(tiles), tiles[-1])
 
     # print("Step Z")
     #

@@ -17,21 +17,13 @@ from transformers import (
 from cryoet.data.detection.data_module import ObjectDetectionDataModule
 from cryoet.modelling.detection.dynunet import DynUNetForObjectDetectionConfig, DynUNetForObjectDetection
 from cryoet.modelling.detection.litehrnet import HRNetv2ForObjectDetection
-from cryoet.modelling.detection.maxvit_unet25d import MaxVitUnet25d, MaxVitUnet25dConfig
-from cryoet.modelling.detection.segresnet_object_detection_s1 import (
-    SegResNetForObjectDetectionS1,
-    SegResNetForObjectDetectionS1Config,
-)
 from cryoet.modelling.detection.segresnet_object_detection_v2 import (
     SegResNetForObjectDetectionV2,
     SegResNetForObjectDetectionV2Config,
 )
-from cryoet.modelling.detection.unet3d_detection import UNet3DForObjectDetection, UNet3DForObjectDetectionConfig
-from cryoet.modelling.detection.unetr import SwinUNETRForObjectDetection, SwinUNETRForObjectDetectionConfig
-
 from cryoet.training.args import MyTrainingArguments, ModelArguments, DataArguments
 from cryoet.training.ema import BetaDecay, EMACallback
-from cryoet.training.object_detection_module import ObjectDetectionModel
+from cryoet.training.ensemble_object_detection_module import EnsembleObjectDetectionModel
 
 
 def main():
@@ -126,7 +118,9 @@ def main():
             model_args=model_args,
         )
 
-    model_module = ObjectDetectionModel(model=model, data_args=data_args, model_args=model_args, train_args=training_args)
+    model_module = EnsembleObjectDetectionModel(
+        models=[model1, model2, model3], data_args=data_args, model_args=model_args, train_args=training_args
+    )
 
     if training_args.transfer_weights is not None:
         checkpoint = torch.load(training_args.transfer_weights, map_location="cpu")
