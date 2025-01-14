@@ -194,19 +194,6 @@ def main():
     with open(os.path.join(training_args.output_dir, "config.json"), "w") as f:
         json.dump(config, f, indent=4, sort_keys=True)
 
-    # Trace & Save
-    best_state_dict = torch.load(checkpoint_callback.best_model_path, map_location=model_module.device)
-    model_module.load_state_dict(best_state_dict["state_dict"])
-
-    traced_checkpoint_path = Path(checkpoint_callback.best_model_path).with_suffix(".jit")
-
-    with torch.no_grad():
-        example_input = torch.randn(
-            1, 1, model_args.depth_window_size, model_args.spatial_window_size, model_args.spatial_window_size
-        ).to(model_module.device)
-        traced_model = torch.jit.trace(model_module, example_input)
-        torch.jit.save(traced_model, str(traced_checkpoint_path))
-
 
 def infer_strategy(training_args, fabric):
     if fabric.world_size > 1:
