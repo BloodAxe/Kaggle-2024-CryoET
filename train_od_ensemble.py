@@ -198,7 +198,7 @@ def main():
     best_state_dict = torch.load(checkpoint_callback.best_model_path, map_location=model_module.device)
     model_module.load_state_dict(best_state_dict["state_dict"])
 
-    traced_checkpoint_path = Path(best_state_dict).with_suffix(".jit")
+    traced_checkpoint_path = Path(checkpoint_callback.best_model_path).with_suffix(".jit")
 
     with torch.no_grad():
         example_input = torch.randn(
