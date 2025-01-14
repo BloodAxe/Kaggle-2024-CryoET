@@ -10,6 +10,15 @@ def normalize_volume_to_unit_range(volume):
     return volume
 
 
+def normalize_volume_to_percentile_range(volume, low_percentile=1, high_percentile=99):
+    low = np.percentile(volume, low_percentile)
+    high = np.percentile(volume, high_percentile)
+    volume = volume.astype(np.float32, copy=True)
+    volume -= low
+    volume /= high - low
+    return volume
+
+
 def as_tuple_of_3(value) -> Tuple:
     if isinstance(value, int):
         result = value, value, value
