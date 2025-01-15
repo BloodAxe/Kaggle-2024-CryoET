@@ -102,6 +102,7 @@ def main():
             use_stride2=model_args.use_stride2,
             use_stride4=model_args.use_stride4,
             use_offset_head=model_args.use_offset_head,
+            head_dropout_prob=model_args.head_dropout_prob,
         )
         model = SegResNetForObjectDetectionV2(config)
     elif model_args.model_name == "unet3d":

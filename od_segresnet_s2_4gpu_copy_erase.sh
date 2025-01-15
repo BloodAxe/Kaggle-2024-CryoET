@@ -5,7 +5,7 @@ torchrun --standalone --nproc-per-node=4 train_od.py \
 --dataloader_num_workers=4 --dataloader_persistent_workers=True --dataloader_pin_memory=True \
 --y_rotation_limit=10 --x_rotation_limit=10 \
 --num_train_epochs=150 --warmup_steps=64 --average_tokens_across_devices=True  --use_instance_crops=True --use_random_crops=True \
---fold=0  --max_grad_norm=3 --ddp_find_unused_parameters=True --early_stopping=25 --use_stride4=False --copy_paste_prob=0.25 --random_erase_prob=0.25 --copy_paste_limit=2
+--fold=0  --max_grad_norm=3 --ddp_find_unused_parameters=True --early_stopping=25 --use_stride4=False --copy_paste_prob=0.25 --random_erase_prob=0.25 --copy_paste_limit=2 --head_dropout_prob=0.1
 
 torchrun --standalone --nproc-per-node=4 train_od.py \
 --model_name=segresnetv2 \
@@ -14,7 +14,7 @@ torchrun --standalone --nproc-per-node=4 train_od.py \
 --dataloader_num_workers=4 --dataloader_persistent_workers=True --dataloader_pin_memory=True \
 --y_rotation_limit=10 --x_rotation_limit=10 \
 --num_train_epochs=150 --warmup_steps=64 --average_tokens_across_devices=True  --use_instance_crops=True --use_random_crops=True \
---fold=1  --max_grad_norm=3 --ddp_find_unused_parameters=True --early_stopping=25 --use_stride4=False --copy_paste_prob=0.25 --random_erase_prob=0.25 --copy_paste_limit=2
+--fold=1  --max_grad_norm=3 --ddp_find_unused_parameters=True --early_stopping=25 --use_stride4=False --copy_paste_prob=0.25 --random_erase_prob=0.25 --copy_paste_limit=2 --head_dropout_prob=0.1
 
 torchrun --standalone --nproc-per-node=4 train_od.py \
 --model_name=segresnetv2 \
@@ -23,7 +23,7 @@ torchrun --standalone --nproc-per-node=4 train_od.py \
 --dataloader_num_workers=4 --dataloader_persistent_workers=True --dataloader_pin_memory=True \
 --y_rotation_limit=10 --x_rotation_limit=10 \
 --num_train_epochs=150 --warmup_steps=64 --average_tokens_across_devices=True  --use_instance_crops=True --use_random_crops=True \
---fold=2  --max_grad_norm=3 --ddp_find_unused_parameters=True --early_stopping=25 --use_stride4=False --copy_paste_prob=0.25 --random_erase_prob=0.25 --copy_paste_limit=2
+--fold=2  --max_grad_norm=3 --ddp_find_unused_parameters=True --early_stopping=25 --use_stride4=False --copy_paste_prob=0.25 --random_erase_prob=0.25 --copy_paste_limit=2 --head_dropout_prob=0.1
 
 
 torchrun --standalone --nproc-per-node=4 train_od.py \
@@ -33,7 +33,7 @@ torchrun --standalone --nproc-per-node=4 train_od.py \
 --dataloader_num_workers=4 --dataloader_persistent_workers=True --dataloader_pin_memory=True \
 --y_rotation_limit=10 --x_rotation_limit=10 \
 --num_train_epochs=150 --warmup_steps=64 --average_tokens_across_devices=True  --use_instance_crops=True --use_random_crops=True \
---fold=3  --max_grad_norm=3 --ddp_find_unused_parameters=True --early_stopping=25 --use_stride4=False --copy_paste_prob=0.25 --random_erase_prob=0.25 --copy_paste_limit=2
+--fold=3  --max_grad_norm=3 --ddp_find_unused_parameters=True --early_stopping=25 --use_stride4=False --copy_paste_prob=0.25 --random_erase_prob=0.25 --copy_paste_limit=2 --head_dropout_prob=0.1
 
 torchrun --standalone --nproc-per-node=4 train_od.py \
 --model_name=segresnetv2 \
@@ -42,7 +42,7 @@ torchrun --standalone --nproc-per-node=4 train_od.py \
 --dataloader_num_workers=4 --dataloader_persistent_workers=True --dataloader_pin_memory=True \
 --y_rotation_limit=10 --x_rotation_limit=10 \
 --num_train_epochs=150 --warmup_steps=64 --average_tokens_across_devices=True  --use_instance_crops=True --use_random_crops=True \
---fold=4  --max_grad_norm=3 --ddp_find_unused_parameters=True --early_stopping=25 --use_stride4=False --copy_paste_prob=0.25 --random_erase_prob=0.25 --copy_paste_limit=2
+--fold=4  --max_grad_norm=3 --ddp_find_unused_parameters=True --early_stopping=25 --use_stride4=False --copy_paste_prob=0.25 --random_erase_prob=0.25 --copy_paste_limit=2 --head_dropout_prob=0.1
 
 
 

@@ -180,6 +180,7 @@ class SegResNetForObjectDetectionV2Config(PretrainedConfig):
         blocks_down=(1, 2, 2, 4),
         blocks_up=(1, 1, 1),
         dropout_prob=0.2,
+        head_dropout_prob=0,
         num_classes=5,
         use_stride4: bool = True,
         use_stride2: bool = True,
@@ -198,6 +199,7 @@ class SegResNetForObjectDetectionV2Config(PretrainedConfig):
         self.use_stride4 = use_stride4
         self.use_stride2 = use_stride2
         self.use_offset_head = use_offset_head
+        self.head_dropout_prob = head_dropout_prob
 
 
 class SegResNetForObjectDetectionV2(nn.Module):
@@ -213,7 +215,7 @@ class SegResNetForObjectDetectionV2(nn.Module):
             blocks_up=config.blocks_up,
             dropout_prob=config.dropout_prob,
         )
-
+        self.dropout = nn.Dropout3d(config.head_dropout_prob)
         if self.config.use_stride2:
             self.head2 = ObjectDetectionHead(
                 in_channels=64,
@@ -243,13 +245,13 @@ class SegResNetForObjectDetectionV2(nn.Module):
         strides = []
 
         if self.config.use_stride4:
-            logits4, offsets4 = self.head4(fm4)
+            logits4, offsets4 = self.head4(self.dropout(fm4))
             logits.append(logits4)
             offsets.append(offsets4)
             strides.append(self.head4.stride)
 
         if self.config.use_stride2:
-            logits2, offsets2 = self.head2(fm2)
+            logits2, offsets2 = self.head2(self.dropout(fm2))
             logits.append(logits2)
             offsets.append(offsets2)
             strides.append(self.head2.stride)
