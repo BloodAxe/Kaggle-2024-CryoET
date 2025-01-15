@@ -124,7 +124,7 @@ class ObjectDetectionModel(L.LightningModule):
             z=[],
         )
 
-        score_thresholds = self.thresholds.detach().cpu().numpy()
+        score_thresholds = self.thresholds.cpu().numpy()
 
         weights = {
             "apo-ferritin": 1,
@@ -215,7 +215,7 @@ class ObjectDetectionModel(L.LightningModule):
         best_score_per_class = np.array([per_class_scores[i, j] for j, i in enumerate(best_index_per_class)])  # [class]
         averaged_score = np.sum([weights[k] * best_score_per_class[i] for i, k in enumerate(keys)]) / sum(weights.values())
 
-        self.per_class_scores = torch.from_numpy(per_class_scores)
+        self.per_class_scores = torch.from_numpy(per_class_scores).to(self.device)
 
         if self.trainer.is_global_zero:
             print("Scores", list(zip(score_values, score_thresholds)))
