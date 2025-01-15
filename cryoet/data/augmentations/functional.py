@@ -113,7 +113,7 @@ def make_affine_transform_4x4(
 
 def rotate_and_scale_volume(
     volume: np.ndarray,
-    points: np.ndarray,
+    centers: np.ndarray,
     scale: float,
     angles: Tuple[float, float, float],
     center_zyx: Tuple[float, float, float],
@@ -127,7 +127,7 @@ def rotate_and_scale_volume(
 
     Args:
         volume: 3D numpy array (D, H, W) = (Z, Y, X)
-        points: Nx3 array of points in (X, Y, Z)
+        centers: Nx3 array of points in (X, Y, Z)
         scale:  float scale factor
         angles: (angle_x, angle_y, angle_z) in degrees
         center_zyx: (cz, cy, cx) = center of rotation in input volume coords
@@ -186,9 +186,9 @@ def rotate_and_scale_volume(
     # 7) Transform the points using the FORWARD matrix:
     #    points are Nx3, each row is (x, y, z).
     #    We treat them as homogeneous coords to do forward_M_4x4 @ [z, y, x, 1].
-    N = points.shape[0]
+    N = centers.shape[0]
     ones = np.ones((N, 1), dtype=np.float32)
-    pts_hom = np.hstack([points[:, ::-1], ones])  # Nx4
+    pts_hom = np.hstack([centers[:, ::-1], ones])  # Nx4
     pts_transformed_hom = (forward_M_4x4 @ pts_hom.T).T  # Nx4
     new_points = pts_transformed_hom[:, :3] / pts_transformed_hom[:, [3]]
 
@@ -302,7 +302,7 @@ def erase_objects(
         mask_volume |= distances_sqr < radius_squared
 
     volume = volume.copy()
-    volume[mask_volume] = 0
+    volume[mask_volume] = volume.mean()
 
     if remove_overlap:
         half_radius_sqr = (radius_px * 0.5) ** 2
@@ -322,7 +322,9 @@ def erase_objects(
     return dict(volume=volume, centers=centers_px[keep_mask], radius=radius_px[keep_mask], labels=labels[keep_mask])
 
 
-def random_erase_objects(volume: np.ndarray, centers: np.ndarray, radius: np.ndarray, labels: np.ndarray, prob: float):
+def random_erase_objects(
+    volume: np.ndarray, centers: np.ndarray, radius: np.ndarray, labels: np.ndarray, prob: float, remove_overlap=True
+):
     """
     :param volume: The volume to erase objects from. Shape: (D, H, W)
     :param centers: The centers of the objects to erase. Shape: (N, 3). Each row is (x, y, z)
@@ -331,7 +333,7 @@ def random_erase_objects(volume: np.ndarray, centers: np.ndarray, radius: np.nda
     :param prob: The probability of erasing each object.
     """
     keep_mask = ~np.array([(random.random() < prob) for _ in range(len(centers))], dtype=bool)
-    data = erase_objects(volume, centers, radius, labels, keep_mask, remove_overlap=True)
+    data = erase_objects(volume, centers, radius, labels, keep_mask, remove_overlap=remove_overlap)
     return data
 
 
@@ -373,7 +375,7 @@ def copy_paste_augmentation(
     output_size = int(2 * object_radius + 1)
     volume_to_paste, rotated_centers = rotate_and_scale_volume(
         volume=sample.volume,
-        points=sample.centers_px,
+        centers=sample.centers_px,
         scale=scale,
         angles=(
             random.uniform(-z_rotation_limit, z_rotation_limit),

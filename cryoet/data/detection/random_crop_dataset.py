@@ -35,7 +35,7 @@ class RandomCropForPointDetectionDataset(CryoETObjectDetectionDataset, ObjectDet
         scale = random.uniform(1 - self.data_args.scale_limit, 1 + self.data_args.scale_limit)
         volume, centers_px = rotate_and_scale_volume(
             volume=self.volume_data,
-            points=centers_px,
+            centers=centers_px,
             angles=(
                 random.uniform(-self.data_args.z_rotation_limit, self.data_args.z_rotation_limit),
                 random.uniform(-self.data_args.y_rotation_limit, self.data_args.y_rotation_limit),
