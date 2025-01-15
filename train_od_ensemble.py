@@ -1,7 +1,6 @@
 import json
 import os
 import typing
-from pathlib import Path
 
 import lightning as L
 import torch
@@ -23,7 +22,7 @@ from cryoet.modelling.detection.segresnet_object_detection_v2 import (
 )
 from cryoet.training.args import MyTrainingArguments, ModelArguments, DataArguments
 from cryoet.training.ema import BetaDecay, EMACallback
-from cryoet.training.ensemble_object_detection_module import EnsembleObjectDetectionModel
+from cryoet.training.ensemble_object_detection_module_v2 import EnsembleObjectDetectionModelV2
 
 
 def main():
@@ -118,7 +117,7 @@ def main():
             model_args=model_args,
         )
 
-    model_module = EnsembleObjectDetectionModel(
+    model_module = EnsembleObjectDetectionModelV2(
         models=[model1, model2, model3], data_args=data_args, model_args=model_args, train_args=training_args
     )
 
