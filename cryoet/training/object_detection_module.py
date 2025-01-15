@@ -123,7 +123,7 @@ class ObjectDetectionModel(L.LightningModule):
             y=[],
             z=[],
         )
-        
+
         score_thresholds = self.thresholds.detach().cpu().numpy()
 
         weights = {
