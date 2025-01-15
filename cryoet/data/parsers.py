@@ -208,7 +208,7 @@ def visualize_slices_grid(
     volume: np.ndarray,
     centers: np.ndarray,
     labels: np.ndarray,
-    radii: np.ndarray,
+    radius: np.ndarray,
     target_classes=None,
     slices_to_show=None,
     only_slices_with_objects: bool = False,
@@ -223,7 +223,7 @@ def visualize_slices_grid(
     :param volume: 3D NumPy array of shape (Z, Y, X).
     :param centers: (N, 3) array of XYZ object centers (in Å).
     :param labels: (N,) array of integer labels.
-    :param radii: (N,) array of object radii (in Å).
+    :param radius: (N,) array of object radii (in Å).
     :param target_classes: A list of dicts describing classes. Example element:
                           {
                               "name": "apo-ferritin",
@@ -297,7 +297,7 @@ def visualize_slices_grid(
             for idx_obj in idx_slice:
                 x_vox = centers[idx_obj, 0] / voxel_size
                 y_vox = centers[idx_obj, 1] / voxel_size
-                r_vox = radii[idx_obj] / voxel_size
+                r_vox = radius[idx_obj] / voxel_size
 
                 # Get the object label and corresponding color
                 lbl = labels[idx_obj]

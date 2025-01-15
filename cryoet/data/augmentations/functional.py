@@ -1,5 +1,5 @@
 import random
-from typing import Optional, List
+from typing import Optional, List, Callable
 from typing import Tuple
 
 import numpy as np
@@ -11,6 +11,7 @@ from .copy_paste_merge import (
     merge_volume_using_grad_mag,
     merge_volume_using_mean,
     merge_volume_using_max,
+    merge_volume_using_weighted_sum,
 )
 
 
@@ -355,6 +356,7 @@ def copy_paste_augmentation(
     y_rotation_limit: float,
     x_rotation_limit: float,
     classes_to_paste=None,
+    merge_method: Callable = merge_volume_using_weighted_sum,
 ):
     sample: AnnotatedVolume = random.choice(samples)  # Pick random sample
 
@@ -406,7 +408,7 @@ def copy_paste_augmentation(
         start_z : start_z + volume_to_paste.shape[0],
         start_y : start_y + volume_to_paste.shape[1],
         start_x : start_x + volume_to_paste.shape[2],
-    ] = merge_volume_using_grad_mag(dst_volume_view, volume_to_paste)
+    ] = merge_method(dst_volume_view, volume_to_paste)
 
     offset = np.array([start_x, start_y, start_z]).reshape(1, 3)
     centers = np.concatenate([centers, centers_to_paste_px + offset], axis=0)
