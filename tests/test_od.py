@@ -1,6 +1,7 @@
 import math
 
 import einops
+import matplotlib.pyplot as plt
 import numpy as np
 import torch
 
@@ -13,6 +14,7 @@ from cryoet.modelling.detection.functional import (
     decode_detections_with_nms,
 )
 from cryoet.modelling.detection.task_aligned_assigner import batch_pairwise_keypoints_iou, TaskAlignedAssigner
+from cryoet.training.od_accumulator import AccumulatedObjectDetectionPredictionContainer
 
 
 def test_nms():
@@ -162,3 +164,32 @@ def test_batch_pairwise_keypoints_iou():
     assert sim.shape[2] == pred_pt.shape[1]
     sim_np = sim.detach().numpy()
     print(sim_np)
+
+
+def test_weighted_average():
+    scores_volume = torch.randn((5, 192, 128, 128))
+
+    weight = AccumulatedObjectDetectionPredictionContainer.compute_weight_matrix(scores_volume, sigma=15)
+
+    weight = weight.numpy()
+
+    print(weight.min(), weight.max())
+
+    fig, ax = plt.subplots(3, 3, figsize=(16, 16))
+    ax[0, 0].imshow(weight[0], vmin=0, vmax=1)
+    ax[0, 1].imshow(weight[weight.shape[0] // 2], vmin=0, vmax=1)
+    ax[0, 2].imshow(weight[-1], vmin=0, vmax=1)
+
+    ax[1, 0].imshow(weight[:, 0, :], vmin=0, vmax=1)
+    ax[1, 1].imshow(weight[:, weight.shape[1] // 2, :], vmin=0, vmax=1)
+    ax[1, 2].imshow(weight[:, -1, :], vmin=0, vmax=1)
+
+    ax[2, 0].imshow(weight[:, :, 0], vmin=0, vmax=1)
+    ax[2, 1].imshow(weight[:, :, weight.shape[2] // 2], vmin=0, vmax=1)
+    im = ax[2, 2].imshow(weight[:, :, -1], vmin=0, vmax=1)
+
+    fig.subplots_adjust(right=0.8)
+    cbar_ax = fig.add_axes([0.85, 0.15, 0.05, 0.7])
+    fig.colorbar(im, cax=cbar_ax)
+
+    plt.show()

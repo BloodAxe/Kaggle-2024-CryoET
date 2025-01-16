@@ -51,6 +51,7 @@ class ObjectDetectionModel(L.LightningModule):
         ]))
         # fmt: on
         self.register_buffer("per_class_scores", torch.zeros(len(self.thresholds), 5))
+        self.inference_window_size = model_args.depth_window_size, model_args.spatial_window_size, model_args.spatial_window_size
 
     def forward(self, volume, labels=None, **loss_kwargs):
         return self.model(
@@ -104,7 +105,13 @@ class ObjectDetectionModel(L.LightningModule):
 
             if study not in self.validation_predictions:
                 self.validation_predictions[study] = AccumulatedObjectDetectionPredictionContainer.from_shape(
-                    volume_shape, num_classes=num_classes, strides=outputs.strides, device="cpu", dtype=torch.float16
+                    volume_shape,
+                    window_size=self.inference_window_size,
+                    num_classes=num_classes,
+                    strides=outputs.strides,
+                    device="cpu",
+                    dtype=torch.float16,
+                    use_weighted_average=True,
                 )
 
             self.validation_predictions[study].accumulate(
