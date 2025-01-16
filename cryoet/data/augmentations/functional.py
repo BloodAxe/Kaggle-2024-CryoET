@@ -459,3 +459,40 @@ def copy_paste_augmentation(
     labels = np.concatenate([labels, labels_to_paste_px], axis=0)
 
     return dict(volume=volume, centers=centers, radius=radius, labels=labels)
+
+
+def mixup_augmentation(
+    volume: np.ndarray,
+    centers: np.ndarray,
+    radius: np.ndarray,
+    labels: np.ndarray,
+    sample: AnnotatedVolume,
+    scale: float,
+    scale_limit: float,
+    z_rotation_limit: float,
+    y_rotation_limit: float,
+    x_rotation_limit: float,
+):
+    data2 = random_crop_around_point(
+        volume=sample.volume,
+        centers=sample.centers_px,
+        radius=sample.radius_px,
+        labels=sample.labels,
+        scale_limit=scale_limit,
+        z_rotation_limit=z_rotation_limit,
+        y_rotation_limit=y_rotation_limit,
+        x_rotation_limit=x_rotation_limit,
+        crop_center_xyz=(
+            random.random() * sample.volume_shape[0],
+            random.random() * sample.volume_shape[1],
+            random.random() * sample.volume_shape[2],
+        ),
+        output_shape=volume.shape,
+    )
+
+    return dict(
+        volume=(volume + data2["volume"]) / 2,
+        centers=np.concatenate([centers, data2["centers"]], axis=0),
+        radius=np.concatenate([radius, data2["radius"]], axis=0),
+        labels=np.concatenate([labels, data2["labels"]], axis=0),
+    )

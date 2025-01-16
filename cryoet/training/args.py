@@ -115,6 +115,8 @@ class DataArguments:
     copy_paste_prob: float = field(default=0.0)
     copy_paste_limit: int = field(default=1)
 
+    mixup_prob: float = field(default=0.0)
+
     gaussian_noise_sigma: float = field(default=0.0)
 
     def _dict_torch_dtype_to_str(self, d: Dict[str, Any]) -> None:
