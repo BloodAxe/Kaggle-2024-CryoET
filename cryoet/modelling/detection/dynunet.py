@@ -63,9 +63,11 @@ class DynUNetForObjectDetectionConfig(PretrainedConfig):
         dropout=None,
         intermediate_channels=48,
         offset_intermediate_channels=16,
+        object_size: int = 128,
         **kwargs,
     ):
         super().__init__(**kwargs)
+        self.object_size = object_size
         self.num_classes = num_classes
         self.in_channels = in_channels
         self.out_channels = out_channels
@@ -83,7 +85,7 @@ class DynUNetForObjectDetection(nn.Module):
     def __init__(self, config: DynUNetForObjectDetectionConfig):
         super().__init__()
         self.config = config
-        kernels, strides = get_kernels_strides([128, 128, 128], [1, 1, 1])
+        kernels, strides = get_kernels_strides([config.object_size, config.object_size, config.object_size], [1, 1, 1])
 
         # kernels = [[3, 3, 3]] * 4
         # strides = [[1, 1, 1]] + [[2, 2, 2]] * 3

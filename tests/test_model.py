@@ -58,6 +58,17 @@ def test_dynunet():
     # print("Output shape:", [x.shape for x in out.logits])
 
 
+def test_dynunet2():
+    config = DynUNetForObjectDetectionConfig(object_size=32)
+    model = DynUNetForObjectDetection(config)
+
+    x = torch.randn(2, 1, 96, 96, 96)
+    out = model(x)
+    print("Model summary:", count_parameters(model, human_friendly=True))
+    print("Input shape:", x.shape)
+    # print("Output shape:", [x.shape for x in out.logits])
+
+
 def test_unetr():
     config = SwinUNETRForObjectDetectionConfig()
     model = SwinUNETRForObjectDetection(config)

@@ -123,6 +123,7 @@ def main():
             res_block=True,
             use_stride2=model_args.use_stride2,
             use_stride4=model_args.use_stride4,
+            object_size=32,
             intermediate_channels=64,
             offset_intermediate_channels=8,
         )
