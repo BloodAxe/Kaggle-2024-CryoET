@@ -9,6 +9,8 @@ from .task_aligned_assigner import TaskAlignedAssigner, batch_pairwise_keypoints
 from pytorch_toolbelt.utils.distributed import is_dist_avail_and_initialized, get_world_size
 import torch.distributed as dist
 
+from ...data.functional import as_tuple_of_3
+
 
 def anchors_for_offsets_feature_map(offsets, stride):
     z, y, x = torch.meshgrid(
@@ -338,8 +340,10 @@ def decode_detections_with_nms(
     return final_centers, final_labels, final_scores
 
 
-def centernet_heatmap_nms(scores, kernel=3):
-    pad = (kernel - 1) // 2
+def centernet_heatmap_nms(scores, kernel: Union[int, Tuple[int, int, int]] = 3):
+    kernel = as_tuple_of_3(kernel)
+    pad = (kernel[0] - 1) // 2, (kernel[1] - 1) // 2, (kernel[2] - 1) // 2
+
     maxpool = torch.nn.functional.max_pool3d(scores, kernel_size=kernel, padding=pad, stride=1)
 
     mask = scores == maxpool
