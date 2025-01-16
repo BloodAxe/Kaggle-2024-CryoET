@@ -64,8 +64,14 @@ class AccumulatedObjectDetectionPredictionContainer:
         return self
 
     def accumulate_batch(self, batch_scores, batch_offsets, batch_tile_coords):
-        for scores_list, offsets_list, tile_coords_zyx in zip(batch_scores, batch_offsets, batch_tile_coords):
-            self.accumulate(scores_list, offsets_list, tile_coords_zyx)
+        batch_size = len(batch_tile_coords)
+        for i in range(batch_size):
+            tile_coord = batch_tile_coords[i]
+            self.accumulate(
+                scores_list=[s[i] for s in batch_scores],
+                offsets_list=[o[i] for o in batch_offsets],
+                tile_coords_zyx=tile_coord,
+            )
 
     def accumulate(self, scores_list: List[Tensor], offsets_list: List[Tensor], tile_coords_zyx):
         if len(scores_list) != len(self.scores):
@@ -92,9 +98,9 @@ class AccumulatedObjectDetectionPredictionContainer:
                 slice(strided_offsets_zyx[2], strided_offsets_zyx[2] + scores.shape[3]),
             )
 
-            scores_view = self.scores[i][:, *roi]
-            offsets_view = self.offsets[i][:, *roi]
-            counter_view = self.counter[i][*roi]
+            scores_view = self.scores[i][:, roi[0], roi[1], roi[2]]
+            offsets_view = self.offsets[i][:, roi[0], roi[1], roi[2]]
+            counter_view = self.counter[i][roi[0], roi[1], roi[2]]
 
             # Crop tile_scores to the view shape
             scores = scores[:, : scores_view.shape[1], : scores_view.shape[2], : scores_view.shape[3]]
