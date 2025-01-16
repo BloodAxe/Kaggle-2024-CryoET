@@ -50,6 +50,7 @@ class ModelArguments:
     assigner_beta: float = field(default=6.0, metadata={"help": "Beta"})
 
     apply_loss_on_each_stride: bool = field(default=False)
+    head_dropout_prob: float = field(default=0.0, metadata={"help": "Dropout probability for the head"})
     use_varifocal_loss: bool = field(default=True)
 
     def _dict_torch_dtype_to_str(self, d: Dict[str, Any]) -> None:

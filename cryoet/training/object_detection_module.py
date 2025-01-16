@@ -40,7 +40,16 @@ class ObjectDetectionModel(L.LightningModule):
         self.model_args = model_args
         self.validation_predictions = None
         self.average_tokens_across_devices = train_args.average_tokens_across_devices
-        self.register_buffer("thresholds", torch.from_numpy(np.linspace(0.14, 1.0, 50, endpoint=False) ** 2))
+        # fmt: off
+        self.register_buffer("thresholds", torch.tensor([
+            0.100, 0.105, 0.110, 0.115, 0.120, 0.125, 0.130, 0.135, 0.140, 0.145, 0.150, 0.155, 0.160, 0.165, 0.170,
+            0.175, 0.180, 0.185, 0.190, 0.195, 0.200, 0.205, 0.210, 0.215, 0.220, 0.225, 0.230, 0.235, 0.240, 0.245,
+            0.250, 0.255, 0.260, 0.265, 0.270, 0.275, 0.280, 0.285, 0.290, 0.295, 0.300, 0.305, 0.310, 0.315, 0.320,
+            0.325, 0.330, 0.335, 0.340, 0.345, 0.350, 0.355, 0.360, 0.365, 0.370, 0.375, 0.380, 0.385, 0.390, 0.395,
+            0.400, 0.405, 0.410, 0.415, 0.420, 0.425, 0.430, 0.435, 0.440, 0.445, 0.450, 0.455, 0.460, 0.465, 0.470,
+            0.55, 0.60, 0.65, 0.70, 0.75, 0.80, 0.85, 0.90
+        ]))
+        # fmt: on
         self.register_buffer("per_class_scores", torch.zeros(len(self.thresholds), 5))
 
     def forward(self, volume, labels=None, **loss_kwargs):
@@ -115,7 +124,8 @@ class ObjectDetectionModel(L.LightningModule):
             y=[],
             z=[],
         )
-        score_thresholds = np.linspace(0.14, 1.0, 50, endpoint=False) ** 2
+
+        score_thresholds = self.thresholds.cpu().numpy()
 
         weights = {
             "apo-ferritin": 1,
@@ -206,7 +216,7 @@ class ObjectDetectionModel(L.LightningModule):
         best_score_per_class = np.array([per_class_scores[i, j] for j, i in enumerate(best_index_per_class)])  # [class]
         averaged_score = np.sum([weights[k] * best_score_per_class[i] for i, k in enumerate(keys)]) / sum(weights.values())
 
-        self.per_class_scores = torch.from_numpy(per_class_scores)
+        self.per_class_scores = torch.from_numpy(per_class_scores).to(self.device)
 
         if self.trainer.is_global_zero:
             print("Scores", list(zip(score_values, score_thresholds)))
