@@ -124,6 +124,7 @@ def object_detection_loss(
     assigner_max_anchors_per_point: int = 13,
     assigner_alpha=1.0,
     assigner_beta=6.0,
+    use_varifocal_loss: bool = True,
     **kwargs,
 ):
     """
@@ -179,12 +180,16 @@ def object_detection_loss(
     #    Use assigned_labels for each anchor
     #    Typically alpha=0.25, gamma=2.0 in standard focal;
     #    The user gave alpha=2.0 => that might be "gamma". So let's do:
-    one_hot_label = torch.nn.functional.one_hot(assigned_labels, num_classes + 1)[..., :-1]
-    cls_loss = varifocal_loss(
-        pred_logits,
-        assigned_scores,
-        one_hot_label,
-    )
+    if use_varifocal_loss:
+        one_hot_label = torch.nn.functional.one_hot(assigned_labels, num_classes + 1)[..., :-1]
+        cls_loss = varifocal_loss(
+            pred_logits,
+            assigned_scores,
+            one_hot_label,
+        )
+    else:
+        cls_loss = focal_loss(pred_logits, assigned_scores, alpha=-1)
+
     # if not torch.isfinite(cls_loss).all():
     #     print("Classification loss is not finite")
 
@@ -340,3 +345,22 @@ def centernet_heatmap_nms(scores, kernel=3):
     mask = scores == maxpool
     peaks = scores * mask
     return peaks
+
+
+def focal_loss(pred_logits: Tensor, label: Tensor, alpha=0.25, gamma=2.0, reduction="sum") -> Tensor:
+    pred_score = pred_logits.sigmoid()
+    weight = torch.abs(pred_score - label).pow(gamma)
+    if alpha > 0:
+        alpha_t = alpha * label + (1 - alpha) * (1 - label)
+        weight *= alpha_t
+    loss = weight * torch.nn.functional.binary_cross_entropy_with_logits(pred_logits, label, reduction="none")
+
+    if reduction == "sum":
+        loss = loss.sum()
+    elif reduction == "mean":
+        loss = loss.mean()
+    elif reduction == "none":
+        pass
+    else:
+        raise ValueError(f"Unsupported reduction type {reduction}")
+    return loss
