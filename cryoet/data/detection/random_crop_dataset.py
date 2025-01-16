@@ -2,8 +2,7 @@ import random
 from typing import List
 
 from cryoet.data.augmentations.functional import (
-    rotate_and_scale_volume,
-    get_points_mask_within_cube,
+    random_crop_around_point,
 )
 from .detection_dataset import CryoETObjectDetectionDataset, apply_augmentations
 from .mixin import ObjectDetectionMixin
@@ -32,39 +31,26 @@ class RandomCropForPointDetectionDataset(CryoETObjectDetectionDataset, ObjectDet
         self.copy_paste_samples = copy_paste_samples
 
     def __getitem__(self, idx):
-        centers_px = self.object_centers_px  # x y z
-        radii_px = self.object_radii_px
-        object_labels = self.object_labels
+        center_xyz = (
+            random.random() * self.volume_shape[2],
+            random.random() * self.volume_shape[0],
+            random.random() * self.volume_shape[1],
+        )
 
-        scale = random.uniform(1 - self.data_args.scale_limit, 1 + self.data_args.scale_limit)
-        volume, centers_px = rotate_and_scale_volume(
+        data = random_crop_around_point(
             volume=self.volume_data,
-            centers=centers_px,
-            angles=(
-                random.uniform(-self.data_args.z_rotation_limit, self.data_args.z_rotation_limit),
-                random.uniform(-self.data_args.y_rotation_limit, self.data_args.y_rotation_limit),
-                random.uniform(-self.data_args.x_rotation_limit, self.data_args.x_rotation_limit),
-            ),
-            scale=scale,
-            center_zyx=(
-                random.random() * self.volume_shape[0],
-                random.random() * self.volume_shape[1],
-                random.random() * self.volume_shape[2],
-            ),
+            centers=self.object_centers_px,
+            labels=self.object_labels,
+            radius=self.object_radii_px,
+            z_rotation_limit=self.data_args.z_rotation_limit,
+            y_rotation_limit=self.data_args.y_rotation_limit,
+            x_rotation_limit=self.data_args.x_rotation_limit,
+            scale_limit=self.data_args.scale_limit,
+            crop_center_xyz=center_xyz,
             output_shape=self.window_size,
         )
 
-        radii_px = radii_px * scale
-
-        # Crop the centers to the tile
-        keep_mask = get_points_mask_within_cube(centers_px, volume.shape)
-
-        centers_px = centers_px[keep_mask].copy()
-        radii_px = radii_px[keep_mask].copy()
-        object_labels = object_labels[keep_mask].copy()
-
-        data = dict(volume=volume, centers=centers_px, labels=object_labels, radius=radii_px)
-        data = apply_augmentations(data, self.data_args, self.copy_paste_samples, scale=scale)
+        data = apply_augmentations(data, data_args=self.data_args, copy_paste_samples=self.copy_paste_samples)
 
         data = self.convert_to_dict(
             volume=data["volume"],

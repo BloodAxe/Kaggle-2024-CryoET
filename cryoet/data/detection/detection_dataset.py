@@ -30,7 +30,9 @@ class CryoETObjectDetectionDataset(Dataset):
         self.num_classes = len(TARGET_CLASSES)
 
 
-def apply_augmentations(data, data_args: DataArguments, copy_paste_samples, scale):
+def apply_augmentations(data, data_args: DataArguments, copy_paste_samples):
+    scale = data["scale"]
+
     if data_args.use_random_flips:
         data = random_flip_volume(**data)
 

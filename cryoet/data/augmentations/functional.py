@@ -347,6 +347,47 @@ def gaussian_noise(volume: np.ndarray, sigma: float, **kwargs):
     return dict(volume=volume + noise, **kwargs)
 
 
+def random_crop_around_point(
+    volume: np.ndarray,
+    centers: np.ndarray,
+    radius: np.ndarray,
+    labels: np.ndarray,
+    scale_limit: float,
+    z_rotation_limit: float,
+    y_rotation_limit: float,
+    x_rotation_limit: float,
+    crop_center_xyz: Tuple[float, float, float],
+    output_shape: Tuple[int, int, int],
+):
+    cx, cy, cz = crop_center_xyz
+    scale = random.uniform(1 - scale_limit, 1 + scale_limit)
+
+    volume, centers = rotate_and_scale_volume(
+        volume=volume,
+        centers=centers,
+        angles=(
+            random.uniform(-z_rotation_limit, z_rotation_limit),
+            random.uniform(-y_rotation_limit, y_rotation_limit),
+            random.uniform(-x_rotation_limit, x_rotation_limit),
+        ),
+        scale=scale,
+        center_zyx=(cz, cy, cx),
+        output_shape=output_shape,
+    )
+
+    radius = radius * scale
+
+    # Crop the centers to the tile
+    keep_mask = get_points_mask_within_cube(centers, volume.shape)
+
+    centers = centers[keep_mask].copy()
+    radius = radius[keep_mask].copy()
+    labels = labels[keep_mask].copy()
+
+    data = dict(volume=volume, centers=centers, labels=labels, radius=radius, scale=scale)
+    return data
+
+
 def copy_paste_augmentation(
     volume: np.ndarray,
     centers: np.ndarray,
