@@ -33,8 +33,6 @@ class ObjectDetectionDataModule(L.LightningDataModule):
         self.runs_dir = self.root / "train" / "static" / "ExperimentRuns"
         self.train_modes = train_modes.split(",") if isinstance(train_modes, str) else list(train_modes)
         self.valid_modes = valid_modes.split(",") if isinstance(valid_modes, str) else list(valid_modes)
-        self.train_batch_size = train_args.per_device_train_batch_size
-        self.valid_batch_size = train_args.per_device_eval_batch_size
         self.dataloader_num_workers = train_args.dataloader_num_workers
         self.dataloader_pin_memory = train_args.dataloader_pin_memory
         self.dataloader_persistent_workers = train_args.dataloader_persistent_workers
@@ -137,7 +135,7 @@ class ObjectDetectionDataModule(L.LightningDataModule):
     def train_dataloader(self):
         return DataLoader(
             dataset=self.train,
-            batch_size=self.train_batch_size,
+            batch_size=self.train_args.per_device_train_batch_size,
             shuffle=True,
             drop_last=True,
             num_workers=self.dataloader_num_workers,
@@ -149,7 +147,7 @@ class ObjectDetectionDataModule(L.LightningDataModule):
     def val_dataloader(self):
         return DataLoader(
             dataset=self.val,
-            batch_size=self.train_batch_size,
+            batch_size=self.train_args.per_device_eval_batch_size,
             shuffle=False,
             drop_last=False,
             num_workers=self.dataloader_num_workers,
