@@ -50,6 +50,7 @@ TARGET_CLASSES = (
         "radius": 135,
         "map_threshold": 0.201,
     },
+    {"name": "beta-amylase", "label": 5, "color": [153, 63, 0, 128], "radius": 65, "map_threshold": 0.035},
 )
 
 NUM_CLASSES = len(TARGET_CLASSES)

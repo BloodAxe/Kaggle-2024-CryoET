@@ -15,6 +15,7 @@ from transformers import (
 )
 
 from cryoet.data.detection.data_module import ObjectDetectionDataModule
+from cryoet.data.parsers import NUM_CLASSES
 from cryoet.modelling.detection.dynunet import DynUNetForObjectDetectionConfig, DynUNetForObjectDetection
 from cryoet.modelling.detection.litehrnet import HRNetv2ForObjectDetection
 from cryoet.modelling.detection.maxvit_unet25d import MaxVitUnet25d, MaxVitUnet25dConfig
@@ -103,6 +104,7 @@ def main():
             use_stride4=model_args.use_stride4,
             use_offset_head=model_args.use_offset_head,
             head_dropout_prob=model_args.head_dropout_prob,
+            num_classes=NUM_CLASSES,
         )
         model = SegResNetForObjectDetectionV2(config)
     elif model_args.model_name == "unet3d":

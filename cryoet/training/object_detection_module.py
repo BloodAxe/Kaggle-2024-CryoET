@@ -19,7 +19,7 @@ from cryoet.schedulers import WarmupCosineScheduler
 from .args import MyTrainingArguments, ModelArguments, DataArguments
 from .od_accumulator import AccumulatedObjectDetectionPredictionContainer
 from .visualization import render_heatmap
-from ..data.parsers import CLASS_LABEL_TO_CLASS_NAME, ANGSTROMS_IN_PIXEL, TARGET_SIGMAS
+from ..data.parsers import CLASS_LABEL_TO_CLASS_NAME, ANGSTROMS_IN_PIXEL, TARGET_SIGMAS, NUM_CLASSES
 from ..metric import score_submission
 from ..modelling.detection.functional import decode_detections_with_nms
 
@@ -50,7 +50,7 @@ class ObjectDetectionModel(L.LightningModule):
             0.55, 0.60, 0.65, 0.70, 0.75, 0.80, 0.85, 0.90
         ]))
         # fmt: on
-        self.register_buffer("per_class_scores", torch.zeros(len(self.thresholds), 5))
+        self.register_buffer("per_class_scores", torch.zeros(len(self.thresholds), NUM_CLASSES))
         self.inference_window_size = (
             model_args.valid_depth_window_size,
             model_args.valid_spatial_window_size,
