@@ -21,7 +21,11 @@ class RandomCropForPointDetectionDataset(CryoETObjectDetectionDataset, ObjectDet
         data_args: DataArguments,
     ):
         super().__init__(sample)
-        self.window_size = model_args.depth_window_size, model_args.spatial_window_size, model_args.spatial_window_size
+        self.window_size = (
+            model_args.train_depth_window_size,
+            model_args.train_spatial_window_size,
+            model_args.train_spatial_window_size,
+        )
         self.num_crops = num_crops
         self.model_args = model_args
         self.data_args = data_args

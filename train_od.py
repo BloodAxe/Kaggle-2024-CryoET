@@ -173,7 +173,7 @@ def main():
         save_last=True,
         auto_insert_metric_name=False,
         save_top_k=5,
-        filename=f"{model_args.model_name}_{model_args.depth_window_size}x{model_args.spatial_window_size}x{model_args.spatial_window_size}_fold_{data_args.fold}"
+        filename=f"{model_args.model_name}_{model_args.valid_depth_window_size}x{model_args.valid_spatial_window_size}x{model_args.valid_spatial_window_size}_fold_{data_args.fold}"
         + "_{step:03d}-score-{val/score:0.4f}-at-{val/apo-ferritin_threshold:0.3f}-{val/beta-galactosidase_threshold:0.3f}-{val/ribosome_threshold:0.3f}-{val/thyroglobulin_threshold:0.3f}-{val/virus-like-particle_threshold:0.3f}",
         # + "_{step:03d}-score-{val/score:0.4f}",
     )
@@ -242,7 +242,7 @@ def main():
 
     with torch.no_grad():
         example_input = torch.randn(
-            1, 1, model_args.depth_window_size, model_args.spatial_window_size, model_args.spatial_window_size
+            1, 1, model_args.valid_depth_window_size, model_args.valid_spatial_window_size, model_args.valid_spatial_window_size
         ).to(model_module.device)
         traced_model = torch.jit.trace(model_module, example_input)
         torch.jit.save(traced_model, str(traced_checkpoint_path))

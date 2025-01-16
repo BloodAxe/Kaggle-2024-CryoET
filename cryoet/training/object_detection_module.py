@@ -51,7 +51,11 @@ class ObjectDetectionModel(L.LightningModule):
         ]))
         # fmt: on
         self.register_buffer("per_class_scores", torch.zeros(len(self.thresholds), 5))
-        self.inference_window_size = model_args.depth_window_size, model_args.spatial_window_size, model_args.spatial_window_size
+        self.inference_window_size = (
+            model_args.valid_depth_window_size,
+            model_args.valid_spatial_window_size,
+            model_args.valid_spatial_window_size,
+        )
 
     def forward(self, volume, labels=None, **loss_kwargs):
         return self.model(

@@ -19,8 +19,16 @@ class SlidingWindowCryoETObjectDetectionDataset(CryoETObjectDetectionDataset, Ob
         model_args: ModelArguments,
     ):
         super().__init__(sample)
-        self.window_size = model_args.depth_window_size, model_args.spatial_window_size, model_args.spatial_window_size
-        self.window_step = model_args.depth_window_step, model_args.spatial_window_step, model_args.spatial_window_step
+        self.window_size = (
+            model_args.valid_depth_window_size,
+            model_args.valid_spatial_window_size,
+            model_args.valid_spatial_window_size,
+        )
+        self.window_step = (
+            model_args.valid_depth_window_step,
+            model_args.valid_spatial_window_step,
+            model_args.valid_spatial_window_step,
+        )
 
         self.tiles = list(compute_better_tiles(self.sample.volume_shape, self.window_size, self.window_step))
         self.data_args = data_args
