@@ -111,7 +111,9 @@ class AccumulatedObjectDetectionPredictionContainer:
 
             if self.use_weighted_average:
                 weight_matrix = self.weight_tensors[i]
-                weight_view = weight_matrix[: scores_view.shape[1], : scores_view.shape[2], : scores_view.shape[3]]
+                # Crop weight matrix to shape of predicted tensor
+                weight_view = weight_matrix[: scores.shape[1], : scores.shape[2], : scores.shape[3]]
+
                 counter_view += weight_view
             else:
                 counter_view += 1
