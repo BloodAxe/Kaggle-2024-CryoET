@@ -153,6 +153,7 @@ def main():
         training_args.master_print(f"Loaded weights from {training_args.transfer_weights}")
 
     checkpoint_callback = ModelCheckpoint(
+        enable_version_counter=False,
         monitor="val/score",
         mode="max",
         save_last=True,
