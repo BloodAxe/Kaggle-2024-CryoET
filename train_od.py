@@ -1,3 +1,4 @@
+import datetime
 import json
 import os
 import typing
@@ -45,6 +46,9 @@ def main():
     L.seed_everything(training_args.seed)
     model_name_slug = build_model_name_slug(data_args, model_args)
 
+    # Make timestamp to differentiate runs in YYMMDD_HHMM format
+    timestamp = datetime.now().strftime("%y%m%d_%H%M")
+
     if training_args.output_dir is None:
         output_dir_name = f"runs/{model_name_slug}"
 
@@ -52,7 +56,7 @@ def main():
         if training_args.ema:
             training_args_str += f"_ema_{training_args.ema_decay}_{training_args.ema_beta}"
 
-        training_args.output_dir = os.path.join(output_dir_name, training_args_str, model_name_slug)
+        training_args.output_dir = os.path.join(output_dir_name, timestamp, training_args_str, model_name_slug)
 
     training_args.master_print(f"Training arguments: {training_args}")
 
@@ -154,7 +158,7 @@ def main():
         save_last=True,
         auto_insert_metric_name=False,
         save_top_k=5,
-        filename=f"{model_name_slug}"
+        filename=f"{timestamp}_{model_name_slug}"
         + "_{step:03d}-score-{val/score:0.4f}-at-{val/apo-ferritin_threshold:0.3f}-{val/beta-galactosidase_threshold:0.3f}-{val/ribosome_threshold:0.3f}-{val/thyroglobulin_threshold:0.3f}-{val/virus-like-particle_threshold:0.3f}",
         # + "_{step:03d}-score-{val/score:0.4f}",
     )
@@ -244,6 +248,8 @@ def build_model_name_slug(data_args, model_args):
         model_name_slug += "_s4"
     if not model_args.use_centernet_nms:
         model_name_slug += "_no_nms"
+    if not model_args.use_offset_head:
+        model_name_slug += "_no_offset"
     if model_args.use_single_label_per_anchor:
         model_name_slug += "_slpa"
     if data_args.train_modes != "denoised":
