@@ -259,6 +259,8 @@ def build_model_name_slug(data_args, model_args):
         model_name_slug += f"_copy_{data_args.copy_paste_prob}x{data_args.copy_paste_limit}"
     if data_args.random_erase_prob > 0:
         model_name_slug += f"_re_{data_args.random_erase_prob}"
+    if data_args.mixup_prob > 0:
+        model_name_slug += f"_mixup_{data_args.mixup_prob}"
     return model_name_slug
 
 
