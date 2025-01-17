@@ -115,7 +115,7 @@ class ObjectDetectionModel(L.LightningModule):
                     strides=outputs.strides,
                     device="cpu",
                     dtype=torch.float16,
-                    use_weighted_average=True,
+                    use_weighted_average=False,
                 )
 
             self.validation_predictions[study].accumulate(
