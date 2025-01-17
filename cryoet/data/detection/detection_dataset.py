@@ -10,7 +10,6 @@ from cryoet.data.augmentations.functional import (
     mixup_augmentation,
 )
 from cryoet.data.parsers import (
-    TARGET_CLASSES,
     AnnotatedVolume,
 )
 from cryoet.training.args import DataArguments
@@ -32,8 +31,6 @@ class CryoETObjectDetectionDataset(Dataset):
 
         self.object_centers_px = sample.centers_px
         self.object_radii_px = sample.radius_px
-
-        self.num_classes = len(TARGET_CLASSES)
 
 
 def apply_augmentations(data, data_args: DataArguments, copy_paste_samples):

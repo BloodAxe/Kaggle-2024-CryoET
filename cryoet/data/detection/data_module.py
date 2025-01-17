@@ -9,7 +9,7 @@ from torch.nn.utils.rnn import pad_sequence
 from torch.utils.data import ConcatDataset, DataLoader, default_collate
 
 from cryoet.data.cross_validation import split_data_into_folds
-from cryoet.data.parsers import CLASS_LABEL_TO_CLASS_NAME, read_annotated_volume, AnnotatedVolume
+from cryoet.data.parsers import read_annotated_volume, AnnotatedVolume, CLASS_LABEL_TO_CLASS_NAME
 from cryoet.training.args import DataArguments, MyTrainingArguments, ModelArguments
 from .instance_crop_dataset import InstanceCropDatasetForPointDetection
 from .random_crop_dataset import RandomCropForPointDetectionDataset
@@ -106,13 +106,17 @@ class ObjectDetectionDataModule(L.LightningDataModule):
         train_samples = []
         for train_study in self.train_studies:
             for mode in self.train_modes:
-                sample = read_annotated_volume(root=self.root, study=train_study, mode=mode, split="train")
+                sample = read_annotated_volume(
+                    root=self.root, study=train_study, mode=mode, split="train", use_6_classes=self.model_args.use_6_classes
+                )
                 train_samples.append(sample)
 
         valid_samples = []
         for study_name in self.valid_studies:
             for mode in self.valid_modes:
-                sample = read_annotated_volume(root=self.root, study=study_name, mode=mode, split="train")
+                sample = read_annotated_volume(
+                    root=self.root, study=study_name, mode=mode, split="train", use_6_classes=self.model_args.use_6_classes
+                )
                 valid_samples.append(sample)
 
         self.train, self.train_solution = self.build_dataset_from_samples(

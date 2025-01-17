@@ -32,8 +32,6 @@ class CryoETPointDetectionDataset(Dataset):
         self.object_centers_px = object_centers / ANGSTROMS_IN_PIXEL
         self.object_radii_px = object_radii / ANGSTROMS_IN_PIXEL
 
-        self.num_classes = len(TARGET_CLASSES)
-
 
 def centernet_gaussian_3d(shape, sigma=1.0):
     d, m, n = [(ss - 1.0) / 2.0 for ss in shape]

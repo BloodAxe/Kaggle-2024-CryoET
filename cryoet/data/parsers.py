@@ -14,7 +14,7 @@ from .functional import normalize_volume_to_unit_range
 
 ANGSTROMS_IN_PIXEL = 10.012
 
-TARGET_CLASSES = (
+TARGET_5_CLASSES = (
     {
         "name": "apo-ferritin",
         "label": 0,
@@ -50,12 +50,16 @@ TARGET_CLASSES = (
         "radius": 135,
         "map_threshold": 0.201,
     },
+)
+
+
+# Note we add beta-amylase as the 6th class (last one)
+TARGET_6_CLASSES = TARGET_5_CLASSES + (
     {"name": "beta-amylase", "label": 5, "color": [153, 63, 0, 128], "radius": 65, "map_threshold": 0.035},
 )
 
-NUM_CLASSES = len(TARGET_CLASSES)
-CLASS_LABEL_TO_CLASS_NAME = {c["label"]: c["name"] for c in TARGET_CLASSES}
-TARGET_SIGMAS = [c["radius"] / ANGSTROMS_IN_PIXEL for c in TARGET_CLASSES]
+CLASS_LABEL_TO_CLASS_NAME = {c["label"]: c["name"] for c in TARGET_6_CLASSES}
+TARGET_SIGMAS = [c["radius"] / ANGSTROMS_IN_PIXEL for c in TARGET_6_CLASSES]
 
 
 def get_volume(
@@ -107,6 +111,7 @@ def get_volume(
 def get_annotations(
     root_dir: str,
     study_name: str,
+    use_6_classes: bool,
     split: str = "train",
 ):
     """
@@ -123,7 +128,8 @@ def get_annotations(
     """
 
     # Build a quick lookup from object "name" -> (label, radius, …)
-    class_dict = {c["name"]: {"label": c.get("label", -1), "radius": c.get("radius", 0)} for c in TARGET_CLASSES}
+    target_classes = TARGET_6_CLASSES if use_6_classes else TARGET_5_CLASSES
+    class_dict = {c["name"]: {"label": c.get("label", -1), "radius": c.get("radius", 0)} for c in target_classes}
 
     # e.g., /.../train/overlay/ExperimentRuns/TS_5_4/Picks/
     picks_dir = os.path.join(root_dir, split, "overlay", "ExperimentRuns", study_name, "Picks")
@@ -171,6 +177,7 @@ def get_annotations(
 def get_volume_and_objects(
     root_dir: str | Path,
     study_name: str,
+    use_6_classes: bool,
     mode: str = "denoised",
     split: str = "train",
 ):
@@ -185,6 +192,7 @@ def get_volume_and_objects(
     centers, labels, radii = get_annotations(
         root_dir,
         study_name,
+        use_6_classes=use_6_classes,
         split=split,
     )
     return volume, centers, labels, radii
@@ -242,7 +250,7 @@ def visualize_slices_grid(
     :return: Matplotlib Figure containing the subplots.
     """
     if target_classes is None:
-        target_classes = TARGET_CLASSES
+        target_classes = TARGET_6_CLASSES
 
     # 1) Build label -> color map from the target_classes
     label_to_color = build_label_to_color_map(target_classes)
@@ -351,12 +359,13 @@ class AnnotatedVolume:
         return (depth, height, width)
 
 
-def read_annotated_volume(root, study, mode, split="train"):
+def read_annotated_volume(root, study, mode, use_6_classes: bool, split="train"):
     volume_data, object_centers, object_labels, object_radii = get_volume_and_objects(
         root_dir=root,
         study_name=study,
         mode=mode,
         split=split,
+        use_6_classes=use_6_classes,
     )
 
     return AnnotatedVolume(

@@ -5,7 +5,7 @@ from typing import Tuple
 import numpy as np
 from scipy.ndimage import affine_transform
 
-from cryoet.data.parsers import AnnotatedVolume, NUM_CLASSES
+from cryoet.data.parsers import AnnotatedVolume
 from .copy_paste_merge import (
     merge_volume_using_derivatives,
     merge_volume_using_grad_mag,
@@ -405,7 +405,7 @@ def copy_paste_augmentation(
 
     if classes_to_paste is None:
         # Pick random class
-        class_to_paste = random.randrange(0, NUM_CLASSES)
+        class_to_paste = random.choice([0, 1, 2, 3, 4])
     else:
         class_to_paste = random.choice(list(classes_to_paste))
 

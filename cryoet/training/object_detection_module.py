@@ -19,7 +19,7 @@ from cryoet.schedulers import WarmupCosineScheduler
 from .args import MyTrainingArguments, ModelArguments, DataArguments
 from .od_accumulator import AccumulatedObjectDetectionPredictionContainer
 from .visualization import render_heatmap
-from ..data.parsers import CLASS_LABEL_TO_CLASS_NAME, ANGSTROMS_IN_PIXEL, TARGET_SIGMAS, NUM_CLASSES
+from ..data.parsers import CLASS_LABEL_TO_CLASS_NAME, ANGSTROMS_IN_PIXEL, TARGET_SIGMAS
 from ..metric import score_submission
 from ..modelling.detection.functional import decode_detections_with_nms
 
@@ -40,6 +40,8 @@ class ObjectDetectionModel(L.LightningModule):
         self.model_args = model_args
         self.validation_predictions = None
         self.average_tokens_across_devices = train_args.average_tokens_across_devices
+        self.num_classes = model.config.num_classes
+
         # fmt: off
         self.register_buffer("thresholds", torch.tensor([
             0.100, 0.105, 0.110, 0.115, 0.120, 0.125, 0.130, 0.135, 0.140, 0.145, 0.150, 0.155, 0.160, 0.165, 0.170,
@@ -50,7 +52,8 @@ class ObjectDetectionModel(L.LightningModule):
             0.55, 0.60, 0.65, 0.70, 0.75, 0.80, 0.85, 0.90
         ]))
         # fmt: on
-        self.register_buffer("per_class_scores", torch.zeros(len(self.thresholds), NUM_CLASSES))
+
+        self.register_buffer("per_class_scores", torch.zeros(len(self.thresholds), self.num_classes))
         self.inference_window_size = (
             model_args.valid_depth_window_size,
             model_args.valid_spatial_window_size,

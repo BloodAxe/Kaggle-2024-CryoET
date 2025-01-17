@@ -15,7 +15,6 @@ from transformers import (
 )
 
 from cryoet.data.detection.data_module import ObjectDetectionDataModule
-from cryoet.data.parsers import NUM_CLASSES
 from cryoet.modelling.detection.dynunet import DynUNetForObjectDetectionConfig, DynUNetForObjectDetection
 from cryoet.modelling.detection.litehrnet import HRNetv2ForObjectDetection
 from cryoet.modelling.detection.maxvit_unet25d import MaxVitUnet25d, MaxVitUnet25dConfig
@@ -44,47 +43,20 @@ def main():
     data_args = typing.cast(DataArguments, data_args)
 
     L.seed_everything(training_args.seed)
+    model_name_slug = build_model_name_slug(data_args, model_args)
 
     if training_args.output_dir is None:
-        output_dir_name = f"runs/od_{model_args.model_name}_fold_{data_args.fold}"
-        model_args_str = ""
-
-        if data_args.use_sliding_crops:
-            model_args_str += "_sc"
-        if data_args.use_random_crops:
-            model_args_str += "_rc"
-        if data_args.use_instance_crops:
-            model_args_str += "_ic"
-        if model_args.use_stride2:
-            model_args_str += "_s2"
-        if model_args.use_stride4:
-            model_args_str += "_s4"
-
-        if model_args.use_single_label_per_anchor:
-            model_args_str += "_slpa"
-        else:
-            model_args_str += "_mlpa"
-
-        if model_args.use_centernet_nms:
-            model_args_str += "_cnms"
-
-        if model_args.apply_loss_on_each_stride:
-            model_args_str += "_loss_each_stride"
-
-        if data_args.copy_paste_prob > 0:
-            model_args_str += f"_copy_{data_args.copy_paste_prob}x{data_args.copy_paste_limit}"
-        if data_args.random_erase_prob > 0:
-            model_args_str += f"_drop_{data_args.random_erase_prob}"
-
-        model_args_str += "_" + data_args.train_modes.replace(",", "_")
+        output_dir_name = f"runs/{model_name_slug}"
 
         training_args_str = f"{training_args.optim.value}_{training_args.learning_rate:.0e}_{training_args.weight_decay}"
         if training_args.ema:
             training_args_str += f"_ema_{training_args.ema_decay}_{training_args.ema_beta}"
 
-        training_args.output_dir = os.path.join(output_dir_name, training_args_str, model_args_str)
+        training_args.output_dir = os.path.join(output_dir_name, training_args_str, model_name_slug)
 
     training_args.master_print(f"Training arguments: {training_args}")
+
+    num_classes = 6 if model_args.use_6_classes else 5
 
     extra_model_args = {}
     if training_args.bf16:
@@ -96,7 +68,9 @@ def main():
     training_args.master_print(f"Model kwargs: {model_kwargs}")
 
     if model_args.model_name == "segresnet_s1":
-        config = SegResNetForObjectDetectionS1Config()
+        config = SegResNetForObjectDetectionS1Config(
+            num_classes=num_classes,
+        )
         model = SegResNetForObjectDetectionS1(config)
     elif model_args.model_name == "segresnetv2":
         config = SegResNetForObjectDetectionV2Config(
@@ -104,20 +78,16 @@ def main():
             use_stride4=model_args.use_stride4,
             use_offset_head=model_args.use_offset_head,
             head_dropout_prob=model_args.head_dropout_prob,
-            num_classes=NUM_CLASSES,
+            num_classes=num_classes,
         )
         model = SegResNetForObjectDetectionV2(config)
-    elif model_args.model_name == "unet3d":
-        config = UNet3DForObjectDetectionConfig(window_size=model_args.window_size)
-        model = UNet3DForObjectDetection(config)
-    elif model_args.model_name == "maxvit_nano_unet25d":
-        config = MaxVitUnet25dConfig(img_size=model_args.window_size)
-        model = MaxVitUnet25d(config)
     elif model_args.model_name == "dynunet":
-        config = DynUNetForObjectDetectionConfig(use_stride2=model_args.use_stride2, use_stride4=model_args.use_stride4)
+        config = DynUNetForObjectDetectionConfig(
+            use_stride2=model_args.use_stride2,
+            use_stride4=model_args.use_stride4,
+            num_classes=num_classes,
+        )
         model = DynUNetForObjectDetection(config)
-    elif model_args.model_name == "hrnet":
-        model = HRNetv2ForObjectDetection()
     elif model_args.model_name == "dynunet_v2":
         config = DynUNetForObjectDetectionConfig(
             act_name="MISH",
@@ -130,19 +100,27 @@ def main():
             offset_intermediate_channels=8,
         )
         model = DynUNetForObjectDetection(config)
-    elif model_args.model_name == "unet3d-fat":
-        config = UNet3DForObjectDetectionConfig(
-            encoder_channels=[32, 64, 128, 256],
-            num_blocks_per_stage=(2, 3, 4, 6),
-            num_blocks_per_decoder_stage=(2, 2, 2),
-            intermediate_channels=64,
-            offset_intermediate_channels=16,
-            window_size=model_args.window_size,
-        )
-        model = UNet3DForObjectDetection(config)
-    elif model_args.model_name == "unetr":
-        config = SwinUNETRForObjectDetectionConfig()
-        model = SwinUNETRForObjectDetection(config)
+    # elif model_args.model_name == "hrnet":
+    #     model = HRNetv2ForObjectDetection()
+    # elif model_args.model_name == "unet3d":
+    #     config = UNet3DForObjectDetectionConfig(window_size=model_args.window_size)
+    #     model = UNet3DForObjectDetection(config)
+    # elif model_args.model_name == "maxvit_nano_unet25d":
+    #     config = MaxVitUnet25dConfig(img_size=model_args.window_size)
+    #     model = MaxVitUnet25d(config)
+    # elif model_args.model_name == "unet3d-fat":
+    #     config = UNet3DForObjectDetectionConfig(
+    #         encoder_channels=[32, 64, 128, 256],
+    #         num_blocks_per_stage=(2, 3, 4, 6),
+    #         num_blocks_per_decoder_stage=(2, 2, 2),
+    #         intermediate_channels=64,
+    #         offset_intermediate_channels=16,
+    #         window_size=model_args.window_size,
+    #     )
+    #     model = UNet3DForObjectDetection(config)
+    # elif model_args.model_name == "unetr":
+    #     config = SwinUNETRForObjectDetectionConfig()
+    #     model = SwinUNETRForObjectDetection(config)
     else:
         raise ValueError(f"Unknown model name: {model_args.model_name}")
 
@@ -176,7 +154,7 @@ def main():
         save_last=True,
         auto_insert_metric_name=False,
         save_top_k=5,
-        filename=f"{model_args.model_name}_{model_args.valid_depth_window_size}x{model_args.valid_spatial_window_size}x{model_args.valid_spatial_window_size}_fold_{data_args.fold}"
+        filename=f"{model_name_slug}"
         + "_{step:03d}-score-{val/score:0.4f}-at-{val/apo-ferritin_threshold:0.3f}-{val/beta-galactosidase_threshold:0.3f}-{val/ribosome_threshold:0.3f}-{val/thyroglobulin_threshold:0.3f}-{val/virus-like-particle_threshold:0.3f}",
         # + "_{step:03d}-score-{val/score:0.4f}",
     )
@@ -249,6 +227,32 @@ def main():
         ).to(model_module.device)
         traced_model = torch.jit.trace(model_module, example_input)
         torch.jit.save(traced_model, str(traced_checkpoint_path))
+
+
+def build_model_name_slug(data_args, model_args):
+    num_classes = 6 if model_args.use_6_classes else 5
+    model_name_slug = f"{model_args.model_name}_fold_{data_args.fold}_{num_classes}x{model_args.train_depth_window_size}x{model_args.train_spatial_window_size}x{model_args.train_spatial_window_size}"
+    if data_args.use_sliding_crops:
+        model_name_slug += "_sc"
+    if data_args.use_random_crops:
+        model_name_slug += "_rc"
+    if data_args.use_instance_crops:
+        model_name_slug += "_ic"
+    if model_args.use_stride2:
+        model_name_slug += "_s2"
+    if model_args.use_stride4:
+        model_name_slug += "_s4"
+    if not model_args.use_centernet_nms:
+        model_name_slug += "_no_nms"
+    if model_args.use_single_label_per_anchor:
+        model_name_slug += "_slpa"
+    if data_args.train_modes != "denoised":
+        model_name_slug += "_" + data_args.train_modes.replace(",", "_")
+    if data_args.copy_paste_prob > 0:
+        model_name_slug += f"_copy_{data_args.copy_paste_prob}x{data_args.copy_paste_limit}"
+    if data_args.random_erase_prob > 0:
+        model_name_slug += f"_re_{data_args.random_erase_prob}"
+    return model_name_slug
 
 
 def infer_strategy(training_args, fabric):

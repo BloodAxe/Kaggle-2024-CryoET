@@ -40,13 +40,14 @@ class ModelArguments:
     )
 
     use_single_label_per_anchor: bool = field(
-        default=True, metadata={"help": "If true, only one label per anchor is used in post-processing"}
+        default=False, metadata={"help": "If true, only one label per anchor is used in post-processing"}
     )
 
     use_offset_head: bool = field(default=True)
 
     use_stride4: bool = field(default=True)
     use_stride2: bool = field(default=True)
+    use_6_classes: bool = field(default=False, metadata={"help": "Use 6 classes instead of 5 (include beta-amylase)"})
 
     assigner_max_anchors_per_point: int = field(default=13, metadata={"help": "Maximum number of anchors per point"})
     assigner_alpha: float = field(default=1.0, metadata={"help": "Alpha"})
