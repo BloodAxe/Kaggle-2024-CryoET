@@ -52,7 +52,7 @@ def main():
     if training_args.output_dir is None:
         output_dir_name = f"runs/{model_name_slug}"
 
-        training_args_str = f"{training_args.optim.value}_{training_args.learning_rate:.0e}_{training_args.weight_decay}"
+        training_args_str = f"{training_args.optim.value}_lr{training_args.learning_rate:.0e}_wd{training_args.weight_decay}_b1{training_args.adam_beta1}_b2{training_args.adam_beta2}"
         if training_args.ema:
             training_args_str += f"_ema_{training_args.ema_decay}_{training_args.ema_beta}"
 
