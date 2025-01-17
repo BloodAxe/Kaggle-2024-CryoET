@@ -183,8 +183,8 @@ class MyTrainingArguments(TrainingArguments):
 
     output_dir: str = None
 
-    adam_beta1: float = field(default=0.9, metadata={"help": "Adam beta1"})
-    adam_beta2: float = field(default=0.95, metadata={"help": "Adam beta2"})
+    # adam_beta1: float = field(default=0.9, metadata={"help": "Adam beta1"})
+    # adam_beta2: float = field(default=0.95, metadata={"help": "Adam beta2"})
 
     sanity_checking: bool = field(default=False, metadata={"help": "Sanity checking"})
 
