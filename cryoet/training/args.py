@@ -198,6 +198,8 @@ class MyTrainingArguments(TrainingArguments):
 
     transfer_weights: Optional[str] = field(default=None, metadata={"help": "Path to the weights to transfer"})
 
+    per_device_eval_batch_size: int = field(default=1, metadata={"help": "Per device evaluation batch size"})
+
     def master_print(self, *args):
         if self.process_index == 0:
             print(*args)

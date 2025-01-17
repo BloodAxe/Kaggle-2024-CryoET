@@ -56,7 +56,7 @@ def main():
         if training_args.ema:
             training_args_str += f"_ema_{training_args.ema_decay}_{training_args.ema_beta}"
 
-        training_args.output_dir = os.path.join(output_dir_name, timestamp, training_args_str, model_name_slug)
+        training_args.output_dir = os.path.join(output_dir_name, f"{timestamp}_{training_args_str}", model_name_slug)
 
     training_args.master_print(f"Training arguments: {training_args}")
 
