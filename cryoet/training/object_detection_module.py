@@ -175,7 +175,9 @@ class ObjectDetectionModel(L.LightningModule):
             self.log_heatmaps(study_name, scores)
 
             topk_coords_px, topk_clases, topk_scores = decode_detections_with_nms(
-                scores,
+                scores[
+                    :5
+                ],  # Kind of hacky but we don't predict class beta-amylase (which may or may not be present during training)
                 offsets,
                 strides=accumulated_predictions.strides,
                 class_sigmas=TARGET_SIGMAS,
