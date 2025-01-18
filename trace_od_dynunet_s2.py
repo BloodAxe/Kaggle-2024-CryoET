@@ -14,7 +14,7 @@ def trace_and_save(checkpoint_path, traced_checkpoint_path, window_size=96, num_
     config = DynUNetForObjectDetectionConfig(use_stride4=False, num_classes=num_classes)
     model = DynUNetForObjectDetection(config).cuda().eval()
     model_state_dict = checkpoint["state_dict"]
-    model_state_dict = {k.replace("model.", ""): v for k, v in model_state_dict.items()}
+    model_state_dict = {k.replace("model.", ""): v for k, v in model_state_dict.items() if k.startswith("model.")}
 
     model.load_state_dict(model_state_dict, strict=True)
 
