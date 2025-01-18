@@ -2,6 +2,7 @@ import timm
 import torch
 import torch.nn as nn
 from pytorch_toolbelt.utils import count_parameters
+from transformers import PretrainedConfig
 
 from cryoet.modelling.detection.detection_head import ObjectDetectionHead, ObjectDetectionOutput
 from cryoet.modelling.detection.functional import object_detection_loss
@@ -124,9 +125,16 @@ def convert_2d_to_3d(model: nn.Module) -> nn.Module:
     return model
 
 
-class HRNetv2ForObjectDetection(nn.Module):
+class HRNetv2ForObjectDetectionConfig(PretrainedConfig):
     def __init__(self, num_classes=5):
         super().__init__()
+        self.num_classes = num_classes
+
+
+class HRNetv2ForObjectDetection(nn.Module):
+    def __init__(self, config: HRNetv2ForObjectDetectionConfig):
+        super().__init__()
+        self.config = config
         backbone = timm.create_model(
             "hrnet_w18_small_v2.ms_in1k",
             in_chans=1,
@@ -163,7 +171,7 @@ class HRNetv2ForObjectDetection(nn.Module):
             nn.Upsample(scale_factor=2, mode="trilinear"),
         )
         self.head = ObjectDetectionHead(
-            in_channels=64, num_classes=num_classes, intermediate_channels=64, offset_intermediate_channels=8, stride=2
+            in_channels=64, num_classes=config.num_classes, intermediate_channels=64, offset_intermediate_channels=8, stride=2
         )
 
     def forward(self, volume, labels=None, **loss_kwargs):
