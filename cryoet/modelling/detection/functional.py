@@ -428,7 +428,7 @@ def convert_2d_to_3d(model: nn.Module) -> nn.Module:
                 old_weight = module.weight  # shape: (out_c, in_c, k, k)
                 # Expand along a new depth dimension
                 old_weight_3d = old_weight.unsqueeze(2)  # (out_c, in_c, 1, k, k)
-                old_weight_3d = old_weight_3d.repeat(1, 1, k, 1, 1)  # (out_c, in_c, k, k, k)
+                old_weight_3d = old_weight_3d.repeat(1, 1, k, 1, 1).div(k)  # (out_c, in_c, k, k, k)
                 new_conv.weight.copy_(old_weight_3d)
 
                 if module.bias is not None:
