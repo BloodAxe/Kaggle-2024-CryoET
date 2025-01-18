@@ -64,6 +64,6 @@ class ObjectDetectionHead(nn.Module):
             offsets = self.offset_head(self.offset_stem(features)).tanh() * self.stride
         else:
             # Dummy offsets
-            offsets = torch.zeros_like(logits[:, 0:2, ...])
+            offsets = torch.zeros_like(logits[:, 0:3, ...])
 
         return logits, offsets
