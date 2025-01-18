@@ -2,10 +2,14 @@ from typing import List, Tuple, Union, Optional
 
 import einops
 import numpy as np
+import timm.layers
 import torch
-from torch import Tensor
+from timm.layers.grn import GlobalResponseNorm
+from torch import Tensor, nn
 
-from .task_aligned_assigner import TaskAlignedAssigner, batch_pairwise_keypoints_iou
+from .global_response_norm import GlobalResponseNorm3d
+from .layer_norm_3d import LayerNorm3d
+from .task_aligned_assigner import TaskAlignedAssigner
 from pytorch_toolbelt.utils.distributed import is_dist_avail_and_initialized, get_world_size
 import torch.distributed as dist
 
@@ -377,3 +381,107 @@ def focal_loss(pred_logits: Tensor, label: Tensor, alpha=0.25, gamma=2.0, reduct
     else:
         raise ValueError(f"Unsupported reduction type {reduction}")
     return loss
+
+
+def convert_2d_to_3d(model: nn.Module) -> nn.Module:
+    """
+    Recursively convert all Conv2d layers in `model` to Conv3d,
+    and all BatchNorm2d layers to BatchNorm3d.
+    Replicates the existing Conv2d weights along the 3rd dimension (depth=1 by default).
+    """
+    for name, module in model.named_children():
+
+        # If we find a Conv2d, replace it with a Conv3d.
+        if isinstance(module, nn.Conv2d):
+            # --------------------------------------------
+            # 1) Check that the 2D kernel is square
+            # --------------------------------------------
+            if module.kernel_size[0] != module.kernel_size[1]:
+                raise ValueError(
+                    f"Non-square kernel detected: {module.kernel_size}. " "This example only handles square kernels (k, k)."
+                )
+            k = module.kernel_size[0]
+
+            # --------------------------------------------
+            # 2) Build a new Conv3d with kernel_size = (k, k, k)
+            #    using the same hyperparameters as best we can
+            # --------------------------------------------
+            new_conv = nn.Conv3d(
+                in_channels=module.in_channels,
+                out_channels=module.out_channels,
+                kernel_size=(k, k, k),
+                # For stride, padding, and dilation, we replicate
+                # the 2D values in each dimension:
+                stride=(module.stride[0], module.stride[0], module.stride[1]),
+                padding=(module.padding[0], module.padding[0], module.padding[1]),
+                dilation=(module.dilation[0], module.dilation[0], module.dilation[1]),
+                groups=module.groups,
+                bias=(module.bias is not None),
+            )
+
+            # --------------------------------------------
+            # 3) Copy and replicate the 2D weights -> 3D
+            # old_weight shape: (out_c, in_c, k, k)
+            # new_weight shape: (out_c, in_c, k, k, k)
+            # --------------------------------------------
+            with torch.no_grad():
+                old_weight = module.weight  # shape: (out_c, in_c, k, k)
+                # Expand along a new depth dimension
+                old_weight_3d = old_weight.unsqueeze(2)  # (out_c, in_c, 1, k, k)
+                old_weight_3d = old_weight_3d.repeat(1, 1, k, 1, 1)  # (out_c, in_c, k, k, k)
+                new_conv.weight.copy_(old_weight_3d)
+
+                if module.bias is not None:
+                    new_conv.bias.copy_(module.bias)
+
+            # Replace the old Conv2d with our new Conv3d
+            setattr(model, name, new_conv)
+
+        # If we find a BatchNorm2d, replace it with a BatchNorm3d.
+        elif isinstance(module, nn.BatchNorm2d):
+            new_bn = nn.BatchNorm3d(
+                num_features=module.num_features,
+                eps=module.eps,
+                momentum=module.momentum,
+                affine=module.affine,
+                track_running_stats=module.track_running_stats,
+            )
+
+            # Copy running statistics and affine parameters
+            with torch.no_grad():
+                if module.affine:
+                    new_bn.weight.copy_(module.weight)
+                    new_bn.bias.copy_(module.bias)
+                new_bn.running_mean.copy_(module.running_mean)
+                new_bn.running_var.copy_(module.running_var)
+
+            # Replace the BatchNorm2d with BatchNorm3d
+            setattr(model, name, new_bn)
+        elif isinstance(module, GlobalResponseNorm):
+            channels_last = module.spatial_dim == (1, 2)
+            new_norm = GlobalResponseNorm3d(dim=len(module.weight), eps=module.eps, channels_last=channels_last)
+            with torch.no_grad():
+                new_norm.weight.copy_(module.weight)
+                new_norm.bias.copy_(module.bias)
+
+            setattr(model, name, new_norm)
+        elif isinstance(module, timm.layers.norm.LayerNorm2d):
+            new_norm = LayerNorm3d(module.normalized_shape, eps=module.eps, affine=module.elementwise_affine)
+            with torch.no_grad():
+                if module.elementwise_affine:
+                    new_norm.weight.copy_(module.weight)
+                    new_norm.bias.copy_(module.bias)
+
+            setattr(model, name, new_norm)
+
+        elif isinstance(module, nn.ReLU):
+            # Replace with SILU
+            setattr(model, name, nn.SiLU(inplace=True))
+        elif isinstance(module, nn.Dropout2d):
+            # Replace with Dropout3d
+            setattr(model, name, nn.Dropout3d(p=module.p, inplace=module.inplace))
+        else:
+            # Recursively convert children
+            convert_2d_to_3d(module)
+
+    return model
