@@ -7,10 +7,10 @@ from cryoet.modelling.detection.litehrnet import (
 )
 
 
-def trace_and_save(checkpoint_path, traced_checkpoint_path, window_size=96):
+def trace_and_save(checkpoint_path, traced_checkpoint_path, window_size=96, num_classes=5):
     checkpoint = torch.load(str(checkpoint_path), weights_only=True)
 
-    model = HRNetv2ForObjectDetection().cuda().eval()
+    model = HRNetv2ForObjectDetection(num_classes=num_classes).cuda().eval()
     model_state_dict = checkpoint["state_dict"]
     model_state_dict = {k.replace("model.", ""): v for k, v in model_state_dict.items()}
 
@@ -21,12 +21,12 @@ def trace_and_save(checkpoint_path, traced_checkpoint_path, window_size=96):
     torch.jit.save(traced_model, str(traced_checkpoint_path))
 
 
-def main(*checkpoints, window_size=96):
+def main(*checkpoints, **kwargs):
     for checkpoint in checkpoints:
         checkpoint_path = Path(checkpoint)
         traced_checkpoint_path = checkpoint_path.with_suffix(".jit")
 
-        trace_and_save(checkpoint_path, traced_checkpoint_path, window_size=window_size)
+        trace_and_save(checkpoint_path, traced_checkpoint_path, **kwargs)
 
 
 if __name__ == "__main__":
