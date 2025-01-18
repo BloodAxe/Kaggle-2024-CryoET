@@ -127,6 +127,7 @@ def object_detection_loss(
     assigner_alpha=1.0,
     assigner_beta=6.0,
     use_varifocal_loss: bool = True,
+    use_cross_entropy_loss: bool = False,
     **kwargs,
 ):
     """
@@ -191,6 +192,14 @@ def object_detection_loss(
         )
     else:
         cls_loss = focal_loss(pred_logits, assigned_scores, alpha=-1)
+
+    if use_cross_entropy_loss or True:
+        bg_label_mask = assigned_labels.eq(num_classes)
+        ce_loss = torch.nn.functional.cross_entropy(
+            input=pred_logits.permute(0, 2, 1), target=torch.masked_fill(assigned_labels, bg_label_mask, -100), reduction="none"
+        )
+        ce_loss_sum = torch.sum(ce_loss * assigned_scores.sum(-1))
+        cls_loss += ce_loss_sum
 
     # if not torch.isfinite(cls_loss).all():
     #     print("Classification loss is not finite")

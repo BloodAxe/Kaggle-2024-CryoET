@@ -261,6 +261,8 @@ def build_model_name_slug(data_args, model_args):
         model_name_slug += f"_re_{data_args.random_erase_prob}"
     if data_args.mixup_prob > 0:
         model_name_slug += f"_mixup_{data_args.mixup_prob}"
+    if model_args.use_cross_entropy_loss:
+        model_name_slug += "_ce"
     return model_name_slug
 
 

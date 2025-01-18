@@ -56,6 +56,7 @@ class ModelArguments:
     apply_loss_on_each_stride: bool = field(default=False)
     head_dropout_prob: float = field(default=0.0, metadata={"help": "Dropout probability for the head"})
     use_varifocal_loss: bool = field(default=True)
+    use_cross_entropy_loss: bool = field(default=False)
 
     def _dict_torch_dtype_to_str(self, d: Dict[str, Any]) -> None:
         """
