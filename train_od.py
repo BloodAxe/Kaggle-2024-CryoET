@@ -104,8 +104,10 @@ def main():
             offset_intermediate_channels=8,
         )
         model = DynUNetForObjectDetection(config)
-    # elif model_args.model_name == "hrnet":
-    #     model = HRNetv2ForObjectDetection()
+    elif model_args.model_name == "hrnet":
+        model = HRNetv2ForObjectDetection(
+            num_classes=num_classes,
+        )
     # elif model_args.model_name == "unet3d":
     #     config = UNet3DForObjectDetectionConfig(window_size=model_args.window_size)
     #     model = UNet3DForObjectDetection(config)

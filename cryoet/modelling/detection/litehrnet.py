@@ -95,22 +95,22 @@ def convert_2d_to_3d(model: nn.Module) -> nn.Module:
 
         # If we find a BatchNorm2d, replace it with a BatchNorm3d.
         elif isinstance(module, nn.BatchNorm2d):
-            new_bn = nn.InstanceNorm3d(
+            new_bn = nn.BatchNorm3d(
                 num_features=module.num_features,
                 eps=module.eps,
                 momentum=module.momentum,
                 affine=module.affine,
-                # track_running_stats=module.track_running_stats,
+                track_running_stats=module.track_running_stats,
             )
 
             # Copy running statistics and affine parameters
-            # with torch.no_grad():
-            #     if module.affine:
-            #         new_bn.weight.copy_(module.weight)
-            #         new_bn.bias.copy_(module.bias)
-            #     new_bn.running_mean.copy_(module.running_mean)
-            #     new_bn.running_var.copy_(module.running_var)
-            #
+            with torch.no_grad():
+                if module.affine:
+                    new_bn.weight.copy_(module.weight)
+                    new_bn.bias.copy_(module.bias)
+                new_bn.running_mean.copy_(module.running_mean)
+                new_bn.running_var.copy_(module.running_var)
+
             # Replace the BatchNorm2d with BatchNorm3d
             setattr(model, name, new_bn)
 
@@ -125,7 +125,7 @@ def convert_2d_to_3d(model: nn.Module) -> nn.Module:
 
 
 class HRNetv2ForObjectDetection(nn.Module):
-    def __init__(self):
+    def __init__(self, num_classes=5):
         super().__init__()
         backbone = timm.create_model(
             "hrnet_w18_small_v2.ms_in1k",
@@ -138,32 +138,32 @@ class HRNetv2ForObjectDetection(nn.Module):
         self.backbone = convert_2d_to_3d(backbone)
 
         self.up_32 = nn.Sequential(
-            nn.InstanceNorm3d(1024),
+            nn.BatchNorm3d(1024),
             nn.Conv3d(1024, 512, kernel_size=1),
             nn.SiLU(inplace=True),
             nn.Upsample(scale_factor=2, mode="trilinear"),
         )
         self.up_16 = nn.Sequential(
-            nn.InstanceNorm3d(512),
+            nn.BatchNorm3d(512),
             nn.Conv3d(512, 256, kernel_size=1),
             nn.SiLU(inplace=True),
             nn.Upsample(scale_factor=2, mode="trilinear"),
         )
         self.up_8 = nn.Sequential(
-            nn.InstanceNorm3d(256),
+            nn.BatchNorm3d(256),
             nn.Conv3d(256, 128, kernel_size=1),
             nn.SiLU(inplace=True),
             nn.Upsample(scale_factor=2, mode="trilinear"),
         )
         self.up_4 = nn.Sequential(
-            nn.InstanceNorm3d(128),
-            nn.Conv3d(128, 64 * 8, kernel_size=1),
+            nn.BatchNorm3d(128),
+            nn.Conv3d(128, 64, kernel_size=1),
             nn.SiLU(inplace=True),
-            PixelShuffle3d(64 * 8, 2),
-            # nn.Upsample(scale_factor=2, mode="trilinear"),
+            # PixelShuffle3d(64 * 8, 2),
+            nn.Upsample(scale_factor=2, mode="trilinear"),
         )
         self.head = ObjectDetectionHead(
-            in_channels=64, num_classes=5, intermediate_channels=64, offset_intermediate_channels=8, stride=2
+            in_channels=64, num_classes=num_classes, intermediate_channels=64, offset_intermediate_channels=8, stride=2
         )
 
     def forward(self, volume, labels=None, **loss_kwargs):
