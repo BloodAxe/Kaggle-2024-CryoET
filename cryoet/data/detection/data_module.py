@@ -8,7 +8,7 @@ import torch
 from torch.nn.utils.rnn import pad_sequence
 from torch.utils.data import ConcatDataset, DataLoader, default_collate
 
-from cryoet.data.cross_validation import split_data_into_folds
+from cryoet.data.cross_validation import split_data_into_folds, get_ninja_split
 from cryoet.data.parsers import read_annotated_volume, AnnotatedVolume, CLASS_LABEL_TO_CLASS_NAME
 from cryoet.training.args import DataArguments, MyTrainingArguments, ModelArguments
 from .instance_crop_dataset import InstanceCropDatasetForPointDetection
@@ -38,7 +38,11 @@ class ObjectDetectionDataModule(L.LightningDataModule):
         self.dataloader_persistent_workers = train_args.dataloader_persistent_workers
         self.fold = data_args.fold
 
-        self.train_studies, self.valid_studies = split_data_into_folds(self.runs_dir)[self.fold]
+        if self.fold == "ninja":
+            self.train_studies, self.valid_studies = get_ninja_split(self.runs_dir)
+        else:
+            self.train_studies, self.valid_studies = split_data_into_folds(self.runs_dir)[self.fold]
+
         self.data_args = data_args
         self.model_args = model_args
         self.train_args = train_args

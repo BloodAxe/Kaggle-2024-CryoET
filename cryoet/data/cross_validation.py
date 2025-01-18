@@ -4,9 +4,12 @@ from pathlib import Path
 from typing import List, Tuple
 
 
-def split_data_into_folds(
-    root: str | Path, n_studies_in_val: int = 2
-) -> List[Tuple[List[str], List[str]]]:
+def get_ninja_split(root: str | Path):
+    studies = list(sorted(os.listdir(str(root))))
+    return studies, studies
+
+
+def split_data_into_folds(root: str | Path, n_studies_in_val: int = 2) -> List[Tuple[List[str], List[str]]]:
     """
     Split the data into folds, ensuring that validation part for any fold gets n_studies_in_val studies.
     """
