@@ -59,12 +59,11 @@ class ObjectDetectionHead(nn.Module):
 
     def forward(self, features):
         logits = self.cls_head(self.cls_stem(features))
+
         if self.use_offset_head:
             offsets = self.offset_head(self.offset_stem(features)).tanh() * self.stride
         else:
             # Dummy offsets
-            offsets = torch.zeros(
-                logits.size(0), 3, logits.size(2), logits.size(3), logits.size(4), device=logits.device, dtype=logits.dtype
-            )
+            offsets = torch.zeros_like(logits[:, 0:2, ...])
 
         return logits, offsets
