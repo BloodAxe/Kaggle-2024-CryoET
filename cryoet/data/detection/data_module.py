@@ -38,7 +38,7 @@ class ObjectDetectionDataModule(L.LightningDataModule):
         self.dataloader_persistent_workers = train_args.dataloader_persistent_workers
         self.fold = data_args.fold
 
-        if self.fold == "ninja":
+        if self.fold == "-1":
             self.train_studies, self.valid_studies = get_ninja_split(self.runs_dir)
         else:
             self.train_studies, self.valid_studies = split_data_into_folds(self.runs_dir)[self.fold]
