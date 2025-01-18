@@ -323,7 +323,7 @@ def erase_objects(
 
 
 def random_erase_objects(
-    volume: np.ndarray, centers: np.ndarray, radius: np.ndarray, labels: np.ndarray, prob: float, remove_overlap=True
+    volume: np.ndarray, centers: np.ndarray, radius: np.ndarray, labels: np.ndarray, prob: float, remove_overlap=True, **kwargs
 ):
     """
     :param volume: The volume to erase objects from. Shape: (D, H, W)
