@@ -106,17 +106,17 @@ class AccumulatedObjectDetectionPredictionContainer:
             scores = scores[:, : scores_view.shape[1], : scores_view.shape[2], : scores_view.shape[3]]
             offsets = offsets[:, : offsets_view.shape[1], : offsets_view.shape[2], : offsets_view.shape[3]]
 
-            scores_view += scores.to(scores_view.device)
-            offsets_view += offsets.to(offsets_view.device)
-
             if self.use_weighted_average:
                 weight_matrix = self.weight_tensors[i]
-                # Crop weight matrix to shape of predicted tensor
-                weight_view = weight_matrix[: scores.shape[1], : scores.shape[2], : scores.shape[3]]
-
-                counter_view += weight_view
+                weight_view = weight_matrix[
+                    : scores.shape[1], : scores.shape[2], : scores.shape[3]
+                ]  # Crop weight matrix to shape of predicted tensor
             else:
-                counter_view += 1
+                weight_view = 1
+
+            counter_view += weight_view
+            scores_view += scores.to(scores_view.device) * weight_view
+            offsets_view += offsets.to(offsets_view.device) * weight_view
 
     @classmethod
     def compute_weight_matrix(self, scores_volume: Tensor, sigma=15):
