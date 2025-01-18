@@ -3,7 +3,7 @@ for FOLD in 0 1 2 3 4
 do
 
   torchrun --standalone --nproc-per-node=4 train_od.py \
-    --model_name=segresnetv2 \
+    --model_name=segresnetv2 --train_spatial_window_size=96 --train_depth_window_size=96 \
     --pretrained_backbone_path=pretrained/wholeBody_ct_segmentation/models/model.pt \
     --per_device_train_batch_size=4 --learning_rate=1e-4 --weight_decay=0.01 \
     --adam_beta1=0.95 --adam_beta2=0.99 \
