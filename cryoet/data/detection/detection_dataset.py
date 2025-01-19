@@ -40,7 +40,7 @@ def apply_augmentations(data, data_args: DataArguments, copy_paste_samples):
         data = random_flip_volume(**data)
 
     if data_args.random_erase_prob > 0:
-        data = random_erase_objects(**data, prob=data_args.random_erase_prob)
+        data = random_erase_objects(**data, prob=data_args.random_erase_prob, remove_overlap=False)
 
     if data_args.copy_paste_prob > 0 and random.random() < data_args.copy_paste_prob:
         for _ in range(random.randint(1, data_args.copy_paste_limit)):
