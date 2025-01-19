@@ -16,7 +16,7 @@ from transformers import (
 )
 
 from cryoet.data.detection.data_module import ObjectDetectionDataModule
-from cryoet.ensembling import average_checkpoints
+from cryoet.ensembling import average_checkpoints, trace_model_and_save
 from cryoet.modelling.detection.convnext import ConvNextForObjectDetectionConfig, ConvNextForObjectDetection
 from cryoet.modelling.detection.dynunet import DynUNetForObjectDetectionConfig, DynUNetForObjectDetection
 from cryoet.modelling.detection.litehrnet import HRNetv2ForObjectDetection, HRNetv2ForObjectDetectionConfig
@@ -31,7 +31,6 @@ from cryoet.modelling.detection.segresnet_object_detection_v2 import (
 from cryoet.training.args import MyTrainingArguments, ModelArguments, DataArguments
 from cryoet.training.ema import BetaDecay, EMACallback
 from cryoet.training.object_detection_module import ObjectDetectionModel
-from pytorch_toolbelt.utils.distributed import is_dist_avail_and_initialized
 
 
 def main():
@@ -93,7 +92,6 @@ def main():
         model = DynUNetForObjectDetection(config)
     elif model_args.model_name == "dynunet_v2":
         config = DynUNetForObjectDetectionConfig(
-            act_name="MISH",
             # dropout=0.1,
             res_block=True,
             use_stride2=model_args.use_stride2,
@@ -264,19 +262,6 @@ def main():
 
     if trainer.is_global_zero:
         trace_model_and_save(model_args, model_module, new_averaged_filepath.with_suffix(".jit"))
-
-
-def trace_model_and_save(model_args, model_module, traced_checkpoint_path):
-    with torch.no_grad():
-        example_input = torch.randn(
-            1,
-            1,
-            model_args.valid_depth_window_size,
-            model_args.valid_spatial_window_size,
-            model_args.valid_spatial_window_size,
-        ).to(model_module.device)
-        traced_model = torch.jit.trace(model_module, example_input)
-        torch.jit.save(traced_model, str(traced_checkpoint_path))
 
 
 def build_model_name_slug(data_args, model_args):

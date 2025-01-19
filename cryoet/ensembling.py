@@ -69,3 +69,17 @@ def average_checkpoints(*ckpt_paths: str, output_path: Union[str, Path] = "avera
     # Save the final averaged state_dict
     torch.save({"state_dict": final_state_dict}, str(output_path))
     print(f"Averaged checkpoint saved to: {output_path}")
+
+
+def trace_model_and_save(model_args, model_module, traced_checkpoint_path):
+    with torch.no_grad():
+        example_input = torch.randn(
+            1,
+            1,
+            model_args.valid_depth_window_size,
+            model_args.valid_spatial_window_size,
+            model_args.valid_spatial_window_size,
+        ).to(model_module.device)
+        model_module = model_module.eval()
+        traced_model = torch.jit.trace(model_module, example_input)
+        torch.jit.save(traced_model, str(traced_checkpoint_path))
