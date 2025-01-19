@@ -6,6 +6,11 @@ def test_better_tiles():
     print(len(tiles), tiles)
 
 
+def test_better_tiles_one_tile():
+    tiles = list(compute_better_tiles_1d(192, 192, 4))
+    print(len(tiles), tiles)
+
+
 def test_tiling():
     volume_shape = (184, 630, 630)
 
