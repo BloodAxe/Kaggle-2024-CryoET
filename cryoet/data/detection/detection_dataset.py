@@ -58,6 +58,7 @@ def apply_augmentations(data, data_args: DataArguments, copy_paste_samples):
         data = mixup_augmentation(
             **data,
             sample=sample,
+            scale=scale,
             z_rotation_limit=data_args.z_rotation_limit,
             y_rotation_limit=data_args.y_rotation_limit,
             x_rotation_limit=data_args.x_rotation_limit,
