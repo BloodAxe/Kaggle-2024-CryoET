@@ -10,7 +10,7 @@ from dotenv import load_dotenv
 from lightning.fabric import Fabric
 from lightning.pytorch.callbacks import ModelCheckpoint, LearningRateMonitor, EarlyStopping
 from lightning.pytorch.loggers import TensorBoardLogger, WandbLogger
-from pytorch_toolbelt.utils import count_parameters, transfer_weights
+from pytorch_toolbelt.utils import count_parameters, transfer_weights, is_dist_avail_and_initialized
 from transformers import (
     HfArgumentParser,
 )
@@ -242,7 +242,8 @@ def main():
     if trainer.is_global_zero:
         average_checkpoints(*best_k_models, output_path=tmp_averaged_checkpoint)
 
-    fabric.barrier("Average checkpoints")
+    if is_dist_avail_and_initialized():
+        torch.distributed.barrier()
 
     model_module.load_state_dict(
         torch.load(tmp_averaged_checkpoint, map_location=model_module.device, weights_only=True)["state_dict"]
