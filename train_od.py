@@ -243,6 +243,9 @@ def main():
         traced_model = torch.jit.trace(model_module, example_input)
         torch.jit.save(traced_model, str(traced_checkpoint_path))
 
+    # Average checkpoint
+    best_k_models = list(checkpoint_callback.best_k_models.keys())
+
 
 def build_model_name_slug(data_args, model_args):
     num_classes = 6 if model_args.use_6_classes else 5

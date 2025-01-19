@@ -99,3 +99,25 @@ def compute_better_tiles(
                     y_slice,
                     x_slice,
                 )
+
+
+def compute_better_tiles_with_num_tiles(
+    volume_shape: Tuple[int, int, int],
+    window_size: Union[int, Tuple[int, int, int]],
+    num_tiles: Tuple[int, int, int],
+) -> Iterable[Tuple[slice, slice, slice]]:
+    """Compute the slices for a sliding window over a volume.
+    A method can output a last slice that is smaller than the window size.
+    """
+    window_size_z, window_size_y, window_size_x = as_tuple_of_3(window_size)
+    num_z_tiles, num_y_tiles, num_x_tiles = as_tuple_of_3(num_tiles)
+    z, y, x = volume_shape
+
+    for z_slice in compute_better_tiles_1d(z, window_size_z, num_z_tiles):
+        for y_slice in compute_better_tiles_1d(y, window_size_y, num_y_tiles):
+            for x_slice in compute_better_tiles_1d(x, window_size_x, num_x_tiles):
+                yield (
+                    z_slice,
+                    y_slice,
+                    x_slice,
+                )
