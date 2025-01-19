@@ -258,9 +258,8 @@ def main():
     new_averaged_filename = f"{timestamp}_{model_name_slug}_{metrics_suffix}"
     new_averaged_filepath = models_output_dir / f"{new_averaged_filename}.pt"
 
-    tmp_averaged_checkpoint.rename(new_averaged_filepath)
-
     if trainer.is_global_zero:
+        tmp_averaged_checkpoint.rename(new_averaged_filepath)
         trace_model_and_save(model_args, model_module, new_averaged_filepath.with_suffix(".jit"))
 
 
