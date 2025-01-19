@@ -1,7 +1,7 @@
-from datetime import datetime
 import json
 import os
 import typing
+from datetime import datetime
 from pathlib import Path
 
 import lightning as L
@@ -16,10 +16,10 @@ from transformers import (
 )
 
 from cryoet.data.detection.data_module import ObjectDetectionDataModule
+from cryoet.ensembling import average_checkpoints
 from cryoet.modelling.detection.convnext import ConvNextForObjectDetectionConfig, ConvNextForObjectDetection
 from cryoet.modelling.detection.dynunet import DynUNetForObjectDetectionConfig, DynUNetForObjectDetection
 from cryoet.modelling.detection.litehrnet import HRNetv2ForObjectDetection, HRNetv2ForObjectDetectionConfig
-from cryoet.modelling.detection.maxvit_unet25d import MaxVitUnet25d, MaxVitUnet25dConfig
 from cryoet.modelling.detection.segresnet_object_detection_s1 import (
     SegResNetForObjectDetectionS1,
     SegResNetForObjectDetectionS1Config,
@@ -28,12 +28,10 @@ from cryoet.modelling.detection.segresnet_object_detection_v2 import (
     SegResNetForObjectDetectionV2,
     SegResNetForObjectDetectionV2Config,
 )
-from cryoet.modelling.detection.unet3d_detection import UNet3DForObjectDetection, UNet3DForObjectDetectionConfig
-from cryoet.modelling.detection.unetr import SwinUNETRForObjectDetection, SwinUNETRForObjectDetectionConfig
-
 from cryoet.training.args import MyTrainingArguments, ModelArguments, DataArguments
 from cryoet.training.ema import BetaDecay, EMACallback
 from cryoet.training.object_detection_module import ObjectDetectionModel
+from pytorch_toolbelt.utils.distributed import is_dist_avail_and_initialized
 
 
 def main():
@@ -211,7 +209,9 @@ def main():
 
     trainer = L.Trainer(
         strategy=strategy,
-        num_sanity_val_steps=16,
+        # num_sanity_val_steps=16,
+        limit_train_batches=16,
+        limit_val_batches=8,
         max_epochs=int(training_args.num_train_epochs),
         max_steps=training_args.max_steps,
         precision=precision,
@@ -231,20 +231,52 @@ def main():
         json.dump(config, f, indent=4, sort_keys=True)
 
     # Trace & Save
-    best_state_dict = torch.load(checkpoint_callback.best_model_path, map_location=model_module.device)
+    best_state_dict = torch.load(checkpoint_callback.best_model_path, map_location=model_module.device, weights_only=True)
     model_module.load_state_dict(best_state_dict["state_dict"])
 
-    traced_checkpoint_path = Path(checkpoint_callback.best_model_path).with_suffix(".jit")
+    if trainer.is_global_zero:
+        trace_model_and_save(model_args, model_module, Path(checkpoint_callback.best_model_path).with_suffix(".jit"))
 
+    best_k_models = list(checkpoint_callback.best_k_models.keys())
+    averaged_filename = f"{timestamp}_{model_name_slug}"
+    tmp_averaged_checkpoint = Path(best_k_models[0]).parent / f"{averaged_filename}.pt"
+
+    # Average checkpoint
+    if trainer.is_global_zero:
+        average_checkpoints(*best_k_models, output_path=tmp_averaged_checkpoint)
+
+    fabric.barrier("Average checkpoints")
+
+    model_module.load_state_dict(
+        torch.load(tmp_averaged_checkpoint, map_location=model_module.device, weights_only=True)["state_dict"]
+    )
+    metrics = trainer.validate(model=model_module, datamodule=data_module)
+    print(metrics)
+
+    # new name
+    metrics_suffix = "averaged-score-{val/score:0.4f}-at-{val/apo-ferritin_threshold:0.3f}-{val/beta-galactosidase_threshold:0.3f}-{val/ribosome_threshold:0.3f}-{val/thyroglobulin_threshold:0.3f}-{val/virus-like-particle_threshold:0.3f}".format(
+        **metrics[0]
+    )
+    new_averaged_filename = f"{timestamp}_{model_name_slug}_{metrics_suffix}"
+    new_averaged_filepath = Path(tmp_averaged_checkpoint).parent / f"{new_averaged_filename}.pt"
+
+    tmp_averaged_checkpoint.rename(new_averaged_filepath)
+
+    if trainer.is_global_zero:
+        trace_model_and_save(model_args, model_module, new_averaged_filepath.with_suffix(".jit"))
+
+
+def trace_model_and_save(model_args, model_module, traced_checkpoint_path):
     with torch.no_grad():
         example_input = torch.randn(
-            1, 1, model_args.valid_depth_window_size, model_args.valid_spatial_window_size, model_args.valid_spatial_window_size
+            1,
+            1,
+            model_args.valid_depth_window_size,
+            model_args.valid_spatial_window_size,
+            model_args.valid_spatial_window_size,
         ).to(model_module.device)
         traced_model = torch.jit.trace(model_module, example_input)
         torch.jit.save(traced_model, str(traced_checkpoint_path))
-
-    # Average checkpoint
-    best_k_models = list(checkpoint_callback.best_k_models.keys())
 
 
 def build_model_name_slug(data_args, model_args):
