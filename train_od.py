@@ -221,11 +221,13 @@ def main():
     trainer.fit(model_module, datamodule=data_module)
 
     # Save hyperparams
-    config = {**training_args.to_dict(), **model_args.to_dict(), **data_args.to_dict()}
-    with open(os.path.join(training_args.output_dir, "config.json"), "w") as f:
-        json.dump(config, f, indent=4, sort_keys=True)
+    if trainer.is_global_zero:
+        config = {**training_args.to_dict(), **model_args.to_dict(), **data_args.to_dict()}
+        with open(os.path.join(training_args.output_dir, "config.json"), "w") as f:
+            json.dump(config, f, indent=4, sort_keys=True)
 
     # Trace & Save
+    models_output_dir = Path(checkpoint_callback.best_model_path).parent
     best_state_dict = torch.load(checkpoint_callback.best_model_path, map_location=model_module.device, weights_only=True)
     model_module.load_state_dict(best_state_dict["state_dict"])
 
@@ -234,7 +236,7 @@ def main():
 
     best_k_models = list(checkpoint_callback.best_k_models.keys())
     averaged_filename = f"{timestamp}_{model_name_slug}"
-    tmp_averaged_checkpoint = Path(best_k_models[0]).parent / f"{averaged_filename}.pt"
+    tmp_averaged_checkpoint = models_output_dir / f"{averaged_filename}.pt"
 
     # Average checkpoint
     if trainer.is_global_zero:
@@ -253,7 +255,7 @@ def main():
         **metrics[0]
     )
     new_averaged_filename = f"{timestamp}_{model_name_slug}_{metrics_suffix}"
-    new_averaged_filepath = Path(tmp_averaged_checkpoint).parent / f"{new_averaged_filename}.pt"
+    new_averaged_filepath = models_output_dir / f"{new_averaged_filename}.pt"
 
     tmp_averaged_checkpoint.rename(new_averaged_filepath)
 
