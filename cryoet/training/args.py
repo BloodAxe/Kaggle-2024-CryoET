@@ -30,10 +30,10 @@ class ModelArguments:
     train_depth_window_size: int = field(default=96)
 
     valid_depth_window_size: int = field(default=192)
-    valid_depth_window_step: int = field(default=62)
+    valid_depth_window_step: int = field(default=192)
 
     valid_spatial_window_size: int = field(default=128)
-    valid_spatial_window_step: int = field(default=79)
+    valid_spatial_window_step: int = field(default=71)
 
     use_centernet_nms: bool = field(
         default=True, metadata={"help": "Enable CenterNet NMS when decoding. Relevant only for OD models."}
