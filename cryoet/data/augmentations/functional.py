@@ -405,7 +405,7 @@ def copy_paste_augmentation(
 
     if classes_to_paste is None:
         # Pick random class
-        class_to_paste = random.choice([0, 1, 2, 3, 4])
+        class_to_paste = random.choice(list(np.unique(sample.labels)))
     else:
         class_to_paste = random.choice(list(classes_to_paste))
 

@@ -51,7 +51,6 @@ def apply_augmentations(data, data_args: DataArguments, copy_paste_samples):
                 z_rotation_limit=data_args.z_rotation_limit,
                 y_rotation_limit=data_args.y_rotation_limit,
                 x_rotation_limit=data_args.x_rotation_limit,
-                classes_to_paste=[1, 3],  # Only paste beta-galactosidase and thyroglobulin (rare)
             )
 
     if data_args.mixup_prob > 0 and random.random() < data_args.mixup_prob:
