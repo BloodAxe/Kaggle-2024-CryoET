@@ -8,6 +8,7 @@ from cryoet.modelling.detection.segresnet_object_detection_v2 import (
 )
 
 
+@torch.no_grad()
 def trace_and_save(checkpoint_path, traced_checkpoint_path, window_size=96, use_stride4=False, num_classes=5, **kwargs):
     print("kwargs", kwargs)
     checkpoint = torch.load(str(checkpoint_path), weights_only=True)

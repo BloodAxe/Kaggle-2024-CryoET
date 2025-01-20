@@ -8,6 +8,7 @@ from cryoet.modelling.detection.dynunet import (
 )
 
 
+@torch.no_grad()
 def trace_and_save(checkpoint_path, traced_checkpoint_path, window_size=96, use_stride2=True, use_stride4=False, num_classes=5):
     checkpoint = torch.load(str(checkpoint_path), weights_only=True)
 
