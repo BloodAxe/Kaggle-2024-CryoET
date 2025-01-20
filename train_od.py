@@ -231,8 +231,10 @@ def main():
     best_state_dict = torch.load(checkpoint_callback.best_model_path, map_location=model_module.device, weights_only=True)
     model_module.load_state_dict(best_state_dict["state_dict"])
 
+    window_size = model_args.valid_depth_window_size, model_args.valid_spatial_window_size, model_args.valid_spatial_window_size
+
     if trainer.is_global_zero:
-        trace_model_and_save(model_args, model_module, Path(checkpoint_callback.best_model_path).with_suffix(".jit"))
+        trace_model_and_save(window_size, model_module.model, Path(checkpoint_callback.best_model_path).with_suffix(".jit"))
 
     best_k_models = list(checkpoint_callback.best_k_models.keys())
     averaged_filename = f"{timestamp}_{model_name_slug}"
@@ -260,7 +262,7 @@ def main():
 
     if trainer.is_global_zero:
         tmp_averaged_checkpoint.rename(new_averaged_filepath)
-        trace_model_and_save(model_args, model_module, new_averaged_filepath.with_suffix(".jit"))
+        trace_model_and_save(window_size, model_module.model, new_averaged_filepath.with_suffix(".jit"))
 
 
 def build_model_name_slug(data_args, model_args):

@@ -8,10 +8,10 @@ from cryoet.modelling.detection.dynunet import (
 )
 
 
-def trace_and_save(checkpoint_path, traced_checkpoint_path, window_size=96, num_classes=5):
+def trace_and_save(checkpoint_path, traced_checkpoint_path, window_size=96, use_stride2=True, use_stride4=False, num_classes=5):
     checkpoint = torch.load(str(checkpoint_path), weights_only=True)
 
-    config = DynUNetForObjectDetectionConfig(use_stride4=False, num_classes=num_classes)
+    config = DynUNetForObjectDetectionConfig(use_stride4=use_stride4, use_stride2=use_stride2, num_classes=num_classes)
     model = DynUNetForObjectDetection(config).cuda().eval()
     model_state_dict = checkpoint["state_dict"]
     model_state_dict = {k.replace("model.", ""): v for k, v in model_state_dict.items() if k.startswith("model.")}

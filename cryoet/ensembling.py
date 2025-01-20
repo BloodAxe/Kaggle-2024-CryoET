@@ -1,8 +1,10 @@
 from pathlib import Path
-from typing import List, Union
+from typing import List, Union, Tuple
 
 import torch
 import os
+
+from torch import nn
 
 
 def average_checkpoints(*ckpt_paths: str, output_path: Union[str, Path] = "averaged_model.pt"):
@@ -71,15 +73,12 @@ def average_checkpoints(*ckpt_paths: str, output_path: Union[str, Path] = "avera
     print(f"Averaged checkpoint saved to: {output_path}")
 
 
-def trace_model_and_save(model_args, model_module, traced_checkpoint_path):
+def trace_model_and_save(window_size: Tuple[int, int, int], model: nn.Module, traced_checkpoint_path):
     with torch.no_grad():
         example_input = torch.randn(
             1,
             1,
-            model_args.valid_depth_window_size,
-            model_args.valid_spatial_window_size,
-            model_args.valid_spatial_window_size,
-        ).to(model_module.device)
-        model_module = model_module.eval()
-        traced_model = torch.jit.trace(model_module, example_input)
+            *window_size,
+        ).to(model.device)
+        traced_model = torch.jit.trace(model.eval(), example_input)
         torch.jit.save(traced_model, str(traced_checkpoint_path))
