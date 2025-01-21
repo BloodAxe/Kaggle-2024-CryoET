@@ -1,7 +1,9 @@
+import timm.models.maxxvit
 import torch
 from pytorch_toolbelt.utils import count_parameters
 
 from cryoet.modelling.detection.dynunet import DynUNetForObjectDetectionConfig, DynUNetForObjectDetection
+from cryoet.modelling.detection.functional import convert_2d_to_3d
 from cryoet.modelling.detection.maxvit_unet25d import MaxVitUnet25d, MaxVitUnet25dConfig
 from cryoet.modelling.detection.segresnet_object_detection_v2 import (
     SegResNetForObjectDetectionV2Config,
@@ -10,6 +12,16 @@ from cryoet.modelling.detection.segresnet_object_detection_v2 import (
 from cryoet.modelling.detection.unet3d_detection import UNet3DForObjectDetectionConfig, UNet3DForObjectDetection
 
 from cryoet.modelling.detection.unetr import SwinUNETRForObjectDetectionConfig, SwinUNETRForObjectDetection
+
+
+def test_convertmaxvit():
+    model = timm.create_model("maxxvit_rmlp_nano_rw_256.sw_in1k", in_channels=1, pretrained=True, features_only=True)
+
+    model3d = convert_2d_to_3d(model)
+
+    x = torch.randn(2, 1, 96, 96, 96)
+    out = model3d(x)
+    print(out)
 
 
 def test_segresnetv2():

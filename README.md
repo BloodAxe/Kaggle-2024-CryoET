@@ -412,7 +412,21 @@ python summarize_checkpoints.py runs/dynunet_fold_0_6x96x128x128_rc_ic_s2_copy_0
 | mean         | 0.830067 |  0.326 | 0.239333 | 0.268333 | 0.243333 | 0.335 |                                                                                                                                     |
 | mean (curve) | 0.830308 |  0.315 | 0.215    | 0.19     | 0.21     | 0.385 |                                                                                                                                     |
 
-#### 
+### V6 SegResNet
+
+```
+python summarize_checkpoints.py  runs/segresnetv2_fold_4_6x96x128x128_rc_ic_s2_copy_0.2x1_re_0.2_mixup_0.2_ce/250121_2049_adamw_torch_lr_1e-04_wd_0.01_b1_0.95_b2_0.99/segresnetv2_fold_4_6x96x128x128_rc_ic_s2_copy_0.2x1_re_0.2_mixup_0.2_ce/lightning_logs/version_0/checkpoints/250121_2049_segresnetv2_fold_4_6x96x128x128_rc_ic_s2_copy_0.2x1_re_0.2_mixup_0.2_ce_averaged-score-0.8557-at-0.400-0.320-0.330-0.310-0.465.pt runs/segresnetv2_fold_3_6x96x128x128_rc_ic_s2_copy_0.2x1_re_0.2_mixup_0.2_ce/250121_1936_adamw_torch_lr_1e-04_wd_0.01_b1_0.95_b2_0.99/segresnetv2_fold_3_6x96x128x128_rc_ic_s2_copy_0.2x1_re_0.2_mixup_0.2_ce/lightning_logs/version_0/checkpoints/250121_1936_segresnetv2_fold_3_6x96x128x128_rc_ic_s2_copy_0.2x1_re_0.2_mixup_0.2_ce_averaged-score-0.8507-at-0.230-0.415-0.405-0.250-0.510.pt runs/segresnetv2_fold_2_6x96x128x128_rc_ic_s2_copy_0.2x1_re_0.2_mixup_0.2_ce/250121_1841_adamw_torch_lr_1e-04_wd_0.01_b1_0.95_b2_0.99/segresnetv2_fold_2_6x96x128x128_rc_ic_s2_copy_0.2x1_re_0.2_mixup_0.2_ce/lightning_logs/version_0/checkpoints/250121_1841_segresnetv2_fold_2_6x96x128x128_rc_ic_s2_copy_0.2x1_re_0.2_mixup_0.2_ce_averaged-score-0.7987-at-0.425-0.470-0.490-0.340-0.255.pt runs/segresnetv2_fold_1_6x96x128x128_rc_ic_s2_copy_0.2x1_re_0.2_mixup_0.2_ce/250121_1741_adamw_torch_lr_1e-04_wd_0.01_b1_0.95_b2_0.99/segresnetv2_fold_1_6x96x128x128_rc_ic_s2_copy_0.2x1_re_0.2_mixup_0.2_ce/lightning_logs/version_0/checkpoints/250121_1741_segresnetv2_fold_1_6x96x128x128_rc_ic_s2_copy_0.2x1_re_0.2_mixup_0.2_ce_averaged-score-0.8386-at-0.535-0.310-0.390-0.320-0.405.pt runs/segresnetv2_fold_0_6x96x128x128_rc_ic_s2_copy_0.2x1_re_0.2_mixup_0.2_ce/250121_1615_adamw_torch_lr_1e-04_wd_0.01_b1_0.95_b2_0.99/segresnetv2_fold_0_6x96x128x128_rc_ic_s2_copy_0.2x1_re_0.2_mixup_0.2_ce/lightning_logs/version_0/checkpoints/250121_1615_segresnetv2_fold_0_6x96x128x128_rc_ic_s2_copy_0.2x1_re_0.2_mixup_0.2_ce_averaged-score-0.8506-at-0.425-0.260-0.315-0.295-0.505.pt
+```
+
+| fold         |    score |   AFRT |   BGT |   RBSM |   TRGLB |   VLP | checkpoint                                                                                                                                 |
+|:-------------|---------:|-------:|------:|-------:|--------:|------:|:-------------------------------------------------------------------------------------------------------------------------------------------|
+| 0            | 0.8506   |  0.425 | 0.26  |  0.315 |   0.295 | 0.505 | 250121_1615_segresnetv2_fold_0_6x96x128x128_rc_ic_s2_copy_0.2x1_re_0.2_mixup_0.2_ce_averaged-score-0.8506-at-0.425-0.260-0.315-0.295-0.505 |
+| 1            | 0.8386   |  0.535 | 0.31  |  0.39  |   0.32  | 0.405 | 250121_1741_segresnetv2_fold_1_6x96x128x128_rc_ic_s2_copy_0.2x1_re_0.2_mixup_0.2_ce_averaged-score-0.8386-at-0.535-0.310-0.390-0.320-0.405 |
+| 2            | 0.7987   |  0.425 | 0.47  |  0.49  |   0.34  | 0.255 | 250121_1841_segresnetv2_fold_2_6x96x128x128_rc_ic_s2_copy_0.2x1_re_0.2_mixup_0.2_ce_averaged-score-0.7987-at-0.425-0.470-0.490-0.340-0.255 |
+| 3            | 0.8507   |  0.23  | 0.415 |  0.405 |   0.25  | 0.51  | 250121_1936_segresnetv2_fold_3_6x96x128x128_rc_ic_s2_copy_0.2x1_re_0.2_mixup_0.2_ce_averaged-score-0.8507-at-0.230-0.415-0.405-0.250-0.510 |
+| 4            | 0.8557   |  0.4   | 0.32  |  0.33  |   0.31  | 0.465 | 250121_2049_segresnetv2_fold_4_6x96x128x128_rc_ic_s2_copy_0.2x1_re_0.2_mixup_0.2_ce_averaged-score-0.8557-at-0.400-0.320-0.330-0.310-0.465 |
+| mean         | 0.83886  |  0.403 | 0.355 |  0.386 |   0.303 | 0.428 |                                                                                                                                            |
+| mean (curve) | 0.839279 |  0.42  | 0.305 |  0.39  |   0.315 | 0.405 |                                                                                                                                            |
 
 # Ideas
 

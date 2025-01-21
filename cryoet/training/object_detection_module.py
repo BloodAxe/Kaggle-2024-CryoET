@@ -168,7 +168,8 @@ class ObjectDetectionModel(L.LightningModule):
             #         os.path.join(self.trainer.log_dir, f"{study_name}.csv"),
             #     )
 
-            self.log_heatmaps(study_name, scores)
+            # Disable logging heatmaps since training is stable
+            # self.log_heatmaps(study_name, scores)
 
             topk_coords_px, topk_clases, topk_scores = decode_detections_with_nms(
                 scores,
@@ -228,8 +229,8 @@ class ObjectDetectionModel(L.LightningModule):
 
         self.per_class_scores = torch.from_numpy(per_class_scores).to(self.device)
 
-        if self.trainer.is_global_zero:
-            print("Scores", list(zip(score_values, score_thresholds)))
+        # if self.trainer.is_global_zero:
+        #     print("Scores", list(zip(score_values, score_thresholds)))
 
         self.log_plots(
             dict((key, (score_thresholds, per_class_scores[:, i])) for i, key in enumerate(keys)), "Threshold", "Score"
