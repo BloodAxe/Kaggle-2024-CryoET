@@ -261,7 +261,8 @@ def main():
     new_averaged_filepath = models_output_dir / f"{new_averaged_filename}.pt"
 
     if trainer.is_global_zero:
-        tmp_averaged_checkpoint.rename(new_averaged_filepath)
+        torch.save({"state_dict": model_module.state_dict()}, new_averaged_filepath)
+        tmp_averaged_checkpoint.unlink()
         trace_model_and_save(window_size, model_module.model, new_averaged_filepath.with_suffix(".jit"))
 
 
