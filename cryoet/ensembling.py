@@ -5,6 +5,7 @@ import torch
 import os
 
 from torch import nn
+from pytorch_toolbelt.utils import get_non_wrapped_model
 
 
 def infer_model_device(model: nn.Module) -> Optional[torch.device]:
@@ -94,7 +95,9 @@ def average_checkpoints(*ckpt_paths: str, output_path: Union[str, Path] = "avera
 
 
 def trace_model_and_save(window_size: Tuple[int, int, int], model: nn.Module, traced_checkpoint_path: Path):
+    model = get_non_wrapped_model(model)
     device = infer_model_device(model)
+
     with torch.no_grad():
         example_input = torch.randn(
             1,
