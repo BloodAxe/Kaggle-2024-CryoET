@@ -73,7 +73,7 @@ def average_checkpoints(*ckpt_paths: str, output_path: Union[str, Path] = "avera
     print(f"Averaged checkpoint saved to: {output_path}")
 
 
-def trace_model_and_save(window_size: Tuple[int, int, int], model: nn.Module, traced_checkpoint_path):
+def trace_model_and_save(window_size: Tuple[int, int, int], model: nn.Module, traced_checkpoint_path: Path):
     with torch.no_grad():
         example_input = torch.randn(
             1,
