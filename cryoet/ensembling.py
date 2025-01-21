@@ -1,10 +1,30 @@
 from pathlib import Path
-from typing import List, Union, Tuple
+from typing import List, Union, Tuple, Optional
 
 import torch
 import os
 
 from torch import nn
+
+
+def infer_model_device(model: nn.Module) -> Optional[torch.device]:
+    """
+    Get the device where the model's parameters are stored.
+    This function returns device of the first parameter of the model, assuming there is no
+    cross-device parameter movement inside the model.
+    :param model: Model to get the device from.
+    :return: Device where the model's parameters are stored.
+             The function may return None if the model has no parameters or buffers.
+    """
+    try:
+        first_parameter = next(iter(model.parameters()))
+        return first_parameter.device
+    except StopIteration:
+        try:
+            first_buffer = next(iter(model.buffers()))
+            return first_buffer.device
+        except StopIteration:
+            return None
 
 
 def average_checkpoints(*ckpt_paths: str, output_path: Union[str, Path] = "averaged_model.pt"):
@@ -74,11 +94,12 @@ def average_checkpoints(*ckpt_paths: str, output_path: Union[str, Path] = "avera
 
 
 def trace_model_and_save(window_size: Tuple[int, int, int], model: nn.Module, traced_checkpoint_path: Path):
+    device = infer_model_device(model)
     with torch.no_grad():
         example_input = torch.randn(
             1,
             1,
             *window_size,
-        ).to(model.device)
+        ).to(device)
         traced_model = torch.jit.trace(model.eval(), example_input)
         torch.jit.save(traced_model, str(traced_checkpoint_path))
