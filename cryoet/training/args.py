@@ -121,6 +121,8 @@ class DataArguments:
 
     gaussian_noise_sigma: float = field(default=0.0)
 
+    use_weighted_average: bool = field(default=False, metadata={"help": "Use weighted average for overlapping crops"})
+
     def _dict_torch_dtype_to_str(self, d: Dict[str, Any]) -> None:
         """
         Checks whether the passed dictionary and its nested dicts have a *torch_dtype* key and if it's not None,
