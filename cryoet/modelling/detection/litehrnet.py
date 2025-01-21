@@ -1,6 +1,7 @@
 import timm
 import torch
 import torch.nn as nn
+from pytorch_toolbelt.modules import get_activation_block
 from pytorch_toolbelt.utils import count_parameters
 from transformers import PretrainedConfig
 
@@ -41,9 +42,10 @@ class PixelShuffle3d(nn.Module):
 
 
 class HRNetv2ForObjectDetectionConfig(PretrainedConfig):
-    def __init__(self, num_classes=5):
+    def __init__(self, num_classes=5, activation="relu"):
         super().__init__()
         self.num_classes = num_classes
+        self.activation = activation
 
 
 class HRNetv2ForObjectDetection(nn.Module):
@@ -58,39 +60,40 @@ class HRNetv2ForObjectDetection(nn.Module):
             out_indices=(1, 2, 3, 4),
             use_incre_features=False,
         )
-        self.backbone = convert_2d_to_3d(backbone)
+        self.backbone = convert_2d_to_3d(backbone, replace_relu_with_silu=config.activation == "silu")
 
+        act = get_activation_block(config.activation)
         self.up_32 = nn.Sequential(
             nn.BatchNorm3d(1024),
             nn.Conv3d(1024, 512, kernel_size=1),
-            nn.SiLU(inplace=True),
+            act(inplace=True),
             nn.Upsample(scale_factor=2, mode="trilinear"),
         )
         self.up_16 = nn.Sequential(
             nn.Conv3d(512 + 512, 256, kernel_size=1),
             nn.BatchNorm3d(256),
-            nn.SiLU(inplace=True),
+            act(inplace=True),
             nn.Conv3d(256, 256, kernel_size=3, padding=1),
             nn.BatchNorm3d(256),
-            nn.SiLU(inplace=True),
+            act(inplace=True),
             nn.Upsample(scale_factor=2, mode="trilinear"),
         )
         self.up_8 = nn.Sequential(
             nn.BatchNorm3d(512),
             nn.Conv3d(512, 128, kernel_size=1),
-            nn.SiLU(inplace=True),
+            act(inplace=True),
             nn.Conv3d(128, 128, kernel_size=3, padding=1),
             nn.BatchNorm3d(128),
-            nn.SiLU(inplace=True),
+            act(inplace=True),
             nn.Upsample(scale_factor=2, mode="trilinear"),
         )
         self.up_4 = nn.Sequential(
             nn.BatchNorm3d(256),
             nn.Conv3d(256, 128, kernel_size=1),
-            nn.SiLU(inplace=True),
+            act(inplace=True),
             nn.Conv3d(128, 64, kernel_size=3, padding=1),
             nn.BatchNorm3d(64),
-            nn.SiLU(inplace=True),
+            act(inplace=True),
             nn.Upsample(scale_factor=2, mode="trilinear"),
         )
         self.head = ObjectDetectionHead(

@@ -383,7 +383,7 @@ def focal_loss(pred_logits: Tensor, label: Tensor, alpha=0.25, gamma=2.0, reduct
     return loss
 
 
-def convert_2d_to_3d(model: nn.Module) -> nn.Module:
+def convert_2d_to_3d(model: nn.Module, replace_relu_with_silu=False) -> nn.Module:
     """
     Recursively convert all Conv2d layers in `model` to Conv3d,
     and all BatchNorm2d layers to BatchNorm3d.
@@ -474,7 +474,7 @@ def convert_2d_to_3d(model: nn.Module) -> nn.Module:
 
             setattr(model, name, new_norm)
 
-        elif isinstance(module, nn.ReLU):
+        elif isinstance(module, nn.ReLU) and replace_relu_with_silu:
             # Replace with SILU
             setattr(model, name, nn.SiLU(inplace=True))
         elif isinstance(module, nn.Dropout2d):
