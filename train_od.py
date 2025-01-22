@@ -1,5 +1,6 @@
 import json
 import os
+import time
 import traceback
 import typing
 from datetime import datetime
@@ -192,7 +193,9 @@ def main():
         callbacks = [checkpoint_callback]
 
         if training_args.early_stopping > 0:
-            callbacks.append(EarlyStopping(monitor="val/score", min_delta=0.001, patience=training_args.early_stopping, mode="max"))
+            callbacks.append(
+                EarlyStopping(monitor="val/score", min_delta=0.001, patience=training_args.early_stopping, mode="max")
+            )
 
         lr_monitor = LearningRateMonitor(logging_interval="step")
         if "wandb" not in training_args.report_to:
@@ -227,16 +230,22 @@ def main():
             config = {**training_args.to_dict(), **model_args.to_dict(), **data_args.to_dict()}
             with open(os.path.join(training_args.output_dir, "config.json"), "w") as f:
                 json.dump(config, f, indent=4, sort_keys=True)
+            print("Saved config")
 
         # Trace & Save
         models_output_dir = Path(checkpoint_callback.best_model_path).parent
         best_state_dict = torch.load(checkpoint_callback.best_model_path, map_location=model_module.device, weights_only=True)
         model_module.load_state_dict(best_state_dict["state_dict"])
 
-        window_size = model_args.valid_depth_window_size, model_args.valid_spatial_window_size, model_args.valid_spatial_window_size
+        window_size = (
+            model_args.valid_depth_window_size,
+            model_args.valid_spatial_window_size,
+            model_args.valid_spatial_window_size,
+        )
 
         if trainer.is_global_zero:
             trace_model_and_save(window_size, model_module.model, Path(checkpoint_callback.best_model_path).with_suffix(".jit"))
+            print("Saved traced model for best checkpoint")
 
         best_k_models = list(checkpoint_callback.best_k_models.keys())
         averaged_filename = f"{timestamp}_{model_name_slug}"
@@ -245,9 +254,12 @@ def main():
         # Average checkpoint
         if trainer.is_global_zero:
             average_checkpoints(*best_k_models, output_path=tmp_averaged_checkpoint)
+            print("Averaged checkpoints")
+        else:
+            time.sleep(30)
 
-        if is_dist_avail_and_initialized():
-            torch.distributed.barrier()
+        # if is_dist_avail_and_initialized():
+        #     torch.distributed.barrier()
 
         model_module.load_state_dict(
             torch.load(tmp_averaged_checkpoint, map_location=model_module.device, weights_only=True)["state_dict"]
@@ -266,11 +278,13 @@ def main():
             torch.save({"state_dict": model_module.state_dict()}, new_averaged_filepath)
             tmp_averaged_checkpoint.unlink()
             trace_model_and_save(window_size, model_module.model, new_averaged_filepath.with_suffix(".jit"))
+            print("Traced and saved averaged checkpoint")
     except Exception as e:
         with open(os.path.join(training_args.output_dir, f"error_rank_{training_args.local_rank}.log"), "w") as f:
             f.write(str(e))
             f.write("\n")
             f.write(traceback.format_exc())
+
 
 def build_model_name_slug(data_args, model_args):
     num_classes = 6 if model_args.use_6_classes else 5
