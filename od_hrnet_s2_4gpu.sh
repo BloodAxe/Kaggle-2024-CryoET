@@ -1,7 +1,7 @@
 for FOLD in 0 1 2 3 4
 do
   torchrun --standalone --nproc-per-node=4 train_od.py \
-  --model_name=dynunet_v2  \
+  --model_name=hrnet  \
   --per_device_train_batch_size=8 \
   --adam_beta1=0.95 \
   --adam_beta2=0.99 \
@@ -13,8 +13,8 @@ do
   --ddp_find_unused_parameters=True \
   --early_stopping=25 \
   --ema \
-  --fold=$FOLD  \
-  --learning_rate=3e-4 \
+  --fold=$FOLD \
+  --learning_rate=5e-5 \
   --max_grad_norm=3 \
   --mixup_prob=0.2 \
   --num_train_epochs=75 \
@@ -27,5 +27,4 @@ do
   --warmup_steps=64 \
   --x_rotation_limit=10 \
   --y_rotation_limit=10
-
 done
