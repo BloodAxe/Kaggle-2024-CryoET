@@ -91,7 +91,7 @@ def main(*checkpoints):
     summary_table["fold"].append("mean (curve)")
     summary_table["checkpoint"].append("")
 
-    summary_table = pd.DataFrame.from_dict(summary_table)
+    summary_table = pd.DataFrame.from_dict(summary_table).sort_values(by="fold", ascending=True)
     print(summary_table[["fold", "score", "AFRT", "BGT", "RBSM", "TRGLB", "VLP", "checkpoint"]].to_markdown(index=False))
 
 
