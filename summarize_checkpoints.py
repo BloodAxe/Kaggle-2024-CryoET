@@ -64,7 +64,7 @@ def main(*checkpoints):
 
     # Find optimal threshold
 
-    summary_table["fold"].append("mean")
+    summary_table["fold"].append(777)
     summary_table["checkpoint"].append("")
     summary_table["score"].append(sum(float(score) for score in summary_table["score"]) / len(summary_table["score"]))
     summary_table["AFRT"].append(sum(float(score) for score in summary_table["AFRT"]) / len(summary_table["AFRT"]))
