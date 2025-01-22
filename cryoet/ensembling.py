@@ -77,12 +77,21 @@ def average_checkpoints(*ckpt_paths: str, output_path: Union[str, Path] = "avera
             averaged = stacked.mean(dim=0)
             final_state_dict[key] = averaged
 
-        elif torch.is_integral(first_val):
+        elif first_val.dtype in {
+            torch.int8,
+            torch.int16,
+            torch.int32,
+            torch.int64,
+            torch.uint8,
+            torch.uint16,
+            torch.uint32,
+            torch.uint64,
+        }:
             # Average integer values (using integer division)
             stacked = torch.stack(values, dim=0)
-            summed = stacked.sum(dim=0)
+            summed = stacked.sum(dim=0, dtype=torch.int64)
             averaged = summed // len(values)
-            final_state_dict[key] = averaged
+            final_state_dict[key] = averaged.to(first_val.dtype)
 
         else:
             # If you have other special dtypes to handle, add logic here
