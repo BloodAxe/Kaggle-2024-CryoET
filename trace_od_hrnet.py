@@ -4,13 +4,15 @@ import torch
 
 from cryoet.modelling.detection.litehrnet import (
     HRNetv2ForObjectDetection,
+    HRNetv2ForObjectDetectionConfig,
 )
 
 
 def trace_and_save(checkpoint_path, traced_checkpoint_path, window_size=96, num_classes=5):
     checkpoint = torch.load(str(checkpoint_path), weights_only=True)
 
-    model = HRNetv2ForObjectDetection(num_classes=num_classes).cuda().eval()
+    config = HRNetv2ForObjectDetectionConfig(num_classes=num_classes)
+    model = HRNetv2ForObjectDetection(config).cuda().eval()
     model_state_dict = checkpoint["state_dict"]
     model_state_dict = {k.replace("model.", ""): v for k, v in model_state_dict.items()}
 
