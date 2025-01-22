@@ -53,7 +53,7 @@ def main(*checkpoints):
         thresholds = checkpoint_state_dict["state_dict"]["thresholds"].numpy()
         per_class_scores = per_class_scores + checkpoint_state_dict["state_dict"]["per_class_scores"].numpy()
 
-        summary_table["fold"].append(fold)
+        summary_table["fold"].append(int(fold))
         summary_table["score"].append(parts[-7])
         summary_table["AFRT"].append(parts[-5])
         summary_table["BGT"].append(parts[-4])
