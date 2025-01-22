@@ -65,7 +65,7 @@ def main(*checkpoints):
     # Find optimal threshold
 
     summary_table["fold"].append(777)
-    summary_table["checkpoint"].append("")
+    summary_table["checkpoint"].append("Mean")
     summary_table["score"].append(sum(float(score) for score in summary_table["score"]) / len(summary_table["score"]))
     summary_table["AFRT"].append(sum(float(score) for score in summary_table["AFRT"]) / len(summary_table["AFRT"]))
     summary_table["BGT"].append(sum(float(score) for score in summary_table["BGT"]) / len(summary_table["BGT"]))
@@ -88,8 +88,8 @@ def main(*checkpoints):
     #
     score = np.sum([weights[k] * v for k, v in zip(weights.keys(), max_scores)]) / sum(weights.values())
     summary_table["score"].append(score)
-    summary_table["fold"].append("mean (curve)")
-    summary_table["checkpoint"].append("")
+    summary_table["fold"].append(888)
+    summary_table["checkpoint"].append("mean (curve)")
 
     summary_table = pd.DataFrame.from_dict(summary_table).sort_values(by="fold", ascending=True)
     print(summary_table[["fold", "score", "AFRT", "BGT", "RBSM", "TRGLB", "VLP", "checkpoint"]].to_markdown(index=False))
