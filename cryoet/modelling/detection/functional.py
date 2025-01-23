@@ -322,7 +322,7 @@ def decode_detections_with_nms(
         keep_indices = []
         suppressed = torch.zeros_like(class_scores, dtype=torch.bool)  # track suppressed
 
-        print(f"Predictions for class {class_index}: ", torch.count_nonzero(class_mask).item())
+        # print(f"Predictions for class {class_index}: ", torch.count_nonzero(class_mask).item())
 
         for i in range(class_scores.size(0)):
             if suppressed[i]:

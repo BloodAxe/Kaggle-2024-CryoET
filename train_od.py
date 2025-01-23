@@ -56,7 +56,7 @@ def main():
         if training_args.ema:
             training_args_str += f"_ema_{training_args.ema_decay}_{training_args.ema_beta}"
 
-        training_args.output_dir = os.path.join(output_dir_name, f"{timestamp}_{training_args_str}", model_name_slug)
+        training_args.output_dir = os.path.join(output_dir_name, f"{timestamp}_{training_args_str}")
 
     try:
         training_args.master_print(f"Training arguments: {training_args}")
@@ -97,7 +97,7 @@ def main():
             report_to = report_to[0]
 
         if "tensorboard" in report_to:
-            logger = TensorBoardLogger(save_dir=training_args.output_dir, name=None, version=None)
+            logger = TensorBoardLogger(save_dir=training_args.output_dir, name=None, version="")
             loggers.append(logger)
         if "wandb" in report_to:
             logger = WandbLogger()
