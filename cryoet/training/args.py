@@ -107,6 +107,7 @@ class DataArguments:
     num_crops_per_study: int = field(default=256)
 
     scale_limit: float = field(default=0.05)
+    anisotropic_scale_limit: float = field(default=0.0)
 
     z_rotation_limit: float = field(default=360.0)
     y_rotation_limit: float = field(default=0.0)
