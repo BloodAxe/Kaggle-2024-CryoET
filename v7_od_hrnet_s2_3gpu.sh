@@ -11,9 +11,8 @@ do
     --dataloader_pin_memory=True \
     --ddp_find_unused_parameters=True \
     --early_stopping=25 \
-    --ema \
     --fold=$FOLD \
-    --learning_rate=5e-5 \
+    --learning_rate=1e-5 \
     --max_grad_norm=3 \
     --mixup_prob=0.1 \
     --random_erase_prob=0.1 \
