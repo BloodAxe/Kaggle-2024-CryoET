@@ -97,7 +97,7 @@ def main():
             report_to = report_to[0]
 
         if "tensorboard" in report_to:
-            logger = TensorBoardLogger(save_dir=training_args.output_dir)
+            logger = TensorBoardLogger(save_dir=training_args.output_dir, name=None, version=None)
             loggers.append(logger)
         if "wandb" in report_to:
             logger = WandbLogger()
