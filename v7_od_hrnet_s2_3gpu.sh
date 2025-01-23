@@ -28,6 +28,7 @@ do
     --warmup_steps=64 \
     --x_rotation_limit=10 \
     --y_rotation_limit=10 \
-    --anisotropic_scale_limit=0.02 --scale_limit=0.05
+    --anisotropic_scale_limit=0.02 --scale_limit=0.05 \
+    --version_prefix=v7_
   done
 done
