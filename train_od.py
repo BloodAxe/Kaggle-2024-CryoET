@@ -255,11 +255,9 @@ def main():
         if trainer.is_global_zero:
             average_checkpoints(*best_k_models, output_path=tmp_averaged_checkpoint)
             print("Averaged checkpoints")
-        else:
-            time.sleep(30)
 
-        # if is_dist_avail_and_initialized():
-        #     torch.distributed.barrier()
+        if is_dist_avail_and_initialized():
+            torch.distributed.barrier()
 
         model_module.load_state_dict(
             torch.load(tmp_averaged_checkpoint, map_location=model_module.device, weights_only=True)["state_dict"]
