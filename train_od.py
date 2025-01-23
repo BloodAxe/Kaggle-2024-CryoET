@@ -44,7 +44,7 @@ def main():
     data_args = typing.cast(DataArguments, data_args)
 
     L.seed_everything(training_args.seed)
-    model_name_slug = build_model_name_slug(data_args, model_args)
+    model_name_slug = build_model_name_slug(data_args, model_args, training_args)
 
     # Make timestamp to differentiate runs in YYMMDD_HHMM format
     timestamp = datetime.now().strftime("%y%m%d_%H%M")
@@ -78,6 +78,7 @@ def main():
             training_args.master_print(f"Loaded weights from {training_args.transfer_weights}")
 
         checkpoint_callback = ModelCheckpoint(
+            dirpath=training_args.output_dir,
             enable_version_counter=False,
             monitor="val/score",
             mode="max",
@@ -282,7 +283,7 @@ def create_model_from_args(model_args, training_args):
     return model
 
 
-def build_model_name_slug(data_args, model_args):
+def build_model_name_slug(data_args, model_args, training_args):
     num_classes = 6 if model_args.use_6_classes else 5
     model_name_slug = f"{model_args.model_name}_fold_{data_args.fold}_{num_classes}x{model_args.train_depth_window_size}x{model_args.train_spatial_window_size}x{model_args.train_spatial_window_size}"
     if data_args.use_sliding_crops:
@@ -311,7 +312,8 @@ def build_model_name_slug(data_args, model_args):
         model_name_slug += f"_mixup_{data_args.mixup_prob}"
     if model_args.use_cross_entropy_loss:
         model_name_slug += "_ce"
-    return model_name_slug
+
+    return f"{training_args.version_prefix}{model_name_slug}"
 
 
 def infer_strategy(training_args, fabric):

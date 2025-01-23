@@ -159,6 +159,8 @@ class DataArguments:
 
 @dataclass
 class MyTrainingArguments(TrainingArguments):
+    version_prefix: str = field(default="")
+
     bf16: bool = field(default=True, metadata={"help": "Use bfloat16 precision"})
     tf32: bool = field(default=True, metadata={"help": "Use tf32 precision"})
 
