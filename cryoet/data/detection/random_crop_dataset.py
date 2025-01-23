@@ -46,6 +46,7 @@ class RandomCropForPointDetectionDataset(CryoETObjectDetectionDataset, ObjectDet
             y_rotation_limit=self.data_args.y_rotation_limit,
             x_rotation_limit=self.data_args.x_rotation_limit,
             scale_limit=self.data_args.scale_limit,
+            anisotropic_scale_limit=self.data_args.anisotropic_scale_limit,
             crop_center_xyz=center_xyz,
             output_shape=self.window_size,
         )

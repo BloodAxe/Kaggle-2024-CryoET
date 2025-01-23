@@ -1,5 +1,5 @@
 import random
-from typing import Optional, List, Callable
+from typing import Optional, List, Callable, Union
 from typing import Tuple
 
 import numpy as np
@@ -13,6 +13,7 @@ from .copy_paste_merge import (
     merge_volume_using_max,
     merge_volume_using_weighted_sum,
 )
+from ..functional import as_tuple_of_3
 
 
 def get_points_mask_within_cube(points, cube_shape):
@@ -72,7 +73,10 @@ def euler_rotation_matrix(angles: Tuple[float, float, float]) -> np.ndarray:
 
 
 def make_affine_transform_4x4(
-    angles: Tuple[float, float, float], scale: float, old_center: np.ndarray, new_center: np.ndarray
+    angles: Tuple[float, float, float],
+    scale: Union[float, Tuple[float, float, float]],
+    old_center: np.ndarray,
+    new_center: np.ndarray,
 ) -> np.ndarray:
     """
     Create a 4x4 affine transform matrix that:
@@ -96,8 +100,11 @@ def make_affine_transform_4x4(
     # Rotation matrix (3x3)
     R = euler_rotation_matrix(angles)
 
+    scale_x, scale_y, scale_z = as_tuple_of_3(scale)
     # Combine rotation & scale
-    RS = scale * R  # 3x3
+    RS = np.diag([scale_x, scale_y, scale_z]) @ R  # 3x3
+
+    # RS = scale * R  # 3x3
     RS_mat = np.eye(4)
     RS_mat[:3, :3] = RS
 
@@ -114,7 +121,7 @@ def make_affine_transform_4x4(
 def rotate_and_scale_volume(
     volume: np.ndarray,
     centers: np.ndarray,
-    scale: float,
+    scale: Union[float, Tuple[float, float, float]],
     angles: Tuple[float, float, float],
     center_zyx: Tuple[float, float, float],
     output_shape: Tuple[int, int, int],
@@ -353,6 +360,7 @@ def random_crop_around_point(
     radius: np.ndarray,
     labels: np.ndarray,
     scale_limit: float,
+    anisotropic_scale_limit: float,
     z_rotation_limit: float,
     y_rotation_limit: float,
     x_rotation_limit: float,
@@ -361,21 +369,31 @@ def random_crop_around_point(
 ):
     cx, cy, cz = crop_center_xyz
     scale = random.uniform(1 - scale_limit, 1 + scale_limit)
+    if anisotropic_scale_limit > 0:
+        scale_x = scale + random.uniform(-anisotropic_scale_limit, anisotropic_scale_limit)
+        scale_y = scale + random.uniform(-anisotropic_scale_limit, anisotropic_scale_limit)
+        scale_z = scale + random.uniform(-anisotropic_scale_limit, anisotropic_scale_limit)
+        scale = (scale_z, scale_y, scale_x)
+    else:
+        scale = as_tuple_of_3(scale)
 
+    angles = (
+        random.uniform(-z_rotation_limit, z_rotation_limit),
+        random.uniform(-y_rotation_limit, y_rotation_limit),
+        random.uniform(-x_rotation_limit, x_rotation_limit),
+    )
+
+    mean_scale = np.mean(scale)
     volume, centers = rotate_and_scale_volume(
         volume=volume,
         centers=centers,
-        angles=(
-            random.uniform(-z_rotation_limit, z_rotation_limit),
-            random.uniform(-y_rotation_limit, y_rotation_limit),
-            random.uniform(-x_rotation_limit, x_rotation_limit),
-        ),
+        angles=angles,
         scale=scale,
         center_zyx=(cz, cy, cx),
         output_shape=output_shape,
     )
 
-    radius = radius * scale
+    radius = radius * mean_scale
 
     # Crop the centers to the tile
     keep_mask = get_points_mask_within_cube(centers, volume.shape)
@@ -384,7 +402,7 @@ def random_crop_around_point(
     radius = radius[keep_mask].copy()
     labels = labels[keep_mask].copy()
 
-    data = dict(volume=volume, centers=centers, labels=labels, radius=radius, scale=scale)
+    data = dict(volume=volume, centers=centers, labels=labels, radius=radius, scale=mean_scale)
     return data
 
 
