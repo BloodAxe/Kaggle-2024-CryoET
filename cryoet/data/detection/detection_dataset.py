@@ -59,6 +59,7 @@ def apply_augmentations(data, data_args: DataArguments, copy_paste_samples):
             **data,
             sample=sample,
             scale=scale,
+            anisotropic_scale_limit=data_args.anisotropic_scale_limit,
             z_rotation_limit=data_args.z_rotation_limit,
             y_rotation_limit=data_args.y_rotation_limit,
             x_rotation_limit=data_args.x_rotation_limit,
