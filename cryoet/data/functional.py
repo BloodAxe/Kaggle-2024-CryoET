@@ -20,7 +20,7 @@ def normalize_volume_to_percentile_range(volume, low_percentile=1, high_percenti
 
 
 def as_tuple_of_3(value) -> Tuple:
-    if isinstance(value, int):
+    if isinstance(value, (int, float)):
         result = value, value, value
     else:
         a, b, c = value

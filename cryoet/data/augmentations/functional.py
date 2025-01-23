@@ -375,7 +375,7 @@ def random_crop_around_point(
         scale_z = scale + random.uniform(-anisotropic_scale_limit, anisotropic_scale_limit)
         scale = (scale_z, scale_y, scale_x)
     else:
-        scale = as_tuple_of_3(scale)
+        scale = as_tuple_of_3(float(scale))
 
     angles = (
         random.uniform(-z_rotation_limit, z_rotation_limit),
