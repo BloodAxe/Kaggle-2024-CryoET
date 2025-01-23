@@ -60,92 +60,8 @@ def main():
 
     try:
         training_args.master_print(f"Training arguments: {training_args}")
-
-        num_classes = 6 if model_args.use_6_classes else 5
-
-        extra_model_args = {}
-        if training_args.bf16:
-            extra_model_args["torch_dtype"] = torch.bfloat16
-        training_args.master_print(f"Extra model args: {extra_model_args}")
-
-        # model_kwargs = build_model_args_from_commandline(model_args)
-        model_kwargs = {}
-        training_args.master_print(f"Model kwargs: {model_kwargs}")
-
-        if model_args.model_name == "segresnet_s1":
-            config = SegResNetForObjectDetectionS1Config(
-                num_classes=num_classes,
-            )
-            model = SegResNetForObjectDetectionS1(config)
-        elif model_args.model_name == "segresnetv2":
-            config = SegResNetForObjectDetectionV2Config(
-                use_stride2=model_args.use_stride2,
-                use_stride4=model_args.use_stride4,
-                use_offset_head=model_args.use_offset_head,
-                head_dropout_prob=model_args.head_dropout_prob,
-                num_classes=num_classes,
-            )
-            model = SegResNetForObjectDetectionV2(config)
-        elif model_args.model_name == "dynunet":
-            config = DynUNetForObjectDetectionConfig(
-                use_stride2=model_args.use_stride2,
-                use_stride4=model_args.use_stride4,
-                num_classes=num_classes,
-            )
-            model = DynUNetForObjectDetection(config)
-        elif model_args.model_name == "dynunet_v2":
-            config = DynUNetForObjectDetectionConfig(
-                # dropout=0.1,
-                res_block=True,
-                use_stride2=model_args.use_stride2,
-                use_stride4=model_args.use_stride4,
-                num_classes=num_classes,
-                object_size=32,
-                intermediate_channels=64,
-                offset_intermediate_channels=8,
-            )
-            model = DynUNetForObjectDetection(config)
-        elif model_args.model_name == "hrnet":
-            config = HRNetv2ForObjectDetectionConfig(
-                num_classes=num_classes,
-            )
-            model = HRNetv2ForObjectDetection(config)
-        elif model_args.model_name == "convnext":
-            config = ConvNextForObjectDetectionConfig(
-                num_classes=num_classes,
-            )
-            model = ConvNextForObjectDetection(config)
-        # elif model_args.model_name == "unet3d":
-        #     config = UNet3DForObjectDetectionConfig(window_size=model_args.window_size)
-        #     model = UNet3DForObjectDetection(config)
-        # elif model_args.model_name == "maxvit_nano_unet25d":
-        #     config = MaxVitUnet25dConfig(img_size=model_args.window_size)
-        #     model = MaxVitUnet25d(config)
-        # elif model_args.model_name == "unet3d-fat":
-        #     config = UNet3DForObjectDetectionConfig(
-        #         encoder_channels=[32, 64, 128, 256],
-        #         num_blocks_per_stage=(2, 3, 4, 6),
-        #         num_blocks_per_decoder_stage=(2, 2, 2),
-        #         intermediate_channels=64,
-        #         offset_intermediate_channels=16,
-        #         window_size=model_args.window_size,
-        #     )
-        #     model = UNet3DForObjectDetection(config)
-        # elif model_args.model_name == "unetr":
-        #     config = SwinUNETRForObjectDetectionConfig()
-        #     model = SwinUNETRForObjectDetection(config)
-        else:
-            raise ValueError(f"Unknown model name: {model_args.model_name}")
-
-        if model_args.pretrained_backbone_path is not None:
-            backbone_sd = torch.load(model_args.pretrained_backbone_path, weights_only=True)
-            model.backbone.load_state_dict(backbone_sd, strict=True)
-            training_args.master_print(f"Loaded pretrained backbone from {model_args.pretrained_backbone_path}")
-
+        model = create_model_from_args(model_args, training_args)
         training_args.master_print(f"Model parameters: {count_parameters(model, human_friendly=True)}")
-
-        # if training_args.gradient_checkpointing:
-        #     model.gradient_checkpointing_enable()
 
         with fabric.rank_zero_first():
             data_module = ObjectDetectionDataModule(
@@ -244,6 +160,9 @@ def main():
         )
 
         if trainer.is_global_zero:
+            # The model we create is brand new, no DDP hooks or other shenanigans
+            model = create_model_from_args(model_args, training_args).cuda().eval()
+            model.load_state_dict(model_module.model.state_dict(), strict=True)
             trace_model_and_save(window_size, model_module.model, Path(checkpoint_callback.best_model_path).with_suffix(".jit"))
             print("Saved traced model for best checkpoint")
 
@@ -274,14 +193,93 @@ def main():
 
         if trainer.is_global_zero:
             torch.save({"state_dict": model_module.state_dict()}, new_averaged_filepath)
-            tmp_averaged_checkpoint.unlink()
-            trace_model_and_save(window_size, model_module.model, new_averaged_filepath.with_suffix(".jit"))
+
+            # The model we create is brand new, no DDP hooks or other shenanigans
+            model = create_model_from_args(model_args, training_args).cuda().eval()
+            model.load_state_dict(model_module.model.state_dict(), strict=True)
+            trace_model_and_save(window_size, model, new_averaged_filepath.with_suffix(".jit"))
+
             print("Traced and saved averaged checkpoint")
+            tmp_averaged_checkpoint.unlink()
+
     except Exception as e:
         with open(os.path.join(training_args.output_dir, f"error_rank_{training_args.local_rank}.log"), "w") as f:
             f.write(str(e))
             f.write("\n")
             f.write(traceback.format_exc())
+
+
+def create_model_from_args(model_args, training_args):
+    num_classes = 6 if model_args.use_6_classes else 5
+    if model_args.model_name == "segresnet_s1":
+        config = SegResNetForObjectDetectionS1Config(
+            num_classes=num_classes,
+        )
+        model = SegResNetForObjectDetectionS1(config)
+    elif model_args.model_name == "segresnetv2":
+        config = SegResNetForObjectDetectionV2Config(
+            use_stride2=model_args.use_stride2,
+            use_stride4=model_args.use_stride4,
+            use_offset_head=model_args.use_offset_head,
+            head_dropout_prob=model_args.head_dropout_prob,
+            num_classes=num_classes,
+        )
+        model = SegResNetForObjectDetectionV2(config)
+    elif model_args.model_name == "dynunet":
+        config = DynUNetForObjectDetectionConfig(
+            use_stride2=model_args.use_stride2,
+            use_stride4=model_args.use_stride4,
+            num_classes=num_classes,
+        )
+        model = DynUNetForObjectDetection(config)
+    elif model_args.model_name == "dynunet_v2":
+        config = DynUNetForObjectDetectionConfig(
+            # dropout=0.1,
+            res_block=True,
+            use_stride2=model_args.use_stride2,
+            use_stride4=model_args.use_stride4,
+            num_classes=num_classes,
+            object_size=32,
+            intermediate_channels=64,
+            offset_intermediate_channels=8,
+        )
+        model = DynUNetForObjectDetection(config)
+    elif model_args.model_name == "hrnet":
+        config = HRNetv2ForObjectDetectionConfig(
+            num_classes=num_classes,
+        )
+        model = HRNetv2ForObjectDetection(config)
+    elif model_args.model_name == "convnext":
+        config = ConvNextForObjectDetectionConfig(
+            num_classes=num_classes,
+        )
+        model = ConvNextForObjectDetection(config)
+    # elif model_args.model_name == "unet3d":
+    #     config = UNet3DForObjectDetectionConfig(window_size=model_args.window_size)
+    #     model = UNet3DForObjectDetection(config)
+    # elif model_args.model_name == "maxvit_nano_unet25d":
+    #     config = MaxVitUnet25dConfig(img_size=model_args.window_size)
+    #     model = MaxVitUnet25d(config)
+    # elif model_args.model_name == "unet3d-fat":
+    #     config = UNet3DForObjectDetectionConfig(
+    #         encoder_channels=[32, 64, 128, 256],
+    #         num_blocks_per_stage=(2, 3, 4, 6),
+    #         num_blocks_per_decoder_stage=(2, 2, 2),
+    #         intermediate_channels=64,
+    #         offset_intermediate_channels=16,
+    #         window_size=model_args.window_size,
+    #     )
+    #     model = UNet3DForObjectDetection(config)
+    # elif model_args.model_name == "unetr":
+    #     config = SwinUNETRForObjectDetectionConfig()
+    #     model = SwinUNETRForObjectDetection(config)
+    else:
+        raise ValueError(f"Unknown model name: {model_args.model_name}")
+    if model_args.pretrained_backbone_path is not None:
+        backbone_sd = torch.load(model_args.pretrained_backbone_path, weights_only=True)
+        model.backbone.load_state_dict(backbone_sd, strict=True)
+        training_args.master_print(f"Loaded pretrained backbone from {model_args.pretrained_backbone_path}")
+    return model
 
 
 def build_model_name_slug(data_args, model_args):
