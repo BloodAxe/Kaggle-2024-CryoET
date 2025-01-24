@@ -54,6 +54,7 @@ def model_from_checkpoint(checkpoint_path: Path, **kwargs):
     return model
 
 
+@torch.no_grad()
 def main(*checkpoints, output_onnx: str, opset=15, **kwargs):
     models = [model_from_checkpoint(checkpoint, **kwargs) for checkpoint in checkpoints]
     ensemble = Ensemble(models).cuda().eval()
