@@ -17,12 +17,12 @@ class Ensemble(nn.Module):
         super().__init__()
         self.models = nn.ModuleList(models)
 
-    def forward(self, x):
+    def forward(self, volume):
         all_scores = []
         all_offsets = []
 
         for model in self.models:
-            (logits,), (offsets,) = model(x)
+            (logits,), (offsets,) = model(volume)
             all_scores.append(logits.sigmoid())
             all_offsets.append(offsets)
 
@@ -64,7 +64,7 @@ def main(*checkpoints, output_onnx: str, opset=15, **kwargs):
 
     traced_model = torch.jit.trace(
         func=ensemble,
-        example_inputs=(dummy_input,),
+        example_inputs=dummy_input,
     )
 
     torch.jit.save(
@@ -74,7 +74,7 @@ def main(*checkpoints, output_onnx: str, opset=15, **kwargs):
 
     torch.onnx.export(
         model=traced_model,
-        args=(dummy_input,),
+        args=dummy_input,
         f=output_onnx,
         verbose=False,
         verify=True,
