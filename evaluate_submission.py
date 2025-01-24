@@ -11,7 +11,7 @@ from dotenv import load_dotenv
 from tqdm import tqdm
 
 from cryoet.data.cross_validation import split_data_into_folds
-from cryoet.data.parsers import CLASS_LABEL_TO_CLASS_NAME, read_annotated_volume, TARGET_6_CLASSES, TARGET_5_CLASSES
+from cryoet.data.parsers import CLASS_LABEL_TO_CLASS_NAME, read_annotated_volume, TARGET_5_CLASSES
 from cryoet.ensembling_eval import (
     plot_2d_score_centernet_single_label,
     plot_2d_score_spatial_depth,
@@ -24,16 +24,12 @@ from cryoet.inference.predict_volume import (
 )
 from cryoet.metric import score_submission
 
-import pandas as pd
-import matplotlib.pyplot as plt
-import seaborn as sns
-
 
 @dataclasses.dataclass
 class PredictionSearchSpace:
     valid_depth_tiles: int | Tuple[int, ...] = dataclasses.field(default=(1,))
-    valid_spatial_tiles: int | Tuple[int, ...] = dataclasses.field(default=(5, 6, 7))
-    use_weighted_average: bool | Tuple[bool, ...] = dataclasses.field(default=(True, False))
+    valid_spatial_tiles: int | Tuple[int, ...] = dataclasses.field(default=(7,))
+    use_weighted_average: bool | Tuple[bool, ...] = dataclasses.field(default=(True,))
 
     def product(self):
         for valid_depth_tile in self.valid_depth_tiles:
@@ -48,13 +44,13 @@ class PredictionSearchSpace:
 
 @dataclasses.dataclass
 class PostprocessingSearchSpace:
-    use_centernet_nms: bool | Tuple[bool, ...] = (True, False)
+    use_centernet_nms: bool | Tuple[bool, ...] = (True,)
     use_single_label_per_anchor: bool | Tuple[bool, ...] = (True, False)
 
-    iou_threshold: float | Tuple[float, ...] = (0.6, 0.7, 0.8, 0.85, 0.9, 0.95)
+    iou_threshold: float | Tuple[float, ...] = (0.85,)
     pre_nms_top_k: int | Tuple[int, ...] = (16536,)  # Does not seems to influence at all (4096, 8192, 16536)
 
-    min_score_threshold: float | Tuple[float, ...] = (0.05, 0.1)
+    min_score_threshold: float | Tuple[float, ...] = (0.05,)
 
     def product(self):
         for use_centernet_nms in self.use_centernet_nms:
@@ -153,6 +149,16 @@ def main(
 
             per_class_scores, score_thresholds, best_threshold_per_class, best_score_per_class, averaged_score = (
                 compute_optimal_thresholds(class_names, solution, submission)
+            )
+
+            np.savez(
+                per_class_scores=per_class_scores,
+                score_thresholds=score_thresholds,
+                best_threshold_per_class=best_threshold_per_class,
+                best_score_per_class=best_score_per_class,
+                averaged_score=averaged_score,
+                file=output_dir
+                / f"{fold=}_{prediction_hparams.valid_depth_tiles}_{prediction_hparams.valid_spatial_tiles}_{prediction_hparams.use_weighted_average}_{postprocess_hparams.use_centernet_nms}_{postprocess_hparams.use_single_label_per_anchor}_{postprocess_hparams.iou_threshold}_{postprocess_hparams.pre_nms_top_k}_{postprocess_hparams.min_score_threshold}.npz",
             )
 
             final_dataframe["valid_depth_tiles"].append(prediction_hparams.valid_depth_tiles)

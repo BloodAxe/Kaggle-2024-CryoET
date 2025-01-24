@@ -19,7 +19,7 @@ from cryoet.schedulers import WarmupCosineScheduler
 from .args import MyTrainingArguments, ModelArguments, DataArguments
 from .od_accumulator import AccumulatedObjectDetectionPredictionContainer
 from .visualization import render_heatmap
-from ..data.parsers import CLASS_LABEL_TO_CLASS_NAME, ANGSTROMS_IN_PIXEL, TARGET_SIGMAS
+from ..data.parsers import CLASS_LABEL_TO_CLASS_NAME, ANGSTROMS_IN_PIXEL, TARGET_SIGMAS, TARGET_6_CLASSES, TARGET_5_CLASSES
 from ..metric import score_submission
 from ..modelling.detection.functional import decode_detections_with_nms
 
@@ -41,7 +41,7 @@ class ObjectDetectionModel(L.LightningModule):
         self.validation_predictions = None
         self.average_tokens_across_devices = train_args.average_tokens_across_devices
         self.num_classes = model.config.num_classes
-
+        self.class_names = [cls["name"] for cls in (TARGET_6_CLASSES if self.num_classes == 6 else TARGET_5_CLASSES)]
         # fmt: off
         self.register_buffer("thresholds", torch.tensor(
             np.linspace(0.1, 0.9, num=161, dtype=np.float32)
@@ -216,7 +216,7 @@ class ObjectDetectionModel(L.LightningModule):
             score_values.append(s[0])
             score_details.append(s[1])
 
-        keys = list(score_details[0].keys())
+        keys = self.target_classes
         per_class_scores = []
         for scores_dict in score_details:
             per_class_scores.append([scores_dict[k] for k in keys])

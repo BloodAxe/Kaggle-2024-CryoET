@@ -7,8 +7,17 @@ def test_better_tiles():
 
 
 def test_better_tiles_one_tile():
-    tiles = list(compute_better_tiles_1d(192, 192, 4))
-    print(len(tiles), tiles)
+    tiles = list(compute_better_tiles_1d(630, 128, 4))
+    print(len(tiles), tiles, "Overlap", (tiles[0].stop - tiles[0].start) - (tiles[1].start - tiles[0].start))
+
+    tiles = list(compute_better_tiles_1d(630, 128, 5))
+    print(len(tiles), tiles, "Overlap", (tiles[0].stop - tiles[0].start) - (tiles[1].start - tiles[0].start))
+
+    tiles = list(compute_better_tiles_1d(630, 128, 6))
+    print(len(tiles), tiles, "Overlap", (tiles[0].stop - tiles[0].start) - (tiles[1].start - tiles[0].start))
+
+    tiles = list(compute_better_tiles_1d(630, 128, 7))
+    print(len(tiles), tiles, "Overlap", (tiles[0].stop - tiles[0].start) - (tiles[1].start - tiles[0].start))
 
 
 def test_tiling():
