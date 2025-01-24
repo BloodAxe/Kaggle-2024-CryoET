@@ -1,8 +1,8 @@
 for FOLD in 0 1 2 3 4
 do
-  torchrun --standalone --nproc-per-node=4 train_od.py \
+  torchrun --standalone --nproc-per-node=4 train_od_ensemble.py \
   --model_name=ensemble  \
-  --per_device_train_batch_size=6 \
+  --per_device_train_batch_size=4 \
   --adam_beta1=0.95 \
   --adam_beta2=0.99 \
   --average_tokens_across_devices=True \
@@ -12,7 +12,7 @@ do
   --dataloader_pin_memory=True \
   --ddp_find_unused_parameters=True \
   --early_stopping=25 \
-  --fold=$FOLD \
+  --fold=0 \
   --learning_rate=1e-4 \
   --max_grad_norm=3 \
   --mixup_prob=0.2 \

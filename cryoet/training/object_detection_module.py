@@ -216,7 +216,7 @@ class ObjectDetectionModel(L.LightningModule):
             score_values.append(s[0])
             score_details.append(s[1])
 
-        keys = self.target_classes
+        keys = self.class_names
         per_class_scores = []
         for scores_dict in score_details:
             per_class_scores.append([scores_dict[k] for k in keys])
