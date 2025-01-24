@@ -297,10 +297,10 @@ def decode_detections_with_nms(
     for class_index in range(num_classes):
         sigma_value = float(class_sigmas[class_index])  # Get the sigma for this class
         score_threshold = float(min_score[class_index])
-        class_mask = labels_of_max_score.eq(class_index)  # Pick out only detections of this class
         score_mask = scores[:, class_index] >= score_threshold  # Filter out low-scoring detections
 
         if use_single_label_per_anchor:
+            class_mask = labels_of_max_score.eq(class_index)  # Pick out only detections of this class
             mask = class_mask & score_mask
         else:
             mask = score_mask
