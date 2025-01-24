@@ -62,8 +62,20 @@ def main(*checkpoints, output_onnx: str, opset=15, **kwargs):
     output_onnx = Path(output_onnx)
     dummy_input = torch.randn(1, 1, 192, 128, 128, device="cuda")
 
+    traced_model = (
+        torch.jit.trace(
+            func=ensemble,
+            example_inputs=(dummy_input,),
+        ),
+    )
+
+    torch.jit.save(
+        traced_model,
+        f=str(output_onnx.with_suffix(".jit")),
+    )
+
     torch.onnx.export(
-        model=ensemble,
+        model=traced_model,
         args=(dummy_input,),
         f=output_onnx,
         verbose=False,
@@ -71,14 +83,6 @@ def main(*checkpoints, output_onnx: str, opset=15, **kwargs):
         opset_version=opset,
         input_names=["volume"],
         output_names=["scores", "offsets"],
-    )
-
-    torch.jit.save(
-        torch.jit.trace(
-            func=ensemble,
-            example_inputs=(dummy_input,),
-        ),
-        f=str(output_onnx.with_suffix(".jit")),
     )
 
     print(f"Exported ensemble to {output_onnx}")
