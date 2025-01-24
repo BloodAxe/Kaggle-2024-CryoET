@@ -2,14 +2,14 @@ import numpy as np
 
 from .detection_dataset import CryoETObjectDetectionDataset
 from .mixin import ObjectDetectionMixin
-from ..functional import compute_better_tiles
+from ..functional import compute_better_tiles_with_num_tiles
 from ..parsers import AnnotatedVolume
 from ...training.args import DataArguments, ModelArguments
 
 
 class SlidingWindowCryoETObjectDetectionDataset(CryoETObjectDetectionDataset, ObjectDetectionMixin):
     def __repr__(self):
-        return f"{self.__class__.__name__}(window_size={self.window_size}, stride={self.window_step}, study={self.study}, mode={self.mode}, split={self.split}) [{len(self)}]"
+        return f"{self.__class__.__name__}(window_size={self.window_size}, num_tiles={self.num_tiles}, study={self.study}, mode={self.mode}, split={self.split}) [{len(self)}]"
 
     def __init__(
         self,
@@ -24,13 +24,15 @@ class SlidingWindowCryoETObjectDetectionDataset(CryoETObjectDetectionDataset, Ob
             model_args.valid_spatial_window_size,
             model_args.valid_spatial_window_size,
         )
-        self.window_step = (
-            model_args.valid_depth_window_step,
-            model_args.valid_spatial_window_step,
-            model_args.valid_spatial_window_step,
+        self.num_tiles = (
+            model_args.valid_depth_num_tiles,
+            model_args.valid_spatial_num_tiles,
+            model_args.valid_spatial_num_tiles,
         )
 
-        self.tiles = list(compute_better_tiles(self.sample.volume_shape, self.window_size, self.window_step))
+        self.tiles = list(
+            compute_better_tiles_with_num_tiles(self.sample.volume_shape, window_size=self.window_size, num_tiles=self.num_tiles)
+        )
         self.data_args = data_args
         self.copy_paste_samples = copy_paste_samples
 
