@@ -69,7 +69,7 @@ class ConvNextForObjectDetection(nn.Module):
         offsets = [offsets]
         strides = [self.head.stride]
 
-        if torch.jit.is_tracing():
+        if torch.jit.is_tracing() or torch.jit.is_scripting():
             return logits, offsets
 
         loss = None

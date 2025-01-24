@@ -142,7 +142,7 @@ class DynUNetForObjectDetection(nn.Module):
             offsets.append(offsets2)
             strides.append(self.head2.stride)
 
-        if torch.jit.is_tracing():
+        if torch.jit.is_tracing() or torch.jit.is_scripting():
             return logits, offsets
 
         loss = None
