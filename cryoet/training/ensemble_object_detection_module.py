@@ -1,4 +1,3 @@
-import os
 from typing import Optional, Any, Dict, List, Tuple
 
 import lightning as L
@@ -11,7 +10,6 @@ from matplotlib import pyplot as plt
 from pytorch_toolbelt.optimization.functional import build_optimizer_param_groups
 from pytorch_toolbelt.utils import all_gather
 from torch import Tensor, nn
-from torch.optim import Optimizer
 from torch.utils.tensorboard import SummaryWriter
 
 from cryoet.modelling.detection.detection_head import ObjectDetectionOutput
@@ -19,7 +17,7 @@ from cryoet.schedulers import WarmupCosineScheduler
 from .args import MyTrainingArguments, ModelArguments, DataArguments
 from .od_accumulator import AccumulatedObjectDetectionPredictionContainer
 from .visualization import render_heatmap
-from ..data.parsers import CLASS_LABEL_TO_CLASS_NAME, ANGSTROMS_IN_PIXEL, TARGET_SIGMAS
+from ..data.parsers import CLASS_LABEL_TO_CLASS_NAME, ANGSTROMS_IN_PIXEL, TARGET_SIGMAS, TARGET_6_CLASSES, TARGET_5_CLASSES
 from ..metric import score_submission
 from ..modelling.detection.functional import decode_detections_with_nms
 
@@ -40,6 +38,20 @@ class EnsembleObjectDetectionModel(L.LightningModule):
         self.model_args = model_args
         self.validation_predictions = None
         self.average_tokens_across_devices = train_args.average_tokens_across_devices
+        self.num_classes = 6 if model_args.use_6_classes else 5
+        self.class_names = [cls["name"] for cls in (TARGET_6_CLASSES if self.num_classes == 6 else TARGET_5_CLASSES)]
+        # fmt: off
+        self.register_buffer("thresholds", torch.tensor(
+            np.linspace(0.1, 0.9, num=161, dtype=np.float32)
+        ))
+        # fmt: on
+
+        self.register_buffer("per_class_scores", torch.zeros(len(self.thresholds), self.num_classes))
+        self.inference_window_size = (
+            model_args.valid_depth_window_size,
+            model_args.valid_spatial_window_size,
+            model_args.valid_spatial_window_size,
+        )
 
     def forward(self, volume, labels=None, **loss_kwargs):
         outputs = []
@@ -54,6 +66,8 @@ class EnsembleObjectDetectionModel(L.LightningModule):
                 assigner_max_anchors_per_point=self.model_args.assigner_max_anchors_per_point,
                 assigner_alpha=self.model_args.assigner_alpha,
                 assigner_beta=self.model_args.assigner_beta,
+                use_varifocal_loss=self.model_args.use_varifocal_loss,
+                use_cross_entropy_loss=self.model_args.use_cross_entropy_loss,
                 **loss_kwargs,
             )
             outputs.append(output)
@@ -76,17 +90,17 @@ class EnsembleObjectDetectionModel(L.LightningModule):
         teacher_offset_loss = 0
 
         for student_output in student_outputs:
-            l1 = [
+            scores_term = [
                 torch.nn.functional.binary_cross_entropy_with_logits(student_logits, teacher_logits.detach().sigmoid())
                 for student_logits, teacher_logits in zip(student_output.logits, teacher_output.logits)
             ]
-            l2 = [
+            offset_term = [
                 torch.nn.functional.l1_loss(student_offset, teacher_offset.detach())
                 for student_offset, teacher_offset in zip(student_output.offsets, teacher_output.offsets)
             ]
 
-            teacher_logits_loss += sum(l1)
-            teacher_offset_loss += sum(l2)
+            teacher_logits_loss += sum(scores_term)
+            teacher_offset_loss += sum(offset_term)
 
         loss = loss + teacher_logits_loss + teacher_offset_loss
 
@@ -149,7 +163,13 @@ class EnsembleObjectDetectionModel(L.LightningModule):
 
             if study not in self.validation_predictions:
                 self.validation_predictions[study] = AccumulatedObjectDetectionPredictionContainer.from_shape(
-                    volume_shape, num_classes=num_classes, strides=strides, device="cpu", dtype=torch.float16
+                    volume_shape,
+                    window_size=self.inference_window_size,
+                    num_classes=num_classes,
+                    strides=strides,
+                    device="cpu",
+                    dtype=torch.float16,
+                    use_weighted_average=self.data_args.use_weighted_average,
                 )
 
             self.validation_predictions[study].accumulate(
@@ -169,7 +189,8 @@ class EnsembleObjectDetectionModel(L.LightningModule):
             y=[],
             z=[],
         )
-        score_thresholds = np.linspace(0.14, 1.0, 20, endpoint=False) ** 2
+
+        score_thresholds = self.thresholds.cpu().numpy()
 
         weights = {
             "apo-ferritin": 1,
@@ -249,7 +270,7 @@ class EnsembleObjectDetectionModel(L.LightningModule):
             score_values.append(s[0])
             score_details.append(s[1])
 
-        keys = list(score_details[0].keys())
+        keys = self.class_names
         per_class_scores = []
         for scores_dict in score_details:
             per_class_scores.append([scores_dict[k] for k in keys])
@@ -260,8 +281,10 @@ class EnsembleObjectDetectionModel(L.LightningModule):
         best_score_per_class = np.array([per_class_scores[i, j] for j, i in enumerate(best_index_per_class)])  # [class]
         averaged_score = np.sum([weights[k] * best_score_per_class[i] for i, k in enumerate(keys)]) / sum(weights.values())
 
-        if self.trainer.is_global_zero:
-            print("Scores", list(zip(score_values, score_thresholds)))
+        self.per_class_scores = torch.from_numpy(per_class_scores).to(self.device)
+
+        # if self.trainer.is_global_zero:
+        #     print("Scores", list(zip(score_values, score_thresholds)))
 
         self.log_plots(
             dict((key, (score_thresholds, per_class_scores[:, i])) for i, key in enumerate(keys)), "Threshold", "Score"

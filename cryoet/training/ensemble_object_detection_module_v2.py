@@ -1,4 +1,3 @@
-import os
 from typing import Optional, Any, Dict, List, Tuple
 
 import lightning as L
@@ -11,7 +10,6 @@ from matplotlib import pyplot as plt
 from pytorch_toolbelt.optimization.functional import build_optimizer_param_groups
 from pytorch_toolbelt.utils import all_gather
 from torch import Tensor, nn
-from torch.optim import Optimizer
 from torch.utils.tensorboard import SummaryWriter
 
 from cryoet.modelling.detection.detection_head import ObjectDetectionOutput
