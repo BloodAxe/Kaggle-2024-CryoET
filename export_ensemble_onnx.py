@@ -33,7 +33,7 @@ class Ensemble(nn.Module):
 
 def model_from_checkpoint(checkpoint_path: Path, **kwargs):
     checkpoint_path = Path(checkpoint_path)
-    checkpoint = torch.load(checkpoint_path, map_location="cpu")
+    checkpoint = torch.load(checkpoint_path, map_location="cpu", weights_only=True)
 
     model_state_dict = checkpoint["state_dict"]
     model_state_dict = {k.replace("model.", ""): v for k, v in model_state_dict.items() if k.startswith("model.")}
@@ -44,7 +44,7 @@ def model_from_checkpoint(checkpoint_path: Path, **kwargs):
     elif "dynunet" in checkpoint_path.stem:
         config = DynUNetForObjectDetectionConfig(**kwargs)
         model = DynUNetForObjectDetection(config)
-    elif "segresnet_v2" in checkpoint_path.stem:
+    elif "segresnetv2" in checkpoint_path.stem:
         config = SegResNetForObjectDetectionV2Config(**kwargs)
         model = SegResNetForObjectDetectionV2(config)
     else:
