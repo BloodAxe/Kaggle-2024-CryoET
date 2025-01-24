@@ -236,7 +236,7 @@ class SegResNetForObjectDetectionV2(nn.Module):
                 use_offset_head=config.use_offset_head,
             )
 
-    def forward(self, volume, labels=None, apply_loss_on_each_stride: bool = False, **loss_kwargs):
+    def forward(self, volume, labels=None, apply_loss_on_each_stride: bool = False, is_tracing=False, **loss_kwargs):
         _, feature_maps = self.backbone(volume)
         fm4, fm2 = feature_maps[-3], feature_maps[-2]
 
@@ -256,7 +256,7 @@ class SegResNetForObjectDetectionV2(nn.Module):
             offsets.append(offsets2)
             strides.append(self.head2.stride)
 
-        if torch.jit.is_tracing() or torch.jit.is_scripting():
+        if is_tracing or torch.jit.is_tracing() or torch.jit.is_scripting():
             return logits, offsets
 
         loss = None

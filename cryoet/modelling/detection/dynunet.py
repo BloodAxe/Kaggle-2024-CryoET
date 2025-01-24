@@ -123,7 +123,7 @@ class DynUNetForObjectDetection(nn.Module):
                 offset_intermediate_channels=config.offset_intermediate_channels,
             )
 
-    def forward(self, volume, labels=None, **loss_kwargs):
+    def forward(self, volume, labels=None, is_tracing=False, **loss_kwargs):
         [fm2, fm4] = self.backbone(volume)
 
         logits = []
@@ -142,7 +142,7 @@ class DynUNetForObjectDetection(nn.Module):
             offsets.append(offsets2)
             strides.append(self.head2.stride)
 
-        if torch.jit.is_tracing() or torch.jit.is_scripting():
+        if is_tracing or torch.jit.is_tracing() or torch.jit.is_scripting():
             return logits, offsets
 
         loss = None

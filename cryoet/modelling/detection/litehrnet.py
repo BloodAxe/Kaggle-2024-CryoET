@@ -109,7 +109,7 @@ class HRNetv2ForObjectDetection(nn.Module):
         x = self.up_4(x)
         return x
 
-    def forward(self, volume, labels=None, **loss_kwargs):
+    def forward(self, volume, labels=None, is_tracing=False, **loss_kwargs):
         feature_maps = self.backbone(volume)
         x = self.decoder_forward(feature_maps)
 
@@ -119,7 +119,7 @@ class HRNetv2ForObjectDetection(nn.Module):
         offsets = [offsets]
         strides = [self.head.stride]
 
-        if torch.jit.is_tracing() or torch.jit.is_scripting():
+        if is_tracing or torch.jit.is_tracing() or torch.jit.is_scripting():
             return logits, offsets
 
         loss = None
