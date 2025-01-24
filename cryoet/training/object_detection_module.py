@@ -177,7 +177,7 @@ class ObjectDetectionModel(L.LightningModule):
                 strides=accumulated_predictions.strides,
                 class_sigmas=TARGET_SIGMAS,
                 min_score=score_thresholds.min(),
-                iou_threshold=0.6,
+                iou_threshold=0.8,
                 use_centernet_nms=self.model_args.use_centernet_nms,
                 use_single_label_per_anchor=self.model_args.use_single_label_per_anchor,
                 pre_nms_top_k=16536,
