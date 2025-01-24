@@ -19,7 +19,7 @@ from cryoet.schedulers import WarmupCosineScheduler
 from .args import MyTrainingArguments, ModelArguments, DataArguments
 from .od_accumulator import AccumulatedObjectDetectionPredictionContainer
 from .visualization import render_heatmap
-from ..data.parsers import CLASS_LABEL_TO_CLASS_NAME, ANGSTROMS_IN_PIXEL, TARGET_SIGMAS
+from ..data.parsers import CLASS_LABEL_TO_CLASS_NAME, ANGSTROMS_IN_PIXEL, TARGET_SIGMAS, TARGET_6_CLASSES, TARGET_5_CLASSES
 from ..metric import score_submission
 from ..modelling.detection.functional import decode_detections_with_nms, object_detection_loss
 
@@ -40,6 +40,20 @@ class EnsembleObjectDetectionModelV2(L.LightningModule):
         self.model_args = model_args
         self.validation_predictions = None
         self.average_tokens_across_devices = train_args.average_tokens_across_devices
+        self.num_classes = 6 if model_args.use_6_classes else 5
+        self.class_names = [cls["name"] for cls in (TARGET_6_CLASSES if self.num_classes == 6 else TARGET_5_CLASSES)]
+        # fmt: off
+        self.register_buffer("thresholds", torch.tensor(
+            np.linspace(0.1, 0.9, num=161, dtype=np.float32)
+        ))
+        # fmt: on
+
+        self.register_buffer("per_class_scores", torch.zeros(len(self.thresholds), self.num_classes))
+        self.inference_window_size = (
+            model_args.valid_depth_window_size,
+            model_args.valid_spatial_window_size,
+            model_args.valid_spatial_window_size,
+        )
 
     def forward(self, volume, labels=None, **loss_kwargs):
         outputs = []
@@ -74,6 +88,8 @@ class EnsembleObjectDetectionModelV2(L.LightningModule):
             assigner_max_anchors_per_point=self.model_args.assigner_max_anchors_per_point,
             assigner_alpha=self.model_args.assigner_alpha,
             assigner_beta=self.model_args.assigner_beta,
+            use_varifocal_loss=self.model_args.use_varifocal_loss,
+            use_cross_entropy_loss=self.model_args.use_cross_entropy_loss,
             **loss_kwargs,
         )
 
@@ -116,7 +132,13 @@ class EnsembleObjectDetectionModelV2(L.LightningModule):
 
             if study not in self.validation_predictions:
                 self.validation_predictions[study] = AccumulatedObjectDetectionPredictionContainer.from_shape(
-                    volume_shape, num_classes=num_classes, strides=outputs.strides, device="cpu", dtype=torch.float16
+                    volume_shape,
+                    window_size=self.inference_window_size,
+                    num_classes=num_classes,
+                    strides=outputs.strides,
+                    device="cpu",
+                    dtype=torch.float16,
+                    use_weighted_average=self.data_args.use_weighted_average,
                 )
 
             self.validation_predictions[study].accumulate(
@@ -136,7 +158,8 @@ class EnsembleObjectDetectionModelV2(L.LightningModule):
             y=[],
             z=[],
         )
-        score_thresholds = np.linspace(0.14, 1.0, 20, endpoint=False) ** 2
+
+        score_thresholds = self.thresholds.cpu().numpy()
 
         weights = {
             "apo-ferritin": 1,
@@ -216,7 +239,7 @@ class EnsembleObjectDetectionModelV2(L.LightningModule):
             score_values.append(s[0])
             score_details.append(s[1])
 
-        keys = list(score_details[0].keys())
+        keys = self.target_classes
         per_class_scores = []
         for scores_dict in score_details:
             per_class_scores.append([scores_dict[k] for k in keys])
@@ -227,8 +250,10 @@ class EnsembleObjectDetectionModelV2(L.LightningModule):
         best_score_per_class = np.array([per_class_scores[i, j] for j, i in enumerate(best_index_per_class)])  # [class]
         averaged_score = np.sum([weights[k] * best_score_per_class[i] for i, k in enumerate(keys)]) / sum(weights.values())
 
-        if self.trainer.is_global_zero:
-            print("Scores", list(zip(score_values, score_thresholds)))
+        self.per_class_scores = torch.from_numpy(per_class_scores).to(self.device)
+
+        # if self.trainer.is_global_zero:
+        #     print("Scores", list(zip(score_values, score_thresholds)))
 
         self.log_plots(
             dict((key, (score_thresholds, per_class_scores[:, i])) for i, key in enumerate(keys)), "Threshold", "Score"
