@@ -22,7 +22,7 @@ class Ensemble(nn.Module):
         all_offsets = []
 
         for model in self.models:
-            (logits,), (offsets,) = model(volume, is_tracing=torch.jit.is_scripting() or torch.jit.is_tracing())
+            (logits,), (offsets,) = model(volume, is_tracing=True)
             all_scores.append(logits.sigmoid())
             all_offsets.append(offsets)
 
