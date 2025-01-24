@@ -29,6 +29,7 @@ from cryoet.modelling.detection.segresnet_object_detection_v2 import (
 from cryoet.training.args import MyTrainingArguments, ModelArguments, DataArguments
 from cryoet.training.ema import BetaDecay, EMACallback
 from cryoet.training.ensemble_object_detection_module_v2 import EnsembleObjectDetectionModelV2
+from cryoet.training.ensemble_object_detection_module import EnsembleObjectDetectionModel
 from train_od import build_model_name_slug
 
 
@@ -98,9 +99,16 @@ def main():
                 model_args=model_args,
             )
 
-        model_module = EnsembleObjectDetectionModelV2(
-            models=[model1, model2, model3], data_args=data_args, model_args=model_args, train_args=training_args
-        )
+        if model_args.model_name == "ensemblev1":
+            model_module = EnsembleObjectDetectionModel(
+                models=[model1, model2, model3], data_args=data_args, model_args=model_args, train_args=training_args
+            )
+        elif model_args.model_name == "ensemblev2":
+            model_module = EnsembleObjectDetectionModelV2(
+                models=[model1, model2, model3], data_args=data_args, model_args=model_args, train_args=training_args
+            )
+        else:
+            raise ValueError(f"Unknown model name: {model_args.model_name}")
 
         if training_args.transfer_weights is not None:
             checkpoint = torch.load(training_args.transfer_weights, map_location="cpu")
