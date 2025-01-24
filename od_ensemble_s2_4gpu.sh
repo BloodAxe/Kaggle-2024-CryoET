@@ -2,7 +2,7 @@ for FOLD in 0 1 2 3 4
 do
   torchrun --standalone --nproc-per-node=4 train_od_ensemble.py \
   --model_name=ensemble  \
-  --per_device_train_batch_size=4 \
+  --per_device_train_batch_size=3 \
   --adam_beta1=0.95 \
   --adam_beta2=0.99 \
   --average_tokens_across_devices=True \
