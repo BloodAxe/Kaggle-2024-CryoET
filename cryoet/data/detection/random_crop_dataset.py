@@ -1,4 +1,5 @@
 import random
+from os.path import samestat
 from typing import List
 
 from cryoet.data.augmentations.functional import (
@@ -31,17 +32,19 @@ class RandomCropForPointDetectionDataset(CryoETObjectDetectionDataset, ObjectDet
         self.copy_paste_samples = copy_paste_samples
 
     def __getitem__(self, idx):
+        volume_shape = self.sample.volume_shape
+
         center_xyz = (
-            random.random() * self.volume_shape[2],
-            random.random() * self.volume_shape[0],
-            random.random() * self.volume_shape[1],
+            random.random() * volume_shape[2],
+            random.random() * volume_shape[0],
+            random.random() * volume_shape[1],
         )
 
         data = random_crop_around_point(
-            volume=self.volume_data,
-            centers=self.object_centers_px,
-            labels=self.object_labels,
-            radius=self.object_radii_px,
+            volume=self.sample.volume,
+            centers=self.sample.centers_px,
+            labels=self.sample.labels,
+            radius=self.sample.radius_px,
             z_rotation_limit=self.data_args.z_rotation_limit,
             y_rotation_limit=self.data_args.y_rotation_limit,
             x_rotation_limit=self.data_args.x_rotation_limit,
@@ -59,15 +62,12 @@ class RandomCropForPointDetectionDataset(CryoETObjectDetectionDataset, ObjectDet
             labels=data["labels"],
             radii=data["radius"],
             tile_offsets_zyx=(0, 0, 0),
-            study_name=self.study,
-            mode=self.mode,
-            volume_shape=self.volume_data.shape,
+            study_name=self.sample.study,
+            mode=self.sample.mode,
+            volume_shape=volume_shape,
         )
 
         return data
 
     def __len__(self):
         return self.num_crops
-
-    def __repr__(self):
-        return f"{self.__class__.__name__}(window_size={self.window_size}, study={self.study}, mode={self.mode}, split={self.split}) [{len(self)}]"

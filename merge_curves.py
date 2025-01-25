@@ -15,9 +15,9 @@ class_names = ["apo-ferritin", "beta-galactosidase", "ribosome", "thyroglobulin"
 
 
 def main(*npz_files):
-    per_class_scores = np.stack([np.load(f)["per_class_scores"] for f in npz_files])  # (n_files, n_thresholds, classes)
+    per_class_scores = [np.load(f)["per_class_scores"] for f in npz_files]  # (n_files, n_thresholds, classes)
 
-    per_class_scores = per_class_scores.mean(axis=0)
+    per_class_scores = np.stack(per_class_scores).mean(axis=0)
 
     score_thresholds = np.load(npz_files[0])["score_thresholds"]
 

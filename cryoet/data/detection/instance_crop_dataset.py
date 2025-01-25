@@ -34,12 +34,12 @@ class InstanceCropDatasetForPointDetection(CryoETObjectDetectionDataset, ObjectD
         self.copy_paste_samples = copy_paste_samples
 
         if balance_classes:
-            self.weights = compute_sample_weight("balanced", self.object_labels)
+            self.weights = compute_sample_weight("balanced", self.sample.labels)
         else:
             self.weights = None
 
     def __getitem__(self, idx):
-        centers_px = self.object_centers_px  # x y z
+        centers_px = self.sample.centers_px  # x y z
 
         if self.balance_classes:
             idx = random.choices(range(len(centers_px)), weights=self.weights, k=1)[0]
@@ -48,10 +48,10 @@ class InstanceCropDatasetForPointDetection(CryoETObjectDetectionDataset, ObjectD
             center = random.choice(centers_px)
 
         data = random_crop_around_point(
-            volume=self.volume_data,
-            centers=self.object_centers_px,
-            labels=self.object_labels,
-            radius=self.object_radii_px,
+            volume=self.sample.volume,
+            centers=self.sample.centers_px,
+            labels=self.sample.labels,
+            radius=self.sample.radius_px,
             z_rotation_limit=self.data_args.z_rotation_limit,
             y_rotation_limit=self.data_args.y_rotation_limit,
             x_rotation_limit=self.data_args.x_rotation_limit,
@@ -69,15 +69,12 @@ class InstanceCropDatasetForPointDetection(CryoETObjectDetectionDataset, ObjectD
             labels=data["labels"],
             radii=data["radius"],
             tile_offsets_zyx=(0, 0, 0),
-            study_name=self.study,
-            mode=self.mode,
-            volume_shape=self.volume_data.shape,
+            study_name=self.sample.study,
+            mode=self.sample.mode,
+            volume_shape=self.sample.volume_shape,
         )
 
         return data
 
     def __len__(self):
         return self.num_crops
-
-    def __repr__(self):
-        return f"{self.__class__.__name__}(window_size={self.window_size}, study={self.study}, mode={self.mode}, split={self.split}) [{len(self)}]"

@@ -17,20 +17,7 @@ from cryoet.training.args import DataArguments
 
 class CryoETObjectDetectionDataset(Dataset):
     def __init__(self, sample: AnnotatedVolume):
-
         self.sample = sample
-
-        self.study = sample.study
-        self.split = sample.split
-        self.mode = sample.mode
-        self.volume_data = sample.volume
-        self.volume_shape = sample.volume_shape
-        self.object_centers = sample.centers
-        self.object_labels = sample.labels
-        self.object_radii = sample.radius
-
-        self.object_centers_px = sample.centers_px
-        self.object_radii_px = sample.radius_px
 
 
 def apply_augmentations(data, data_args: DataArguments, copy_paste_samples):

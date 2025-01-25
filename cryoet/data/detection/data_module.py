@@ -62,25 +62,44 @@ class ObjectDetectionDataModule(L.LightningDataModule):
         data_args,
     ):
         datasets = []
-        solution = defaultdict(list)
+        solution = {
+            "experiment": [],
+            "particle_type": [],
+            "x": [],
+            "y": [],
+            "z": [],
+        }
 
         for sample in samples:
 
-            for i, (center, label, radius) in enumerate(zip(sample.centers, sample.labels, sample.radius)):
-                solution["experiment"].append(sample.study)
-                solution["particle_type"].append(CLASS_LABEL_TO_CLASS_NAME[label])
-                solution["x"].append(float(center[0]))
-                solution["y"].append(float(center[1]))
-                solution["z"].append(float(center[2]))
-
             if use_sliding_crops:
-                sliding_dataset = SlidingWindowCryoETObjectDetectionDataset(
-                    sample=sample,
-                    data_args=data_args,
-                    model_args=model_args,
-                    copy_paste_samples=samples,
-                )
-                datasets.append(sliding_dataset)
+                x_options = [False, True] if data_args.validate_on_x_flips else [False]
+                y_options = [False, True] if data_args.validate_on_y_flips else [False]
+                z_options = [False, True] if data_args.validate_on_z_flips else [False]
+
+                for x_flip in x_options:
+                    for y_flip in y_options:
+                        for z_flip in z_options:
+                            print("Flipping", x_flip, y_flip, z_flip)
+                            maybe_flipped_sample = sample.flip(x_flip, y_flip, z_flip)
+
+                            sliding_dataset = SlidingWindowCryoETObjectDetectionDataset(
+                                sample=maybe_flipped_sample,
+                                data_args=data_args,
+                                model_args=model_args,
+                            )
+
+                            for i, (center, label, radius) in enumerate(
+                                zip(maybe_flipped_sample.centers, maybe_flipped_sample.labels, maybe_flipped_sample.radius)
+                            ):
+                                solution["experiment"].append(maybe_flipped_sample.study)
+                                solution["particle_type"].append(CLASS_LABEL_TO_CLASS_NAME[label])
+                                solution["x"].append(float(center[0]))
+                                solution["y"].append(float(center[1]))
+                                solution["z"].append(float(center[2]))
+
+                            print(f"Added {maybe_flipped_sample.study} objects to the dataset")
+                            datasets.append(sliding_dataset)
 
             if use_random_crops:
                 random_crop_dataset = RandomCropForPointDetectionDataset(

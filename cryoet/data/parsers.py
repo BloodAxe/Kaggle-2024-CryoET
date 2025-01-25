@@ -358,6 +358,35 @@ class AnnotatedVolume:
         depth, height, width = self.volume.shape
         return (depth, height, width)
 
+    def flip(self, flip_x, flip_y, flip_z):
+        shape = self.volume.shape
+
+        centers_px = self.centers_px.copy()
+        volume = self.volume
+        if flip_x:
+            volume = np.flip(volume, axis=2)
+            centers_px[:, 0] = (shape[2] - 1) - centers_px[:, 0]
+
+        if flip_y:
+            volume = np.flip(volume, axis=1)
+            centers_px[:, 1] = (shape[1] - 1) - centers_px[:, 1]
+
+        if flip_z:
+            volume = np.flip(volume, axis=0)
+            centers_px[:, 2] = (shape[0] - 1) - centers_px[:, 2]
+
+        return AnnotatedVolume(
+            volume=np.ascontiguousarray(volume),
+            study=self.study + f"_{flip_x=}_{flip_y=}_{flip_z=}",
+            split=self.split,
+            mode=self.mode,
+            centers=centers_px / ANGSTROMS_IN_PIXEL,
+            labels=self.labels.copy(),
+            radius=self.radius.copy(),
+            centers_px=centers_px,
+            radius_px=self.radius_px.copy(),
+        )
+
 
 def read_annotated_volume(root, study, mode, use_6_classes: bool, split="train"):
     volume_data, object_centers, object_labels, object_radii = get_volume_and_objects(
