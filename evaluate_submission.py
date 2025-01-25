@@ -28,8 +28,12 @@ from cryoet.metric import score_submission
 @dataclasses.dataclass
 class PredictionSearchSpace:
     valid_depth_tiles: int | Tuple[int, ...] = dataclasses.field(default=(1,))
-    valid_spatial_tiles: int | Tuple[int, ...] = dataclasses.field(default=(7,))
+    valid_spatial_tiles: int | Tuple[int, ...] = dataclasses.field(default=(6, 7, 8, 9))
     use_weighted_average: bool | Tuple[bool, ...] = dataclasses.field(default=(True,))
+
+    use_z_flip_tta: bool | Tuple[bool, ...] = dataclasses.field(default=(False, True))
+    use_y_flip_tta: bool | Tuple[bool, ...] = dataclasses.field(default=(False, True))
+    use_x_flip_tta: bool | Tuple[bool, ...] = dataclasses.field(default=(False, True))
 
     def product(self):
         for valid_depth_tile in self.valid_depth_tiles:
@@ -135,6 +139,9 @@ def main(
                 use_weighted_average=prediction_hparams.use_weighted_average,
                 device=device,
                 study_name=sample.study,
+                use_z_flip_tta=prediction_hparams.use_z_flip_tta,
+                use_y_flip_tta=prediction_hparams.use_y_flip_tta,
+                use_x_flip_tta=prediction_hparams.use_x_flip_tta,
             )
             pred_scores.append(scores)
             pred_offsets.append(offsets)

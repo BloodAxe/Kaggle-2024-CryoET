@@ -126,6 +126,9 @@ def predict_scores_offsets_from_volume(
     volume,
     window_size: Tuple[int, int, int],
     tiles_per_dim: Tuple[int, int, int],
+    use_z_flip_tta: bool = False,
+    use_y_flip_tta: bool = False,
+    use_x_flip_tta: bool = False,
 ):
     torch.cuda.empty_cache()
     container = None
@@ -157,5 +160,63 @@ def predict_scores_offsets_from_volume(
                 )
 
             container.accumulate_batch(probas, offsets, tile_offsets)
+
+            if use_z_flip_tta:
+                logits_flip, offsets_flip = model(z_flip_volume(tile_volume))
+                probas = [z_flip_volume(x.sigmoid()) for x in logits_flip]
+                offsets = [z_flip_offsets(x) for x in offsets_flip]
+                container.accumulate_batch(probas, offsets, tile_offsets)
+
+            if use_y_flip_tta:
+                logits_flip, offsets_flip = model(y_flip_volume(tile_volume))
+                probas = [y_flip_volume(x.sigmoid()) for x in logits_flip]
+                offsets = [y_flip_offsets(x) for x in offsets_flip]
+                container.accumulate_batch(probas, offsets, tile_offsets)
+
+            if use_x_flip_tta:
+                logits_flip, offsets_flip = model(x_flip_volume(tile_volume))
+                probas = [x_flip_volume(x.sigmoid()) for x in logits_flip]
+                offsets = [x_flip_offsets(x) for x in offsets_flip]
+                container.accumulate_batch(probas, offsets, tile_offsets)
+
     scores, offsets = container.merge_()
     return scores, offsets
+
+
+def flip_volume(volume, dim):
+    """
+    Flip the volume along the specified dimension.
+    :param volume: Volume to flip. B C D H W shape
+    :param dim: Dimension to flip
+    """
+    return volume.flip(dim)
+
+
+def flip_offsets(offsets, dim):
+    offsets_flip = torch.flip(offsets, [dim]).clone()
+    offsets_flip[:, dim] *= -1  # Flip the z-offsets
+    return offsets_flip
+
+
+def z_flip_volume(volume):
+    return flip_volume(volume, 2)
+
+
+def z_flip_offsets(offsets):
+    return flip_offsets(offsets, 2)
+
+
+def y_flip_volume(volume):
+    return flip_volume(volume, 3)
+
+
+def y_flip_offsets(offsets):
+    return flip_offsets(offsets, 3)
+
+
+def x_flip_volume(volume):
+    return flip_volume(volume, 4)
+
+
+def x_flip_offsets(offsets):
+    return flip_offsets(offsets, 4)
