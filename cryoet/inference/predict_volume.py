@@ -40,6 +40,9 @@ def predict_volume(
     use_single_label_per_anchor,
     torch_dtype,
     pre_nms_top_k,
+    use_z_flip_tta: bool,
+    use_y_flip_tta: bool,
+    use_x_flip_tta: bool,
 ):
     scores, offsets = predict_scores_offsets_from_volume(
         volume=volume,
@@ -53,6 +56,9 @@ def predict_volume(
         torch_dtype=torch_dtype,
         study_name=study_name,
         use_weighted_average=use_weighted_average,
+        use_z_flip_tta=use_z_flip_tta,
+        use_y_flip_tta=use_y_flip_tta,
+        use_x_flip_tta=use_x_flip_tta,
     )
 
     submission = postprocess_scores_offsets_into_submission(
@@ -126,9 +132,9 @@ def predict_scores_offsets_from_volume(
     volume,
     window_size: Tuple[int, int, int],
     tiles_per_dim: Tuple[int, int, int],
-    use_z_flip_tta: bool = False,
-    use_y_flip_tta: bool = False,
-    use_x_flip_tta: bool = False,
+    use_z_flip_tta: bool,
+    use_y_flip_tta: bool,
+    use_x_flip_tta: bool,
 ):
     torch.cuda.empty_cache()
     container = None
@@ -192,9 +198,9 @@ def flip_volume(volume, dim):
     return volume.flip(dim)
 
 
-def flip_offsets(offsets, dim):
+def flip_offsets(offsets, dim, offset_dim):
     offsets_flip = torch.flip(offsets, [dim]).clone()
-    offsets_flip[:, dim] *= -1  # Flip the z-offsets
+    offsets_flip[:, offset_dim] *= -1  # Flip the z-offsets
     return offsets_flip
 
 
@@ -203,7 +209,7 @@ def z_flip_volume(volume):
 
 
 def z_flip_offsets(offsets):
-    return flip_offsets(offsets, 2)
+    return flip_offsets(offsets, 2, 2)
 
 
 def y_flip_volume(volume):
@@ -211,7 +217,7 @@ def y_flip_volume(volume):
 
 
 def y_flip_offsets(offsets):
-    return flip_offsets(offsets, 3)
+    return flip_offsets(offsets, 3, 1)
 
 
 def x_flip_volume(volume):
@@ -219,4 +225,4 @@ def x_flip_volume(volume):
 
 
 def x_flip_offsets(offsets):
-    return flip_offsets(offsets, 4)
+    return flip_offsets(offsets, 4, 0)

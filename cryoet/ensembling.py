@@ -7,6 +7,13 @@ import os
 from torch import nn
 from pytorch_toolbelt.utils import get_non_wrapped_model
 
+from cryoet.modelling.detection.dynunet import DynUNetForObjectDetectionConfig, DynUNetForObjectDetection
+from cryoet.modelling.detection.litehrnet import HRNetv2ForObjectDetectionConfig, HRNetv2ForObjectDetection
+from cryoet.modelling.detection.segresnet_object_detection_v2 import (
+    SegResNetForObjectDetectionV2Config,
+    SegResNetForObjectDetectionV2,
+)
+
 
 def infer_model_device(model: nn.Module) -> Optional[torch.device]:
     """
@@ -115,3 +122,26 @@ def trace_model_and_save(window_size: Tuple[int, int, int], model: nn.Module, tr
         ).to(device)
         traced_model = torch.jit.trace(model.eval(), example_input)
         torch.jit.save(traced_model, str(traced_checkpoint_path))
+
+
+def model_from_checkpoint(checkpoint_path: Path, **kwargs):
+    checkpoint_path = Path(checkpoint_path)
+    checkpoint = torch.load(checkpoint_path, map_location="cpu", weights_only=True)
+
+    model_state_dict = checkpoint["state_dict"]
+    model_state_dict = {k.replace("model.", ""): v for k, v in model_state_dict.items() if k.startswith("model.")}
+
+    if "hrnet" in checkpoint_path.stem:
+        config = HRNetv2ForObjectDetectionConfig(**kwargs)
+        model = HRNetv2ForObjectDetection(config)
+    elif "dynunet" in checkpoint_path.stem:
+        config = DynUNetForObjectDetectionConfig(**kwargs)
+        model = DynUNetForObjectDetection(config)
+    elif "segresnetv2" in checkpoint_path.stem:
+        config = SegResNetForObjectDetectionV2Config(**kwargs)
+        model = SegResNetForObjectDetectionV2(config)
+    else:
+        raise ValueError(f"Unknown model type: {checkpoint_path.stem}")
+
+    model.load_state_dict(model_state_dict, strict=True)
+    return model

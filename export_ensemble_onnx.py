@@ -31,29 +31,6 @@ class Ensemble(nn.Module):
         return scores, offsets
 
 
-def model_from_checkpoint(checkpoint_path: Path, **kwargs):
-    checkpoint_path = Path(checkpoint_path)
-    checkpoint = torch.load(checkpoint_path, map_location="cpu", weights_only=True)
-
-    model_state_dict = checkpoint["state_dict"]
-    model_state_dict = {k.replace("model.", ""): v for k, v in model_state_dict.items() if k.startswith("model.")}
-
-    if "hrnet" in checkpoint_path.stem:
-        config = HRNetv2ForObjectDetectionConfig(**kwargs)
-        model = HRNetv2ForObjectDetection(config)
-    elif "dynunet" in checkpoint_path.stem:
-        config = DynUNetForObjectDetectionConfig(**kwargs)
-        model = DynUNetForObjectDetection(config)
-    elif "segresnetv2" in checkpoint_path.stem:
-        config = SegResNetForObjectDetectionV2Config(**kwargs)
-        model = SegResNetForObjectDetectionV2(config)
-    else:
-        raise ValueError(f"Unknown model type: {checkpoint_path.stem}")
-
-    model.load_state_dict(model_state_dict, strict=True)
-    return model
-
-
 def main(*checkpoints, output_onnx: str, opset=15, **kwargs):
     models = [model_from_checkpoint(checkpoint, **kwargs) for checkpoint in checkpoints]
     ensemble = Ensemble(models).cuda().eval()

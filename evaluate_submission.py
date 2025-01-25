@@ -28,7 +28,7 @@ from cryoet.metric import score_submission
 @dataclasses.dataclass
 class PredictionSearchSpace:
     valid_depth_tiles: int | Tuple[int, ...] = dataclasses.field(default=(1,))
-    valid_spatial_tiles: int | Tuple[int, ...] = dataclasses.field(default=(6, 7, 8, 9))
+    valid_spatial_tiles: int | Tuple[int, ...] = dataclasses.field(default=(9,))
     use_weighted_average: bool | Tuple[bool, ...] = dataclasses.field(default=(True,))
 
     use_z_flip_tta: bool | Tuple[bool, ...] = dataclasses.field(default=(False, True))
@@ -39,17 +39,23 @@ class PredictionSearchSpace:
         for valid_depth_tile in self.valid_depth_tiles:
             for valid_spatial_tile in self.valid_spatial_tiles:
                 for use_weighted_average in self.use_weighted_average:
-                    yield PredictionSearchSpace(
-                        valid_depth_tiles=valid_depth_tile,
-                        valid_spatial_tiles=valid_spatial_tile,
-                        use_weighted_average=use_weighted_average,
-                    )
+                    for use_z_flip_tta in self.use_z_flip_tta:
+                        for use_y_flip_tta in self.use_y_flip_tta:
+                            for use_x_flip_tta in self.use_x_flip_tta:
+                                yield PredictionSearchSpace(
+                                    valid_depth_tiles=valid_depth_tile,
+                                    valid_spatial_tiles=valid_spatial_tile,
+                                    use_weighted_average=use_weighted_average,
+                                    use_z_flip_tta=use_z_flip_tta,
+                                    use_y_flip_tta=use_y_flip_tta,
+                                    use_x_flip_tta=use_x_flip_tta,
+                                )
 
 
 @dataclasses.dataclass
 class PostprocessingSearchSpace:
     use_centernet_nms: bool | Tuple[bool, ...] = (True,)
-    use_single_label_per_anchor: bool | Tuple[bool, ...] = (True, False)
+    use_single_label_per_anchor: bool | Tuple[bool, ...] = (False,)
 
     iou_threshold: float | Tuple[float, ...] = (0.85,)
     pre_nms_top_k: int | Tuple[int, ...] = (16536,)  # Does not seems to influence at all (4096, 8192, 16536)
@@ -165,12 +171,23 @@ def main(
                 best_score_per_class=best_score_per_class,
                 averaged_score=averaged_score,
                 file=output_dir
-                / f"{fold=}_{prediction_hparams.valid_depth_tiles}_{prediction_hparams.valid_spatial_tiles}_{prediction_hparams.use_weighted_average}_{postprocess_hparams.use_centernet_nms}_{postprocess_hparams.use_single_label_per_anchor}_{postprocess_hparams.iou_threshold}_{postprocess_hparams.pre_nms_top_k}_{postprocess_hparams.min_score_threshold}.npz",
+                / f"{fold=}_tiles_{prediction_hparams.valid_depth_tiles}_{prediction_hparams.valid_spatial_tiles}_"
+                f"wa{prediction_hparams.use_weighted_average}_"
+                f"nms_{postprocess_hparams.use_centernet_nms}_"
+                f"slpa_{postprocess_hparams.use_single_label_per_anchor}_"
+                f"iou_{postprocess_hparams.iou_threshold}_"
+                f"prenms_{postprocess_hparams.pre_nms_top_k}_"
+                f"minscore_{postprocess_hparams.min_score_threshold}_"
+                f"tta_z_{prediction_hparams.use_z_flip_tta}_y_{prediction_hparams.use_y_flip_tta}_x_{prediction_hparams.use_x_flip_tta}.npz",
             )
 
             final_dataframe["valid_depth_tiles"].append(prediction_hparams.valid_depth_tiles)
             final_dataframe["valid_spatial_tiles"].append(prediction_hparams.valid_spatial_tiles)
             final_dataframe["use_weighted_average"].append(prediction_hparams.use_weighted_average)
+
+            final_dataframe["use_z_flip_tta"].append(prediction_hparams.use_z_flip_tta)
+            final_dataframe["use_y_flip_tta"].append(prediction_hparams.use_y_flip_tta)
+            final_dataframe["use_x_flip_tta"].append(prediction_hparams.use_x_flip_tta)
 
             final_dataframe["use_centernet_nms"].append(postprocess_hparams.use_centernet_nms)
             final_dataframe["use_single_label_per_anchor"].append(postprocess_hparams.use_single_label_per_anchor)

@@ -19,6 +19,12 @@ def test_better_tiles_one_tile():
     tiles = list(compute_better_tiles_1d(630, 128, 7))
     print(len(tiles), tiles, "Overlap", (tiles[0].stop - tiles[0].start) - (tiles[1].start - tiles[0].start))
 
+    tiles = list(compute_better_tiles_1d(630, 128, 8))
+    print(len(tiles), tiles, "Overlap", (tiles[0].stop - tiles[0].start) - (tiles[1].start - tiles[0].start))
+
+    tiles = list(compute_better_tiles_1d(630, 128, 9))
+    print(len(tiles), tiles, "Overlap", (tiles[0].stop - tiles[0].start) - (tiles[1].start - tiles[0].start))
+
 
 def test_tiling():
     volume_shape = (184, 630, 630)
