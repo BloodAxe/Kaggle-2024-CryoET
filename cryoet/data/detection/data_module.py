@@ -39,9 +39,9 @@ class ObjectDetectionDataModule(L.LightningDataModule):
         self.fold = data_args.fold
 
         if self.fold == -1:
-            self.train_studies, self.valid_studies = get_ninja_split(self.runs_dir)
+            self.train_studies, self.valid_studies_original = get_ninja_split(self.runs_dir)
         else:
-            self.train_studies, self.valid_studies = split_data_into_folds(self.runs_dir)[self.fold]
+            self.train_studies, self.valid_studies_original = split_data_into_folds(self.runs_dir)[self.fold]
 
         self.data_args = data_args
         self.model_args = model_args
@@ -135,7 +135,7 @@ class ObjectDetectionDataModule(L.LightningDataModule):
                 train_samples.append(sample)
 
         valid_samples = []
-        for study_name in self.valid_studies:
+        for study_name in self.valid_studies_original:
             for mode in self.valid_modes:
                 sample = read_annotated_volume(
                     root=self.root, study=study_name, mode=mode, split="train", use_6_classes=self.model_args.use_6_classes
@@ -158,6 +158,10 @@ class ObjectDetectionDataModule(L.LightningDataModule):
             model_args=self.model_args,
             data_args=self.data_args,
         )
+
+        # Update the list of validation studies
+        self.valid_studies = [dataset.sample.study for dataset in self.val.datasets]
+        print("Validation studies:", self.valid_studies)
 
     def train_dataloader(self):
         return DataLoader(

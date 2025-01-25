@@ -169,7 +169,7 @@ class ObjectDetectionModel(L.LightningModule):
             #     )
 
             # Disable logging heatmaps since training is stable
-            # self.log_heatmaps(study_name, scores)
+            self.log_heatmaps(study_name, scores)
 
             topk_coords_px, topk_clases, topk_scores = decode_detections_with_nms(
                 scores,
