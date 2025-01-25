@@ -6,14 +6,6 @@ import pandas as pd
 import torch
 
 
-def infer_fold(checkpoint_name):
-    for i in range(5):
-        if f"fold_{i}" in checkpoint_name:
-            return i
-
-    raise ValueError(f"Could not infer fold from checkpoint name: {checkpoint_name}")
-
-
 weights = {
     "apo-ferritin": 1,
     "beta-amylase": 0,

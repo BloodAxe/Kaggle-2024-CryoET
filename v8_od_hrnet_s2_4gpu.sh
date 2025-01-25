@@ -24,6 +24,10 @@ do
   --version_prefix=v7_ \
   --warmup_steps=64 \
   --weight_decay=0.0001 \
-  --x_rotation_limit=25 \
-  --y_rotation_limit=25 --seed=555
+  --x_rotation_limit=15 \
+  --y_rotation_limit=15 \
+  --seed=555 \
+  --validate_on_x_flips=True \
+  --validate_on_y_flips=True \
+  --validate_on_z_flips=True
 done

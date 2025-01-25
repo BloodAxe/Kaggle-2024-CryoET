@@ -145,3 +145,11 @@ def model_from_checkpoint(checkpoint_path: Path, **kwargs):
 
     model.load_state_dict(model_state_dict, strict=True)
     return model
+
+
+def infer_fold(checkpoint_name):
+    for i in range(5):
+        if f"fold_{i}" in checkpoint_name:
+            return i
+
+    raise ValueError(f"Could not infer fold from checkpoint name: {checkpoint_name}")
