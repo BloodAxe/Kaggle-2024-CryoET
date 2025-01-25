@@ -8,6 +8,7 @@ from cryoet.ensembling import model_from_checkpoint
 @torch.no_grad()
 def trace_and_save(checkpoint_path, traced_checkpoint_path, **kwargs):
     model = model_from_checkpoint(checkpoint_path, **kwargs)
+    model = model.cuda().eval()
 
     example_input = torch.randn(1, 1, 192, 128, 128).cuda()
     traced_model = torch.jit.trace(model, example_input)
