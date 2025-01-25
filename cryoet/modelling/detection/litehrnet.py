@@ -42,8 +42,8 @@ class PixelShuffle3d(nn.Module):
 
 
 class HRNetv2ForObjectDetectionConfig(PretrainedConfig):
-    def __init__(self, num_classes=5, activation="relu"):
-        super().__init__()
+    def __init__(self, num_classes=5, activation="relu", **kwargs):
+        super().__init__(**kwargs)
         self.num_classes = num_classes
         self.activation = activation
 
