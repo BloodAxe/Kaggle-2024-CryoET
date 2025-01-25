@@ -328,7 +328,11 @@ def infer_strategy(training_args, fabric):
 
 
 def infer_training_precision(training_args):
-    return "bf16-mixed" if training_args.bf16 else (16 if training_args.fp16 else 32)
+    if training_args.bf16:
+        return "bf16-mixed"
+    if training_args.fp16:
+        return "fp16-mixed"
+    return 32
 
 
 if __name__ == "__main__":
