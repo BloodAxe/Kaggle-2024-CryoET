@@ -358,6 +358,32 @@ class AnnotatedVolume:
         depth, height, width = self.volume.shape
         return (depth, height, width)
 
+    def rot90(self, k: int):
+        volume_rotated = np.rot90(self.volume, k=k, axes=(1, 2))
+        centers_px_rotated = self.centers_px.copy()
+
+        if k % 4 == 1:
+            centers_px_rotated[:, [0, 1]] = centers_px_rotated[:, [1, 0]]
+            centers_px_rotated[:, 0] = self.volume.shape[2] - centers_px_rotated[:, 0] - 1
+        elif k % 4 == 2:
+            centers_px_rotated[:, 0] = self.volume.shape[2] - centers_px_rotated[:, 0] - 1
+            centers_px_rotated[:, 1] = self.volume.shape[1] - centers_px_rotated[:, 1] - 1
+        elif k % 4 == 3:
+            centers_px_rotated[:, [0, 1]] = centers_px_rotated[:, [1, 0]]
+            centers_px_rotated[:, 1] = self.volume.shape[1] - centers_px_rotated[:, 1] - 1
+
+        return AnnotatedVolume(
+            volume=np.ascontiguousarray(volume_rotated),
+            study=(self.study + f"_rot90_{k}") if k != 0 else self.study,
+            split=self.split,
+            mode=self.mode,
+            centers=centers_px_rotated * ANGSTROMS_IN_PIXEL,
+            labels=self.labels.copy(),
+            radius=self.radius.copy(),
+            centers_px=centers_px_rotated,
+            radius_px=self.radius_px.copy(),
+        )
+
     def flip(self, flip_x, flip_y, flip_z):
         depth, height, width = self.volume.shape
 
