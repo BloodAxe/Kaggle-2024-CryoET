@@ -209,8 +209,10 @@ class ObjectDetectionModel(L.LightningModule):
             # print("Added predictions for", study_name, "to dataframe")
 
         submission = pd.DataFrame.from_dict(submission)
+        print(f"Rank {get_rank()} has {len(submission)} predictions")
         submission = all_gather(submission)
         submission = pd.concat(submission, ignore_index=True)
+        print("Rank", get_rank(), "has", len(submission), "predictions after all_gather")
 
         # self.trainer.print(submission.sort_values(by="score", ascending=False).head(20))
 
