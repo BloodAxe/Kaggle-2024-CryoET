@@ -127,6 +127,7 @@ class DataArguments:
     validate_on_z_flips: bool = field(default=False, metadata={"help": "Validate on z-flips"})
     validate_on_y_flips: bool = field(default=False, metadata={"help": "Validate on y-flips"})
     validate_on_x_flips: bool = field(default=False, metadata={"help": "Validate on x-flips"})
+    validate_on_rot90: bool = field(default=False, metadata={"help": "Validate on rot90"})
 
     def _dict_torch_dtype_to_str(self, d: Dict[str, Any]) -> None:
         """

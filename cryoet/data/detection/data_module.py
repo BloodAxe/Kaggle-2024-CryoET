@@ -50,7 +50,7 @@ class ObjectDetectionDataModule(L.LightningDataModule):
         self.val = None
         self.solution = None
         self.train_solution = None
-
+        self.valid_studies
     @classmethod
     def build_dataset_from_samples(
         cls,

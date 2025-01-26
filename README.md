@@ -574,6 +574,24 @@ V4 + V7
 ```
 ```
 
+## v8 (New validation)
+
+```
+python summarize_checkpoints.py runs/v8_segresnetv2_fold_0_6x96x128x128_rc_ic_s2_re_0.2_ce/250125_2218_adamw_torch_lr_1e-04_wd_0.01_b1_0.95_b2_0.99/250125_2218_v8_segresnetv2_fold_0_6x96x128x128_rc_ic_s2_re_0.2_ce_averaged-score-0.8176-at-0.460-0.330-0.225-0.280-0.790.pt runs/v8_segresnetv2_fold_1_6x96x128x128_rc_ic_s2_re_0.2_ce/250126_0021_adamw_torch_lr_1e-04_wd_0.01_b1_0.95_b2_0.99/250126_0021_v8_segresnetv2_fold_1_6x96x128x128_rc_ic_s2_re_0.2_ce_averaged-score-0.8178-at-0.410-0.370-0.310-0.335-0.440.pt runs/v8_segresnetv2_fold_2_6x96x128x128_rc_ic_s2_re_0.2_ce/250126_0306_adamw_torch_lr_1e-04_wd_0.01_b1_0.95_b2_0.99/250126_0306_v8_segresnetv2_fold_2_6x96x128x128_rc_ic_s2_re_0.2_ce_averaged-score-0.8107-at-0.350-0.310-0.505-0.340-0.495.pt runs/v8_segresnetv2_fold_3_6x96x128x128_rc_ic_s2_re_0.2_ce/250126_0524_adamw_torch_lr_1e-04_wd_0.01_b1_0.95_b2_0.99/250126_0524_v8_segresnetv2_fold_3_6x96x128x128_rc_ic_s2_re_0.2_ce_averaged-score-0.8163-at-0.190-0.240-0.590-0.235-0.290.pt runs/v8_segresnetv2_fold_4_6x96x128x128_rc_ic_s2_re_0.2_ce/250126_0744_adamw_torch_lr_1e-04_wd_0.01_b1_0.95_b2_0.99/250126_0744_v8_segresnetv2_fold_4_6x96x128x128_rc_ic_s2_re_0.2_ce_2720-score-0.8401-at-0.260-0.425-0.190-0.245-0.245.ckpt
+python trace_model.py --num_classes=6 --use_stride2=True --use_stride4=False runs/v8_segresnetv2_fold_0_6x96x128x128_rc_ic_s2_re_0.2_ce/250125_2218_adamw_torch_lr_1e-04_wd_0.01_b1_0.95_b2_0.99/250125_2218_v8_segresnetv2_fold_0_6x96x128x128_rc_ic_s2_re_0.2_ce_averaged-score-0.8176-at-0.460-0.330-0.225-0.280-0.790.pt runs/v8_segresnetv2_fold_1_6x96x128x128_rc_ic_s2_re_0.2_ce/250126_0021_adamw_torch_lr_1e-04_wd_0.01_b1_0.95_b2_0.99/250126_0021_v8_segresnetv2_fold_1_6x96x128x128_rc_ic_s2_re_0.2_ce_averaged-score-0.8178-at-0.410-0.370-0.310-0.335-0.440.pt runs/v8_segresnetv2_fold_2_6x96x128x128_rc_ic_s2_re_0.2_ce/250126_0306_adamw_torch_lr_1e-04_wd_0.01_b1_0.95_b2_0.99/250126_0306_v8_segresnetv2_fold_2_6x96x128x128_rc_ic_s2_re_0.2_ce_averaged-score-0.8107-at-0.350-0.310-0.505-0.340-0.495.pt runs/v8_segresnetv2_fold_3_6x96x128x128_rc_ic_s2_re_0.2_ce/250126_0524_adamw_torch_lr_1e-04_wd_0.01_b1_0.95_b2_0.99/250126_0524_v8_segresnetv2_fold_3_6x96x128x128_rc_ic_s2_re_0.2_ce_averaged-score-0.8163-at-0.190-0.240-0.590-0.235-0.290.pt runs/v8_segresnetv2_fold_4_6x96x128x128_rc_ic_s2_re_0.2_ce/250126_0744_adamw_torch_lr_1e-04_wd_0.01_b1_0.95_b2_0.99/250126_0744_v8_segresnetv2_fold_4_6x96x128x128_rc_ic_s2_re_0.2_ce_2720-score-0.8401-at-0.260-0.425-0.190-0.245-0.245.ckpt
+```
+
+|   fold |    score |   AFRT |   BGT |   RBSM |   TRGLB |   VLP | checkpoint                                                                                                               |
+|-------:|---------:|-------:|------:|-------:|--------:|------:|:-------------------------------------------------------------------------------------------------------------------------|
+|      0 | 0.8176   |  0.46  | 0.33  |  0.225 |   0.28  | 0.79  | 250125_2218_v8_segresnetv2_fold_0_6x96x128x128_rc_ic_s2_re_0.2_ce_averaged-score-0.8176-at-0.460-0.330-0.225-0.280-0.790 |
+|      1 | 0.8178   |  0.41  | 0.37  |  0.31  |   0.335 | 0.44  | 250126_0021_v8_segresnetv2_fold_1_6x96x128x128_rc_ic_s2_re_0.2_ce_averaged-score-0.8178-at-0.410-0.370-0.310-0.335-0.440 |
+|      2 | 0.8107   |  0.35  | 0.31  |  0.505 |   0.34  | 0.495 | 250126_0306_v8_segresnetv2_fold_2_6x96x128x128_rc_ic_s2_re_0.2_ce_averaged-score-0.8107-at-0.350-0.310-0.505-0.340-0.495 |
+|      3 | 0.8163   |  0.19  | 0.24  |  0.59  |   0.235 | 0.29  | 250126_0524_v8_segresnetv2_fold_3_6x96x128x128_rc_ic_s2_re_0.2_ce_averaged-score-0.8163-at-0.190-0.240-0.590-0.235-0.290 |
+|      4 | 0.8401   |  0.26  | 0.425 |  0.19  |   0.245 | 0.245 | 250126_0744_v8_segresnetv2_fold_4_6x96x128x128_rc_ic_s2_re_0.2_ce_2720-score-0.8401-at-0.260-0.425-0.190-0.245-0.245     |
+|    777 | 0.8205   |  0.334 | 0.335 |  0.364 |   0.287 | 0.452 | Mean                                                                                                                     |
+|    888 | 0.837876 |  0.3   | 0.31  |  0.225 |   0.26  | 0.415 | mean (curve)                                                                                                             |
+
+
 # Ideas
 
 ## Data
