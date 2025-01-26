@@ -93,7 +93,7 @@ class ObjectDetectionModel(L.LightningModule):
 
     def on_validation_start(self) -> None:
         self.validation_predictions: Dict[str, AccumulatedObjectDetectionPredictionContainer] = {}
-        for study in self.trainer.data_module.valid_studies:
+        for study in self.trainer.datamodule.valid_studies:
             self.validation_predictions[study] = AccumulatedObjectDetectionPredictionContainer.from_shape(
                 shape=(180, 630, 630),  # Hard-coded so far, TODO pull from data module
                 window_size=self.inference_window_size,
