@@ -77,30 +77,32 @@ class ObjectDetectionDataModule(L.LightningDataModule):
                 x_options = [False, True] if data_args.validate_on_x_flips else [False]
                 y_options = [False, True] if data_args.validate_on_y_flips else [False]
                 z_options = [False, True] if data_args.validate_on_z_flips else [False]
+                rot_options = [0, 1, 2, 3] if data_args.validate_on_rot90 else [0]
 
-                for x_flip in x_options:
-                    for y_flip in y_options:
-                        for z_flip in z_options:
-                            print("Flipping", x_flip, y_flip, z_flip)
-                            maybe_flipped_sample = sample.flip(x_flip, y_flip, z_flip)
+                for rot in rot_options:
+                    for x_flip in x_options:
+                        for y_flip in y_options:
+                            for z_flip in z_options:
+                                print("Flipping", x_flip, y_flip, z_flip)
+                                maybe_flipped_sample = sample.rot90(rot).flip(x_flip, y_flip, z_flip)
 
-                            sliding_dataset = SlidingWindowCryoETObjectDetectionDataset(
-                                sample=maybe_flipped_sample,
-                                data_args=data_args,
-                                model_args=model_args,
-                            )
+                                sliding_dataset = SlidingWindowCryoETObjectDetectionDataset(
+                                    sample=maybe_flipped_sample,
+                                    data_args=data_args,
+                                    model_args=model_args,
+                                )
 
-                            for i, (center, label, radius) in enumerate(
-                                zip(maybe_flipped_sample.centers, maybe_flipped_sample.labels, maybe_flipped_sample.radius)
-                            ):
-                                solution["experiment"].append(maybe_flipped_sample.study)
-                                solution["particle_type"].append(CLASS_LABEL_TO_CLASS_NAME[label])
-                                solution["x"].append(float(center[0]))
-                                solution["y"].append(float(center[1]))
-                                solution["z"].append(float(center[2]))
+                                for i, (center, label, radius) in enumerate(
+                                    zip(maybe_flipped_sample.centers, maybe_flipped_sample.labels, maybe_flipped_sample.radius)
+                                ):
+                                    solution["experiment"].append(maybe_flipped_sample.study)
+                                    solution["particle_type"].append(CLASS_LABEL_TO_CLASS_NAME[label])
+                                    solution["x"].append(float(center[0]))
+                                    solution["y"].append(float(center[1]))
+                                    solution["z"].append(float(center[2]))
 
-                            print(f"Added {maybe_flipped_sample.study} objects to the dataset")
-                            datasets.append(sliding_dataset)
+                                print(f"Added {maybe_flipped_sample.study} objects to the dataset")
+                                datasets.append(sliding_dataset)
 
             if use_random_crops:
                 random_crop_dataset = RandomCropForPointDetectionDataset(
