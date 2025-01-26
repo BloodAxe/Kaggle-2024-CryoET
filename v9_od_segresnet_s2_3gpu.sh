@@ -1,4 +1,4 @@
-for FOLD in 0 1 2 3 4
+for FOLD in 1 2 3 4
 do
   torchrun --standalone --nproc-per-node=3 train_od.py \
   --adam_beta1=0.95 --adam_beta2=0.99 \
@@ -33,6 +33,6 @@ do
   --validate_on_x_flips=True \
   --validate_on_y_flips=True \
   --validate_on_z_flips=False \
-  --validate_on_rot90=True
+  --validate_on_rot90=False
 done
 
