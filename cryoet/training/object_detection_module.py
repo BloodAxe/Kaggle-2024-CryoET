@@ -9,7 +9,8 @@ from lightning.pytorch.loggers import TensorBoardLogger
 from lightning.pytorch.utilities.types import LRSchedulerTypeUnion
 from matplotlib import pyplot as plt
 from pytorch_toolbelt.optimization.functional import build_optimizer_param_groups
-from pytorch_toolbelt.utils import all_gather
+from pytorch_toolbelt.utils import all_gather, split_across_nodes, get_rank
+
 from torch import Tensor
 from torch.optim import Optimizer
 from torch.utils.tensorboard import SummaryWriter
@@ -92,13 +93,22 @@ class ObjectDetectionModel(L.LightningModule):
 
     def on_validation_start(self) -> None:
         self.validation_predictions: Dict[str, AccumulatedObjectDetectionPredictionContainer] = {}
+        for study in self.trainer.data_module.valid_studies:
+            self.validation_predictions[study] = AccumulatedObjectDetectionPredictionContainer.from_shape(
+                shape=(180, 630, 630),  # Hard-coded so far, TODO pull from data module
+                window_size=self.inference_window_size,
+                num_classes=self.num_classes,
+                strides=[2],  # Hard-coded so far, TODO pull from model
+                device="cpu",
+                dtype=torch.float16,
+                use_weighted_average=self.data_args.use_weighted_average,
+            )
 
     def accumulate_predictions(self, outputs: ObjectDetectionOutput, batch):
         tile_offsets_zyx = batch["tile_offsets_zyx"]
 
         scores = [torch.sigmoid(p).cpu() for p in outputs.logits]
         offsets = [p.cpu() for p in outputs.offsets]
-        num_classes = scores[0].shape[1]
 
         batch_size = len(batch["study"])
         for i in range(batch_size):
@@ -106,17 +116,7 @@ class ObjectDetectionModel(L.LightningModule):
             volume_shape = batch["volume_shape"][i]
             tile_coord = tile_offsets_zyx[i]
 
-            if study not in self.validation_predictions:
-                self.validation_predictions[study] = AccumulatedObjectDetectionPredictionContainer.from_shape(
-                    volume_shape,
-                    window_size=self.inference_window_size,
-                    num_classes=num_classes,
-                    strides=outputs.strides,
-                    device="cpu",
-                    dtype=torch.float16,
-                    use_weighted_average=self.data_args.use_weighted_average,
-                )
-
+            assert tuple(volume_shape) == (180, 630, 630), f"Volume shape is {volume_shape}"
             self.validation_predictions[study].accumulate(
                 scores_list=[s[i] for s in scores],
                 offsets_list=[o[i] for o in offsets],
@@ -146,7 +146,11 @@ class ObjectDetectionModel(L.LightningModule):
             "virus-like-particle": 1,
         }
 
-        for study_name in self.trainer.datamodule.valid_studies:
+        all_scores = {}
+        all_offsets = {}
+        all_studies = self.trainer.datamodule.valid_studies
+
+        for study_name in all_studies:
             preds = self.validation_predictions.get(study_name, None)
             preds = all_gather(preds)
 
@@ -159,7 +163,15 @@ class ObjectDetectionModel(L.LightningModule):
                 accumulated_predictions += p
 
             scores, offsets = accumulated_predictions.merge_()
+            all_scores[study_name] = scores
+            all_offsets[study_name] = offsets
 
+        # By this point, all_scores and all_offsets are gathered and we can distribute postprocessing across nodes
+        rank_local_studies = split_across_nodes(all_studies)
+
+        print(f"Rank {get_rank()} got local studies {rank_local_studies}")
+
+        for study_name in rank_local_studies:
             # Save averaged heatmap for further postprocessing hyperparam tuning
             # if self.trainer.is_global_zero:
             #     torch.save({"scores": scores, "offsets": offsets}, os.path.join(self.trainer.log_dir, f"{study_name}.pth"))
@@ -172,9 +184,9 @@ class ObjectDetectionModel(L.LightningModule):
             # self.log_heatmaps(study_name, scores)
 
             topk_coords_px, topk_clases, topk_scores = decode_detections_with_nms(
-                scores,
-                offsets,
-                strides=accumulated_predictions.strides,
+                all_scores[study_name],
+                all_offsets[study_name],
+                strides=[2],
                 class_sigmas=TARGET_SIGMAS,
                 min_score=score_thresholds.min(),
                 iou_threshold=0.8,
@@ -197,12 +209,12 @@ class ObjectDetectionModel(L.LightningModule):
             # print("Added predictions for", study_name, "to dataframe")
 
         submission = pd.DataFrame.from_dict(submission)
+        submission = all_gather(submission)
+        submission = pd.concat(submission, ignore_index=True)
 
         # self.trainer.print(submission.sort_values(by="score", ascending=False).head(20))
 
-        score_values = []
         score_details = []
-
         for score_threshold in score_thresholds:
             keep_mask = submission["score"] >= score_threshold
             submission_filtered = submission[keep_mask]
@@ -213,7 +225,6 @@ class ObjectDetectionModel(L.LightningModule):
                 distance_multiplier=0.5,
                 beta=4,
             )
-            score_values.append(s[0])
             score_details.append(s[1])
 
         keys = self.class_names
@@ -229,9 +240,6 @@ class ObjectDetectionModel(L.LightningModule):
 
         self.per_class_scores = torch.from_numpy(per_class_scores).to(self.device)
 
-        # if self.trainer.is_global_zero:
-        #     print("Scores", list(zip(score_values, score_thresholds)))
-
         self.log_plots(
             dict((key, (score_thresholds, per_class_scores[:, i])) for i, key in enumerate(keys)), "Threshold", "Score"
         )
@@ -246,7 +254,7 @@ class ObjectDetectionModel(L.LightningModule):
             on_epoch=True,
             prog_bar=True,
             logger=True,
-            sync_dist=False,
+            sync_dist=True,
             rank_zero_only=False,
         )
 
