@@ -12,7 +12,7 @@ do
   --early_stopping=25 \
   --fold=$FOLD \
   --learning_rate=1e-3 \
-  --optim=sgd \
+  --optim=sgd --ema \
   --max_grad_norm=3 \
   --ddp_find_unused_parameters=True \
   --model_name=segresnetv2 \
