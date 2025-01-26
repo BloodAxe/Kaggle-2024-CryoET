@@ -359,18 +359,20 @@ class AnnotatedVolume:
         return (depth, height, width)
 
     def rot90(self, k: int):
+        depth, height, width = self.volume.shape
         volume_rotated = np.rot90(self.volume, k=k, axes=(1, 2))
         centers_px_rotated = self.centers_px.copy()
 
         if k % 4 == 1:
-            centers_px_rotated[:, [0, 1]] = centers_px_rotated[:, [1, 0]]
-            centers_px_rotated[:, 0] = self.volume.shape[2] - centers_px_rotated[:, 0] - 1
+            centers_px_rotated[:, [0, 1]] = centers_px_rotated[:, [1, 0]].copy()
+            centers_px_rotated[:, 1] = width - centers_px_rotated[:, 1] - 1
+
         elif k % 4 == 2:
-            centers_px_rotated[:, 0] = self.volume.shape[2] - centers_px_rotated[:, 0] - 1
-            centers_px_rotated[:, 1] = self.volume.shape[1] - centers_px_rotated[:, 1] - 1
+            centers_px_rotated[:, 0] = width - centers_px_rotated[:, 0] - 1
+            centers_px_rotated[:, 1] = height - centers_px_rotated[:, 1] - 1
         elif k % 4 == 3:
-            centers_px_rotated[:, [0, 1]] = centers_px_rotated[:, [1, 0]]
-            centers_px_rotated[:, 1] = self.volume.shape[1] - centers_px_rotated[:, 1] - 1
+            centers_px_rotated[:, [0, 1]] = centers_px_rotated[:, [1, 0]].copy()
+            centers_px_rotated[:, 0] = height - centers_px_rotated[:, 0] - 1
 
         return AnnotatedVolume(
             volume=np.ascontiguousarray(volume_rotated),
