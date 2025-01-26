@@ -51,14 +51,19 @@ def main(
     data_path: str = None,
     output_strides: List[int] = (2,),
     torch_dtype=torch.float16,
-    valid_depth_window_size=128,
+    valid_depth_window_size=192,
     valid_spatial_window_size=128,
-    valid_depth_tiles=3,
-    valid_spatial_tiles=8,
+    valid_depth_tiles=1,
+    valid_spatial_tiles=6,
     iou_threshold=0.85,
     pre_nms_top_k=16536,
+    validate_on_x_flips=False,
+    validate_on_y_flips=False,
+    validate_on_z_flips=False,
+    validate_on_rot90=False,
     device="cuda",
 ):
+    function_args = locals()
     if data_path is None:
         data_path = os.environ.get("CRYOET_DATA_ROOT")
 
@@ -74,12 +79,21 @@ def main(
         fold = infer_fold(checkpoint_path)
         models_per_fold[fold].append(checkpoint_path)
 
-    summary_file = open(output_dir / "summary.txt", "w")
+    summary_file = open(output_dir / "summary.txt", "a")
 
     score_thresholds = None
     oof_per_class_scores = []
     oof_averaged_score = []
     oof_best_threshold_per_class = []
+
+    summary_file.write(f"Ensemble of {len(checkpoints)} models\n")
+    for fold, checkpoints in models_per_fold.items():
+        summary_file.write(f"Fold {fold}: {checkpoints}\n")
+
+    summary_file.write("\n")
+    summary_file.write("Hyperparameters\n")
+    for k, v in function_args.items():
+        summary_file.write(f"{k}: {v}\n")
 
     folds = list(sorted(list(models_per_fold.keys())))
     for fold in folds:
@@ -90,6 +104,10 @@ def main(
                 checkpoints=checkpoints,
                 fold=fold,
                 data_path=data_path,
+                validate_on_x_flips=validate_on_x_flips,
+                validate_on_y_flips=validate_on_y_flips,
+                validate_on_z_flips=validate_on_z_flips,
+                validate_on_rot90=validate_on_rot90,
                 prediction_params=PredictionParams(
                     valid_depth_window_size=valid_depth_window_size,
                     valid_spatial_window_size=valid_spatial_window_size,
@@ -140,6 +158,13 @@ def main(
     print("Median of thresholds     ", np.array2string(median_of_thresholds, separator=",", precision=3))
     print("Curve averaged thresholds", np.array2string(curve_averaged_thresholds, separator=",", precision=3))
 
+    summary_file.write(f"Mean of thresholds {np.array2string(mean_of_thresholds, separator=',', precision=3)}\n")
+    summary_file.write(f"Median of thresholds {np.array2string(median_of_thresholds, separator=',', precision=3)}\n")
+    summary_file.write(f"Curve averaged thresholds {np.array2string(curve_averaged_thresholds, separator=',', precision=3)}\n")
+    summary_file.write(f"CV score: {np.mean(oof_averaged_score)} std: {np.std(oof_averaged_score)}\n")
+
+    summary_file.close()
+
     num_folds = len(folds)
     f, ax = plt.subplots(1, num_folds + 1, figsize=(5 * (num_folds + 1), 5))
 
@@ -159,7 +184,10 @@ def main(
     ax[-1].legend(class_names)
 
     f.tight_layout()
-    f.savefig(output_dir / "score_thresholds.png")
+    f.savefig(
+        output_dir
+        / f"plot_rot{validate_on_rot90}_z{validate_on_z_flips}_y{validate_on_y_flips}_x{validate_on_x_flips}_{valid_depth_window_size}x{valid_depth_tiles}_{valid_spatial_window_size}x{valid_spatial_tiles}.png"
+    )
     f.show()
 
 
@@ -167,6 +195,10 @@ def evaluate_models_on_fold(
     checkpoints,
     fold,
     data_path: Path,
+    validate_on_x_flips,
+    validate_on_y_flips,
+    validate_on_z_flips,
+    validate_on_rot90,
     prediction_params: PredictionParams,
     postprocess_hparams: PostprocessingParams,
     output_strides=(2,),
@@ -183,69 +215,81 @@ def evaluate_models_on_fold(
         prediction_params.valid_spatial_window_size,
     )
 
-    solution = defaultdict(list)
-
-    valid_samples = []
-    for study_name in valid_studies:
-        sample = read_annotated_volume(root=data_path, study=study_name, mode="denoised", split="train", use_6_classes=False)
-        valid_samples.append(sample)
-
-        for i, (center, label, radius) in enumerate(zip(sample.centers, sample.labels, sample.radius)):
-            solution["experiment"].append(sample.study)
-            solution["particle_type"].append(CLASS_LABEL_TO_CLASS_NAME[label])
-            solution["x"].append(float(center[0]))
-            solution["y"].append(float(center[1]))
-            solution["z"].append(float(center[2]))
-
-    solution = pd.DataFrame.from_dict(solution)
-
+    study_names = []
     pred_scores = []
     pred_offsets = []
+    solution = defaultdict(list)
 
-    for sample in valid_samples:
-        scores, offsets = predict_scores_offsets_from_volume(
-            volume=sample.volume,
-            models=models,
-            output_strides=output_strides,
-            window_size=window_size,
-            tiles_per_dim=(
-                prediction_params.valid_depth_tiles,
-                prediction_params.valid_spatial_tiles,
-                prediction_params.valid_spatial_tiles,
-            ),
-            batch_size=1,
-            num_workers=0,
-            torch_dtype=torch_dtype,
-            use_weighted_average=prediction_params.use_weighted_average,
-            device=device,
-            study_name=sample.study,
-            use_z_flip_tta=prediction_params.use_z_flip_tta,
-            use_y_flip_tta=prediction_params.use_y_flip_tta,
-            use_x_flip_tta=prediction_params.use_x_flip_tta,
-        )
-        pred_scores.append(scores)
-        pred_offsets.append(offsets)
+    for study_name in valid_studies:
+        sample = read_annotated_volume(root=data_path, study=study_name, mode="denoised", split="train", use_6_classes=False)
 
-    submission = postprocess_into_submission(pred_scores, pred_offsets, postprocess_hparams, output_strides, valid_samples)
+        x_options = [False, True] if validate_on_x_flips else [False]
+        y_options = [False, True] if validate_on_y_flips else [False]
+        z_options = [False, True] if validate_on_z_flips else [False]
+        rot_options = [0, 1, 2, 3] if validate_on_rot90 else [0]
+
+        for rot in rot_options:
+            for x_flip in x_options:
+                for y_flip in y_options:
+                    for z_flip in z_options:
+                        print("Flipping", x_flip, y_flip, z_flip)
+                        maybe_flipped_sample = sample.rot90(rot).flip(x_flip, y_flip, z_flip)
+
+                        for i, (center, label, radius) in enumerate(
+                            zip(maybe_flipped_sample.centers, maybe_flipped_sample.labels, maybe_flipped_sample.radius)
+                        ):
+                            solution["experiment"].append(maybe_flipped_sample.study)
+                            solution["particle_type"].append(CLASS_LABEL_TO_CLASS_NAME[label])
+                            solution["x"].append(float(center[0]))
+                            solution["y"].append(float(center[1]))
+                            solution["z"].append(float(center[2]))
+
+                        study_names.append(maybe_flipped_sample.study)
+
+                        scores, offsets = predict_scores_offsets_from_volume(
+                            volume=maybe_flipped_sample.volume,
+                            models=models,
+                            output_strides=output_strides,
+                            window_size=window_size,
+                            tiles_per_dim=(
+                                prediction_params.valid_depth_tiles,
+                                prediction_params.valid_spatial_tiles,
+                                prediction_params.valid_spatial_tiles,
+                            ),
+                            batch_size=1,
+                            num_workers=0,
+                            torch_dtype=torch_dtype,
+                            use_weighted_average=prediction_params.use_weighted_average,
+                            device=device,
+                            study_name=maybe_flipped_sample.study,
+                            use_z_flip_tta=prediction_params.use_z_flip_tta,
+                            use_y_flip_tta=prediction_params.use_y_flip_tta,
+                            use_x_flip_tta=prediction_params.use_x_flip_tta,
+                        )
+                        pred_scores.append(scores)
+                        pred_offsets.append(offsets)
+
+    solution = pd.DataFrame.from_dict(solution)
+    submission = postprocess_into_submission(pred_scores, pred_offsets, postprocess_hparams, output_strides, study_names)
 
     class_names = [cls["name"] for cls in TARGET_5_CLASSES]
     return compute_optimal_thresholds(class_names, solution, submission)
 
 
 def postprocess_into_submission(
-    pred_scores, pred_offsets, postprocess_hparams: PostprocessingParams, output_strides, valid_samples
+    pred_scores, pred_offsets, postprocess_hparams: PostprocessingParams, output_strides, study_names
 ):
     submissions = []
     for (
-        sample,
+        study_name,
         scores,
         offsets,
-    ) in zip(valid_samples, pred_scores, pred_offsets):
+    ) in zip(study_names, pred_scores, pred_offsets):
         submission_for_sample = postprocess_scores_offsets_into_submission(
             scores=scores,
             offsets=offsets,
             output_strides=output_strides,
-            study_name=sample.study,
+            study_name=study_name,
             iou_threshold=postprocess_hparams.iou_threshold,
             score_thresholds=postprocess_hparams.min_score_threshold,
             pre_nms_top_k=postprocess_hparams.pre_nms_top_k,
