@@ -33,7 +33,7 @@ class ModelArguments:
     valid_depth_num_tiles: int = field(default=1)
 
     valid_spatial_window_size: int = field(default=128)
-    valid_spatial_num_tiles: int = field(default=6)
+    valid_spatial_num_tiles: int = field(default=7)
 
     use_centernet_nms: bool = field(
         default=True, metadata={"help": "Enable CenterNet NMS when decoding. Relevant only for OD models."}
