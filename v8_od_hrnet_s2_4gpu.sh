@@ -21,7 +21,7 @@ do
   --use_instance_crops=True \
   --use_random_crops=True \
   --use_stride4=False \
-  --version_prefix=v7_ \
+  --version_prefix=v8_ \
   --warmup_steps=64 \
   --weight_decay=0.0001 \
   --x_rotation_limit=15 \
