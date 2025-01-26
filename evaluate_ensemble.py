@@ -51,11 +51,11 @@ def main(
     data_path: str = None,
     output_strides: List[int] = (2,),
     torch_dtype=torch.float16,
-    valid_depth_window_size=192,
+    valid_depth_window_size=128,
     valid_spatial_window_size=128,
-    valid_depth_tiles=1,
-    valid_spatial_tiles=6,
-    iou_threshold=0.8,
+    valid_depth_tiles=3,
+    valid_spatial_tiles=8,
+    iou_threshold=0.85,
     pre_nms_top_k=16536,
     device="cuda",
 ):
@@ -117,9 +117,9 @@ def main(
         oof_best_threshold_per_class.append(best_threshold_per_class)
 
         summary_file.write(f"Fold {fold}\n")
-        summary_file.write(f"Per class scores: {best_threshold_per_class}\n")
-        summary_file.write(f"Per class thresholds: {best_score_per_class}\n")
-        summary_file.write(f"Averaged score: {averaged_score}\n")
+        summary_file.write(f"Per class thresholds: {best_threshold_per_class}\n")
+        summary_file.write(f"Per class scores:     {best_score_per_class}\n")
+        summary_file.write(f"Averaged score:       {averaged_score}\n")
         summary_file.write("\n")
 
     # Now do something fancy with the OOF scores
