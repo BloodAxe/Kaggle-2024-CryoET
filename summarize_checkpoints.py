@@ -5,6 +5,7 @@ import numpy as np
 import pandas as pd
 import torch
 
+from cryoet.ensembling import infer_fold
 
 weights = {
     "apo-ferritin": 1,
