@@ -116,7 +116,7 @@ class ObjectDetectionModel(L.LightningModule):
             volume_shape = batch["volume_shape"][i]
             tile_coord = tile_offsets_zyx[i]
 
-            assert tuple(volume_shape) == (180, 630, 630), f"Volume shape is {volume_shape}"
+            assert tuple(volume_shape) == (184, 630, 630), f"Volume shape is {volume_shape}"
             self.validation_predictions[study].accumulate(
                 scores_list=[s[i] for s in scores],
                 offsets_list=[o[i] for o in offsets],
