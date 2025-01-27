@@ -12,23 +12,22 @@ do
   --ddp_find_unused_parameters=True \
   --early_stopping=25 \
   --fold=$FOLD \
-  --learning_rate=1e-4 \
+  --learning_rate=5e-5 \
   --max_grad_norm=3 \
   --ddp_find_unused_parameters=True \
   --model_name=segresnetv2 \
   --num_train_epochs=75 \
-  --per_device_train_batch_size=4 \
+  --per_device_train_batch_size=3 \
   --pretrained_backbone_path=pretrained/wholeBody_ct_segmentation/models/model.pt \
   --random_erase_prob=0.2 \
   --scale_limit=0.1 \
-  --ema \
   --use_6_classes=True \
   --use_cross_entropy_loss=True \
   --use_instance_crops=True \
   --use_random_crops=True \
   --use_stride4=False \
   --version_prefix=v10_ \
-  --warmup_steps=64 \
+  --warmup_steps=128 \
   --weight_decay=0.01 \
   --y_rotation_limit=10 \
   --x_rotation_limit=10 \
