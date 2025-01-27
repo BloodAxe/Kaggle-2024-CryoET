@@ -167,6 +167,8 @@ class ObjectDetectionModel(L.LightningModule):
             all_scores[study_name] = scores
             all_offsets[study_name] = offsets
 
+            self.log_heatmaps(study_name, scores)
+
         # By this point, all_scores and all_offsets are gathered and we can distribute postprocessing across nodes
         rank_local_studies = split_across_nodes(all_studies)
 
@@ -180,9 +182,6 @@ class ObjectDetectionModel(L.LightningModule):
             #     self.trainer.datamodule.solution.to_csv(
             #         os.path.join(self.trainer.log_dir, f"{study_name}.csv"),
             #     )
-
-            # Disable logging heatmaps since training is stable
-            # self.log_heatmaps(study_name, scores)
 
             topk_coords_px, topk_clases, topk_scores = decode_detections_with_nms(
                 all_scores[study_name],
