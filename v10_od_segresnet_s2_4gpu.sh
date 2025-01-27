@@ -27,7 +27,7 @@ do
   --use_random_crops=True \
   --use_stride4=False \
   --version_prefix=v10_ \
-  --assigned_min_iou_for_anchor=0.8 \
+  --assigned_min_iou_for_anchor=0.9 \
   --warmup_steps=128 \
   --weight_decay=0.01 \
   --y_rotation_limit=10 \
