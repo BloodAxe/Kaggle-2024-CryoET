@@ -2,7 +2,7 @@ import numpy as np
 import torch
 
 from cryoet.data.augmentations.functional import random_rotate90_volume, random_flip_volume, random_rotate90_volume_around_z
-from .point_detection_dataset import CryoETPointDetectionDataset, compute_tiles, encode_centers_to_heatmap
+from .point_detection_dataset import CryoETPointDetectionDataset, encode_centers_to_heatmap
 
 
 class SlidingWindowCryoETPointDetectionDataset(CryoETPointDetectionDataset):
