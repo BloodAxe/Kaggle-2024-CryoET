@@ -1,17 +1,39 @@
+import numpy as np
 import timm.models.maxxvit
 import torch
 from pytorch_toolbelt.utils import count_parameters
 
 from cryoet.modelling.detection.dynunet import DynUNetForObjectDetectionConfig, DynUNetForObjectDetection
-from cryoet.modelling.detection.functional import convert_2d_to_3d
+from cryoet.modelling.detection.functional import convert_2d_to_3d, gaussian_blur_3d
 from cryoet.modelling.detection.maxvit_unet25d import MaxVitUnet25d, MaxVitUnet25dConfig
 from cryoet.modelling.detection.segresnet_object_detection_v2 import (
     SegResNetForObjectDetectionV2Config,
     SegResNetForObjectDetectionV2,
 )
+from cryoet.modelling.detection.task_aligned_assigner import check_points_inside_bboxes
 from cryoet.modelling.detection.unet3d_detection import UNet3DForObjectDetectionConfig, UNet3DForObjectDetection
 
 from cryoet.modelling.detection.unetr import SwinUNETRForObjectDetectionConfig, SwinUNETRForObjectDetection
+
+
+def test_check_points_inside_bboxes():
+    points = torch.arange(20).float()
+    points = torch.stack([points, torch.zeros_like(points), torch.zeros_like(points)], dim=-1)
+    points = points.unsqueeze(0)  # [1, 20, 3]
+
+    true_centers = torch.tensor([0, 0, 0]).view(1, 1, 3).repeat(1, 5, 1).float()  # Center
+
+    true_sigmas = torch.tensor([6, 9, 15, 13, 13.5]).float().view(1, -1, 1)  # Radius
+
+    mask = check_points_inside_bboxes(points, true_centers, true_sigmas)
+    print(mask)
+
+
+def test_gaussian_blur_3d():
+
+    data = torch.randn(1, 6, 128, 128, 128)
+    data_blur = gaussian_blur_3d(data, 3, 1)
+    print(data_blur.shape)
 
 
 def test_convertmaxvit():

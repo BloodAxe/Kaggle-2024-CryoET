@@ -65,6 +65,7 @@ class ObjectDetectionModel(L.LightningModule):
             use_l1_loss=self.train_args.use_l1_loss,
             use_offset_head=self.model_args.use_offset_head,
             assigner_max_anchors_per_point=self.model_args.assigner_max_anchors_per_point,
+            assigned_min_iou_for_anchor=self.model_args.assigned_min_iou_for_anchor,
             assigner_alpha=self.model_args.assigner_alpha,
             assigner_beta=self.model_args.assigner_beta,
             use_varifocal_loss=self.model_args.use_varifocal_loss,

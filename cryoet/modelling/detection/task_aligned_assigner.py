@@ -82,7 +82,7 @@ def check_points_inside_bboxes(anchor_points: Tensor, gt_centers: Tensor, gt_rad
 
 class TaskAlignedAssigner(nn.Module):
 
-    def __init__(self, max_anchors_per_point=13, alpha=1.0, beta=6.0, eps=1e-9):
+    def __init__(self, max_anchors_per_point, assigned_min_iou_for_anchor, alpha=1.0, beta=6.0, eps=1e-9):
         """
 
         :param max_anchors_per_point: Maximum number of achors that is selected for each gt box
@@ -92,6 +92,7 @@ class TaskAlignedAssigner(nn.Module):
         """
         super(TaskAlignedAssigner, self).__init__()
         self.topk = max_anchors_per_point
+        self.assigned_min_iou_for_anchor = assigned_min_iou_for_anchor
         self.alpha = alpha
         self.beta = beta
         self.eps = eps
@@ -165,7 +166,7 @@ class TaskAlignedAssigner(nn.Module):
         alignment_metrics = bbox_cls_scores.pow(self.alpha) * ious.pow(self.beta)
 
         # check the positive sample's center in gt, [B, n, L]
-        is_in_gts = check_points_inside_bboxes(anchor_points, true_centers, true_sigmas)
+        is_in_gts = check_points_inside_bboxes(anchor_points, true_centers, true_sigmas, eps=self.assigned_min_iou_for_anchor)
 
         # select topk largest alignment metrics pred bbox as candidates
         # for each gt, [B, n, L]

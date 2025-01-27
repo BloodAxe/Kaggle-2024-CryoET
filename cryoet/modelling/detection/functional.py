@@ -127,6 +127,7 @@ def object_detection_loss(
     average_tokens_across_devices: bool = False,
     use_l1_loss: bool = False,
     use_offset_head: bool = True,
+    assigned_min_iou_for_anchor=0.05,
     assigner_max_anchors_per_point: int = 13,
     assigner_alpha=1.0,
     assigner_beta=6.0,
@@ -166,6 +167,7 @@ def object_detection_loss(
     # 4) Perform dynamic anchor assignment
     assigner = TaskAlignedAssigner(
         max_anchors_per_point=assigner_max_anchors_per_point,
+        assigned_min_iou_for_anchor=assigned_min_iou_for_anchor,
         alpha=assigner_alpha,
         beta=assigner_beta,
     )
@@ -254,6 +256,8 @@ def decode_detections_with_nms(
     use_single_label_per_anchor: bool = True,
     use_centernet_nms: bool = False,
     pre_nms_top_k: Optional[int] = None,
+    class_map_gaussian_smoothing_kernel=0,
+    centernet_nms_kernel: Union[int, Tuple[int, int, int]] = 3,
 ) -> Tuple[torch.Tensor, torch.Tensor, torch.Tensor]:
     """
     Decode detections from scores and centers with NMS
@@ -279,8 +283,14 @@ def decode_detections_with_nms(
     if len(min_score) == 1:
         min_score = np.full(num_classes, min_score[0], dtype=np.float32)
 
+    if class_map_gaussian_smoothing_kernel > 0:
+        scores = [
+            gaussian_blur_3d(s.unsqueeze(0), kernel_size=class_map_gaussian_smoothing_kernel, sigma=1.0).squeeze(0)
+            for s in scores
+        ]
+
     if use_centernet_nms:
-        scores = [centernet_heatmap_nms(s.unsqueeze(0)).squeeze(0) for s in scores]
+        scores = [centernet_heatmap_nms(s.unsqueeze(0), kernel=centernet_nms_kernel).squeeze(0) for s in scores]
 
     scores, centers, _ = decode_detections([s.unsqueeze(0) for s in scores], [o.unsqueeze(0) for o in offsets], strides)
     scores = scores.squeeze(0)
@@ -351,6 +361,28 @@ def decode_detections_with_nms(
 
     print(f"Final predictions after NMS: {final_centers.size(0)}")
     return final_centers, final_labels, final_scores
+
+
+def gaussian_blur_3d(x: Tensor, kernel_size: int, sigma: float):
+    # build gaussian kernel
+    kd, kh, kw = as_tuple_of_3(kernel_size)
+    z = torch.linspace(-(kd // 2), kd // 2, steps=kd)
+    y = torch.linspace(-(kh // 2), kh // 2, steps=kh)
+    x_ = torch.linspace(-(kw // 2), kw // 2, steps=kw)
+
+    zz, yy, xx = torch.meshgrid(z, y, x_, indexing="ij")
+    kernel_3d = torch.exp(-(xx**2 + yy**2 + zz**2) / (2 * sigma**2))
+    kernel_3d /= kernel_3d.sum()
+    #  normalize
+    kernel_3d = kernel_3d.to(x.device).to(x.dtype)
+
+    C = x.shape[1]
+    kernel_3d = kernel_3d.view(1, 1, *kernel_3d.shape)
+    kernel_3d = kernel_3d.repeat(C, 1, 1, 1, 1)
+
+    # apply gaussian kernel
+    x = torch.nn.functional.conv3d(x, weight=kernel_3d, bias=None, padding=kernel_size // 2, stride=1, groups=C)
+    return x
 
 
 def centernet_heatmap_nms(scores, kernel: Union[int, Tuple[int, int, int]] = 3):

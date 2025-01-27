@@ -49,6 +49,9 @@ class ModelArguments:
     use_stride2: bool = field(default=True)
     use_6_classes: bool = field(default=False, metadata={"help": "Use 6 classes instead of 5 (include beta-amylase)"})
 
+    assigned_min_iou_for_anchor: float = field(
+        default=0.05, metadata={"help": "Minimum IOU for anchor assignment to consider anchor to be positive"}
+    )
     assigner_max_anchors_per_point: int = field(default=13, metadata={"help": "Maximum number of anchors per point"})
     assigner_alpha: float = field(default=1.0, metadata={"help": "Alpha"})
     assigner_beta: float = field(default=6.0, metadata={"help": "Beta"})
