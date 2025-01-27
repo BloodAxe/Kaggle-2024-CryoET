@@ -1,6 +1,6 @@
 python export_ensemble_onnx.py \
   --num_classes=6 --use_stride4=False --use_stride2=True --depth=192 \
-  --output_onnx=v4_segresnet_dynunet_ensemble_192x128x128.onnx \
+  --output_onnx=ensembles/v4_segresnet_dynunet_ensemble_192x128x128.onnx \
   runs/dynunet_fold_0_6x96x128x128_rc_ic_s2_re_0.05/250118_0912_adamw_torch_lr_3e-04_wd_0.0001_b1_0.95_b2_0.99_ema_0.995_10/dynunet_fold_0_6x96x128x128_rc_ic_s2_re_0.05/lightning_logs/version_0/checkpoints/250118_0912_dynunet_fold_0_6x96x128x128_rc_ic_s2_re_0.05_1484-score-0.8272-at-0.145-0.330-0.215-0.235-0.405.ckpt \
   runs/dynunet_fold_1_6x96x128x128_rc_ic_s2_re_0.05/250118_0953_adamw_torch_lr_3e-04_wd_0.0001_b1_0.95_b2_0.99_ema_0.995_10/dynunet_fold_1_6x96x128x128_rc_ic_s2_re_0.05/lightning_logs/version_0/checkpoints/250118_0953_dynunet_fold_1_6x96x128x128_rc_ic_s2_re_0.05_4982-score-0.8337-at-0.390-0.185-0.215-0.210-0.235.ckpt \
   runs/dynunet_fold_2_6x96x128x128_rc_ic_s2_re_0.05/250118_1112_adamw_torch_lr_3e-04_wd_0.0001_b1_0.95_b2_0.99_ema_0.995_10/dynunet_fold_2_6x96x128x128_rc_ic_s2_re_0.05/lightning_logs/version_0/checkpoints/250118_1112_dynunet_fold_2_6x96x128x128_rc_ic_s2_re_0.05_2650-score-0.7971-at-0.425-0.160-0.550-0.275-0.650.ckpt \
@@ -14,7 +14,7 @@ python export_ensemble_onnx.py \
 
 python export_ensemble_onnx.py \
   --num_classes=6 --use_stride4=False --use_stride2=True --depth=128 \
-  --output_onnx=v4_segresnet_dynunet_ensemble_128x128x128.onnx \
+  --output_onnx=ensembles/v4_segresnet_dynunet_ensemble_128x128x128.onnx \
   runs/dynunet_fold_0_6x96x128x128_rc_ic_s2_re_0.05/250118_0912_adamw_torch_lr_3e-04_wd_0.0001_b1_0.95_b2_0.99_ema_0.995_10/dynunet_fold_0_6x96x128x128_rc_ic_s2_re_0.05/lightning_logs/version_0/checkpoints/250118_0912_dynunet_fold_0_6x96x128x128_rc_ic_s2_re_0.05_1484-score-0.8272-at-0.145-0.330-0.215-0.235-0.405.ckpt \
   runs/dynunet_fold_1_6x96x128x128_rc_ic_s2_re_0.05/250118_0953_adamw_torch_lr_3e-04_wd_0.0001_b1_0.95_b2_0.99_ema_0.995_10/dynunet_fold_1_6x96x128x128_rc_ic_s2_re_0.05/lightning_logs/version_0/checkpoints/250118_0953_dynunet_fold_1_6x96x128x128_rc_ic_s2_re_0.05_4982-score-0.8337-at-0.390-0.185-0.215-0.210-0.235.ckpt \
   runs/dynunet_fold_2_6x96x128x128_rc_ic_s2_re_0.05/250118_1112_adamw_torch_lr_3e-04_wd_0.0001_b1_0.95_b2_0.99_ema_0.995_10/dynunet_fold_2_6x96x128x128_rc_ic_s2_re_0.05/lightning_logs/version_0/checkpoints/250118_1112_dynunet_fold_2_6x96x128x128_rc_ic_s2_re_0.05_2650-score-0.7971-at-0.425-0.160-0.550-0.275-0.650.ckpt \

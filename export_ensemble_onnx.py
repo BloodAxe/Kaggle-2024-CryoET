@@ -32,6 +32,7 @@ def main(*checkpoints, output_onnx: str, depth=192, width_height=128, opset=None
     ensemble = Ensemble(models).cuda().eval().half()
 
     output_onnx = Path(output_onnx)
+    output_onnx.parent.mkdir(parents=True, exist_ok=True)
 
     with torch.no_grad():
         dummy_input = torch.randn(1, 1, depth, width_height, width_height, device="cuda").half()
