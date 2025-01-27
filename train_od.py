@@ -164,7 +164,8 @@ def main():
             # The model we create is brand new, no DDP hooks or other shenanigans
             model = create_model_from_args(model_args, training_args).cuda().eval()
             model.load_state_dict(model_module.model.state_dict(), strict=True)
-            trace_model_and_save(window_size, model_module.model, Path(checkpoint_callback.best_model_path).with_suffix(".jit"))
+            # Model tracing here somehow makes traced model very slow on Kaggle. Need to trace outside DDP?
+            # trace_model_and_save(window_size, model_module.model, Path(checkpoint_callback.best_model_path).with_suffix(".jit"))
             print("Saved traced model for best checkpoint")
 
         best_k_models = list(checkpoint_callback.best_k_models.keys())
@@ -198,7 +199,8 @@ def main():
             # The model we create is brand new, no DDP hooks or other shenanigans
             model = create_model_from_args(model_args, training_args).cuda().eval()
             model.load_state_dict(model_module.model.state_dict(), strict=True)
-            trace_model_and_save(window_size, model, new_averaged_filepath.with_suffix(".jit"))
+            # Model tracing here somehow makes traced model very slow on Kaggle. Need to trace outside DDP?
+            # trace_model_and_save(window_size, model, new_averaged_filepath.with_suffix(".jit"))
 
             print("Traced and saved averaged checkpoint")
             tmp_averaged_checkpoint.unlink()
