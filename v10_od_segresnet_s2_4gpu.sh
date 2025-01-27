@@ -1,6 +1,6 @@
 # Train in fp16 not in bf16 and with EMA
 
-for FOLD in 0 1 2 3 4
+for FOLD in 1 2 3 4
 do
   torchrun --standalone --nproc-per-node=4 train_od.py \
   --adam_beta1=0.95 --adam_beta2=0.99 \
