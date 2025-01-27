@@ -333,7 +333,7 @@ def infer_training_precision(training_args):
     if training_args.bf16:
         return "bf16-mixed"
     if training_args.fp16:
-        return "fp16-mixed"
+        return "16-mixed"
     return 32
 
 
