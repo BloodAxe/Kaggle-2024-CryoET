@@ -57,6 +57,7 @@ def main(
     valid_spatial_tiles=6,
     iou_threshold=0.85,
     pre_nms_top_k=16536,
+    use_single_label_per_anchor=False,
     validate_on_x_flips=False,
     validate_on_y_flips=False,
     validate_on_z_flips=False,
@@ -120,7 +121,7 @@ def main(
                 ),
                 postprocess_hparams=PostprocessingParams(
                     use_centernet_nms=True,
-                    use_single_label_per_anchor=False,
+                    use_single_label_per_anchor=use_single_label_per_anchor,
                     iou_threshold=iou_threshold,
                     pre_nms_top_k=pre_nms_top_k,
                     min_score_threshold=0.05,
@@ -154,14 +155,14 @@ def main(
     max_scores_index = np.argmax(avg_per_class_scores, axis=0)  # [class]
     curve_averaged_thresholds = score_thresholds[max_scores_index]
 
-    print("Mean of thresholds       ", np.array2string(mean_of_thresholds, separator=",", precision=3))
-    print("Median of thresholds     ", np.array2string(median_of_thresholds, separator=",", precision=3))
-    print("Curve averaged thresholds", np.array2string(curve_averaged_thresholds, separator=",", precision=3))
+    print("Mean of thresholds        ", np.array2string(mean_of_thresholds, separator=", ", precision=3))
+    print("Median of thresholds      ", np.array2string(median_of_thresholds, separator=", ", precision=3))
+    print("Curve averaged thresholds ", np.array2string(curve_averaged_thresholds, separator=", ", precision=3))
 
-    summary_file.write(f"Mean of thresholds {np.array2string(mean_of_thresholds, separator=',', precision=3)}\n")
-    summary_file.write(f"Median of thresholds {np.array2string(median_of_thresholds, separator=',', precision=3)}\n")
-    summary_file.write(f"Curve averaged thresholds {np.array2string(curve_averaged_thresholds, separator=',', precision=3)}\n")
-    summary_file.write(f"CV score: {np.mean(oof_averaged_score)} std: {np.std(oof_averaged_score)}\n")
+    summary_file.write(f"Mean of thresholds        {np.array2string(mean_of_thresholds, separator=', ', precision=3)}\n")
+    summary_file.write(f"Median of thresholds      {np.array2string(median_of_thresholds, separator=', ', precision=3)}\n")
+    summary_file.write(f"Curve averaged thresholds {np.array2string(curve_averaged_thresholds, separator=', ', precision=3)}\n")
+    summary_file.write(f"CV score:                 {np.mean(oof_averaged_score):.4f} std: {np.std(oof_averaged_score):.4f}\n")
 
     summary_file.close()
 
@@ -186,7 +187,7 @@ def main(
     f.tight_layout()
     f.savefig(
         output_dir
-        / f"plot_rot{validate_on_rot90}_z{validate_on_z_flips}_y{validate_on_y_flips}_x{validate_on_x_flips}_{valid_depth_window_size}x{valid_depth_tiles}_{valid_spatial_window_size}x{valid_spatial_tiles}.png"
+        / f"plot_rot{validate_on_rot90}_z{validate_on_z_flips}_y{validate_on_y_flips}_x{validate_on_x_flips}_{valid_depth_window_size}x{valid_depth_tiles}_{valid_spatial_window_size}x{valid_spatial_tiles}_slpa{use_single_label_per_anchor}.png"
     )
     f.show()
 
