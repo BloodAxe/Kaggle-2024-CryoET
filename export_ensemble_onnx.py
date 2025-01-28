@@ -27,7 +27,7 @@ class Ensemble(nn.Module):
         return scores, offsets
 
 
-def main(*checkpoints, output_onnx: str, depth=192, width_height=128, opset=None, **kwargs):
+def main(*checkpoints, output_onnx: str, depth=192, width_height=128, batch_size=None, opset=None, **kwargs):
     models = [model_from_checkpoint(checkpoint, **kwargs) for checkpoint in checkpoints]
     ensemble = Ensemble(models).cuda().eval().half()
 
@@ -35,14 +35,18 @@ def main(*checkpoints, output_onnx: str, depth=192, width_height=128, opset=None
     output_onnx.parent.mkdir(parents=True, exist_ok=True)
 
     with torch.no_grad():
-        dummy_input = torch.randn(1, 1, depth, width_height, width_height, device="cuda").half()
+        dummy_input_batch_size = 1
+        if batch_size is not None:
+            dummy_input_batch_size = batch_size
+        dummy_input = torch.randn(dummy_input_batch_size or 1, 1, depth, width_height, width_height, device="cuda").half()
+
         torch.onnx.export(
             model=ensemble,
             args=dummy_input,
             f=output_onnx,
             verbose=False,
             verify=True,
-            dynamic_axes={"volume": {0: "batch"}},
+            dynamic_axes={"volume": {0: "batch"}} if batch_size is None else None,
             opset_version=opset,
             input_names=["volume"],
             output_names=["scores", "offsets"],
