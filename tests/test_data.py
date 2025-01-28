@@ -1,7 +1,7 @@
 from pathlib import Path
 from pprint import pprint
 
-from cryoet.data.cross_validation import split_data_into_folds
+from cryoet.data.cross_validation import split_data_into_folds, split_data_into_folds_leave_one_out
 from cryoet.data.heatmap.point_detection_data_module import PointDetectionDataModule
 
 DATA_ROOT = Path(__file__).parent.parent / "data" / "czii-cryo-et-object-identification"
@@ -10,12 +10,27 @@ TRAIN_DATA_DIR = DATA_ROOT / "train" / "static" / "ExperimentRuns"
 
 def test_split_data_into_folds():
     folds = split_data_into_folds(TRAIN_DATA_DIR)
-    pprint(folds)
+    print("split_data_into_folds")
+    for train, valid in folds:
+        print("Train", len(train), train, "Valid", len(valid), valid)
+    print()
 
     assert len(folds) == 5
     for train_studies, val_studies in folds:
         assert len(train_studies) == 5
         assert len(val_studies) == 2
+        assert len(set(train_studies) & set(val_studies)) == 0
+
+    folds = split_data_into_folds_leave_one_out(TRAIN_DATA_DIR)
+    print("Leave-one-out")
+    for train, valid in folds:
+        print("Train", len(train), train, "Valid", len(valid), valid)
+    print()
+
+    assert len(folds) == 7
+    for train_studies, val_studies in folds:
+        assert len(train_studies) == 6
+        assert len(val_studies) == 1
         assert len(set(train_studies) & set(val_studies)) == 0
 
 

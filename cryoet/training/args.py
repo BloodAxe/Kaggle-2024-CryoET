@@ -98,6 +98,8 @@ class DataArguments:
     data_root: str = field(default_factory=data_root_default_factory)
     fold: int = field(default=0)
 
+    split_strategy: str = field(default="split_data_into_folds", metadata={"help": "Split strategy"})
+
     use_sliding_crops: bool = field(default=False)
     use_random_crops: bool = field(default=False)
     use_instance_crops: bool = field(default=False)
