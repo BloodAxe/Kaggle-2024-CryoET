@@ -44,7 +44,7 @@ class ObjectDetectionDataModule(L.LightningDataModule):
             "split_data_into_folds_leave_one_out": split_data_into_folds_leave_one_out,
         }[data_args.split_strategy]
 
-        splits = split_strategy()
+        splits = split_strategy(self.runs_dir)
         self.train_studies, self.valid_studies_original = splits[self.fold]
 
         self.data_args = data_args
