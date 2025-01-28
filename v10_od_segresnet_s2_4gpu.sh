@@ -1,6 +1,4 @@
-# Train in fp16 not in bf16 and with EMA
-
-for FOLD in 3 4
+for FOLD in 0 1 2 3 4
 do
   torchrun --standalone --nproc-per-node=4 train_od.py \
   --adam_beta1=0.95 --adam_beta2=0.99 \
@@ -12,15 +10,15 @@ do
   --ddp_find_unused_parameters=True \
   --early_stopping=25 \
   --fold=$FOLD \
-  --learning_rate=5e-5 \
+  --learning_rate=1e-5 \
   --max_grad_norm=3 \
   --ddp_find_unused_parameters=True \
   --model_name=segresnetv2 \
   --num_train_epochs=75 \
-  --per_device_train_batch_size=3 \
+  --per_device_train_batch_size=4 \
   --pretrained_backbone_path=pretrained/wholeBody_ct_segmentation/models/model.pt \
-  --random_erase_prob=0.2 \
-  --scale_limit=0.1 \
+  --random_erase_prob=0.1 \
+  --scale_limit=0.05 \
   --use_6_classes=True \
   --use_cross_entropy_loss=True \
   --use_instance_crops=True \
@@ -34,8 +32,6 @@ do
   --x_rotation_limit=10 \
   --validate_on_x_flips=True \
   --validate_on_y_flips=True \
-  --validate_on_z_flips=True \
-  --bf16=False \
-  --fp16=True
+  --validate_on_z_flips=True
 done
 

@@ -13,7 +13,7 @@ do
   --max_grad_norm=3 \
   --model_name=dynunet  \
   --num_train_epochs=75 \
-  --per_device_train_batch_size=4 \
+  --per_device_train_batch_size=6 \
   --random_erase_prob=0.2 \
   --scale_limit=0.05 \
   --use_6_classes=True \
@@ -30,8 +30,5 @@ do
   --seed=4444 \
   --validate_on_x_flips=True \
   --validate_on_y_flips=True \
-  --validate_on_z_flips=True \
-  --bf16=False \
-  --fp16=True
-
+  --validate_on_z_flips=True
 done
