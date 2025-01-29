@@ -8,7 +8,7 @@ do
   --dataloader_persistent_workers=True \
   --dataloader_pin_memory=True \
   --ddp_find_unused_parameters=True \
-  --early_stopping=25 \
+  --early_stopping=15 \
   --fold=$FOLD \
   --learning_rate=5e-5 \
   --max_grad_norm=3 \
