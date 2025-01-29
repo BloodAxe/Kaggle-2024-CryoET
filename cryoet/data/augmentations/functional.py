@@ -366,6 +366,7 @@ def random_crop_around_point(
     x_rotation_limit: float,
     crop_center_xyz: Tuple[float, float, float],
     output_shape: Tuple[int, int, int],
+    interpolation_mode: int,
 ):
     cx, cy, cz = crop_center_xyz
     scale = random.uniform(1 - scale_limit, 1 + scale_limit)
@@ -391,6 +392,7 @@ def random_crop_around_point(
         scale=scale,
         center_zyx=(cz, cy, cx),
         output_shape=output_shape,
+        order=interpolation_mode,
     )
 
     radius = radius * mean_scale
@@ -416,6 +418,7 @@ def copy_paste_augmentation(
     z_rotation_limit: float,
     y_rotation_limit: float,
     x_rotation_limit: float,
+    interpolation_mode: int,
     classes_to_paste=None,
     merge_method: Callable = merge_volume_using_weighted_sum,
 ):
@@ -443,6 +446,7 @@ def copy_paste_augmentation(
         ),
         center_zyx=(object_center[2], object_center[1], object_center[0]),
         output_shape=(output_size, output_size, output_size),
+        order=interpolation_mode,
     )
 
     mask = get_points_mask_within_cube(rotated_centers, volume_to_paste.shape)
@@ -491,6 +495,7 @@ def mixup_augmentation(
     z_rotation_limit: float,
     y_rotation_limit: float,
     x_rotation_limit: float,
+    interpolation_mode: int,
 ):
     data2 = random_crop_around_point(
         volume=sample.volume,
@@ -508,6 +513,7 @@ def mixup_augmentation(
             random.random() * sample.volume_shape[2],
         ),
         output_shape=volume.shape,
+        interpolation_mode=interpolation_mode,
     )
 
     return dict(

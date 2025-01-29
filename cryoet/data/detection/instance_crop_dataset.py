@@ -6,7 +6,7 @@ from sklearn.utils import compute_sample_weight
 from cryoet.data.augmentations.functional import (
     random_crop_around_point,
 )
-from .detection_dataset import CryoETObjectDetectionDataset, apply_augmentations
+from .detection_dataset import CryoETObjectDetectionDataset, apply_augmentations, sample_interpolation_mode
 from .mixin import ObjectDetectionMixin
 from ..parsers import AnnotatedVolume
 from ...training.args import DataArguments, ModelArguments
@@ -47,6 +47,8 @@ class InstanceCropDatasetForPointDetection(CryoETObjectDetectionDataset, ObjectD
         else:
             center = random.choice(centers_px)
 
+        interpolation_mode = sample_interpolation_mode(self.data_args)
+
         data = random_crop_around_point(
             volume=self.sample.volume,
             centers=self.sample.centers_px,
@@ -59,9 +61,12 @@ class InstanceCropDatasetForPointDetection(CryoETObjectDetectionDataset, ObjectD
             anisotropic_scale_limit=self.data_args.anisotropic_scale_limit,
             crop_center_xyz=center,
             output_shape=self.window_size,
+            interpolation_mode=interpolation_mode,
         )
 
-        data = apply_augmentations(data, data_args=self.data_args, copy_paste_samples=self.copy_paste_samples)
+        data = apply_augmentations(
+            data, data_args=self.data_args, copy_paste_samples=self.copy_paste_samples, interpolation_mode=interpolation_mode
+        )
 
         data = self.convert_to_dict(
             volume=data["volume"],

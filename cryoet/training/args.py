@@ -98,6 +98,8 @@ class DataArguments:
     data_root: str = field(default_factory=data_root_default_factory)
     fold: int = field(default=0)
 
+    interpolation_mode: str = field(default="1", metadata={"help": "Interpolation mode"})
+
     split_strategy: str = field(default="split_data_into_folds", metadata={"help": "Split strategy"})
 
     normalization: str = field(default="minmax", metadata={"help": "Normalization strategy"})

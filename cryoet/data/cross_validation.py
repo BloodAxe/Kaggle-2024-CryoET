@@ -21,12 +21,10 @@ def split_data_into_folds(root: str | Path, n_studies_in_val: int = 2) -> List[T
 
     n_studies = len(studies)
 
-    n_folds = n_studies - n_studies_in_val
-
     folds = []
-    for i in range(n_folds):
+    for i in range(n_studies):
         # The validation set is a slice of size n_studies_in_val
-        val_indices = list(range(i, i + n_studies_in_val))
+        val_indices = [i % n_studies for i in range(i, i + n_studies_in_val)]
         val_studies = [studies[j] for j in val_indices]
 
         # All other indices go into the training set

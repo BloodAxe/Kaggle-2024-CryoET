@@ -20,7 +20,14 @@ class CryoETObjectDetectionDataset(Dataset):
         self.sample = sample
 
 
-def apply_augmentations(data, data_args: DataArguments, copy_paste_samples):
+def sample_interpolation_mode(data_args):
+    if data_args.interpolation_mode == "random":
+        return random.choice([1, 2, 3])
+
+    return int(data_args.interpolation_mode)
+
+
+def apply_augmentations(data, data_args: DataArguments, copy_paste_samples, interpolation_mode):
     scale = data["scale"]
 
     if data_args.use_random_flips:
@@ -38,6 +45,7 @@ def apply_augmentations(data, data_args: DataArguments, copy_paste_samples):
                 z_rotation_limit=data_args.z_rotation_limit,
                 y_rotation_limit=data_args.y_rotation_limit,
                 x_rotation_limit=data_args.x_rotation_limit,
+                interpolation_mode=interpolation_mode,
             )
 
     if data_args.mixup_prob > 0 and random.random() < data_args.mixup_prob:
@@ -51,6 +59,7 @@ def apply_augmentations(data, data_args: DataArguments, copy_paste_samples):
             y_rotation_limit=data_args.y_rotation_limit,
             x_rotation_limit=data_args.x_rotation_limit,
             scale_limit=data_args.scale_limit,
+            interpolation_mode=interpolation_mode,
         )
 
     if data_args.gaussian_noise_sigma > 0:
