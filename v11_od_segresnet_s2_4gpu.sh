@@ -4,7 +4,7 @@ do
   --adam_beta1=0.95 --adam_beta2=0.99 \
   --anisotropic_scale_limit=0.05 \
   --average_tokens_across_devices=True \
-  --dataloader_num_workers=4 \
+  --dataloader_num_workers=8 \
   --dataloader_persistent_workers=True \
   --dataloader_pin_memory=True \
   --ddp_find_unused_parameters=True \

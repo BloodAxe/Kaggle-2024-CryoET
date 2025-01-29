@@ -3,7 +3,7 @@ do
   torchrun --standalone --nproc-per-node=4 train_od.py \
   --anisotropic_scale_limit=0.07 \
   --average_tokens_across_devices=True \
-  --dataloader_num_workers=4 \
+  --dataloader_num_workers=8 \
   --dataloader_persistent_workers=True \
   --dataloader_pin_memory=True \
   --ddp_find_unused_parameters=True \

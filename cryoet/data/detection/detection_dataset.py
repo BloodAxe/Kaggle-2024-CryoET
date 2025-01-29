@@ -22,7 +22,7 @@ class CryoETObjectDetectionDataset(Dataset):
 
 def sample_interpolation_mode(data_args):
     if data_args.interpolation_mode == "random":
-        return random.choice([1, 2, 3])
+        return random.choice([1, 2])
 
     return int(data_args.interpolation_mode)
 
