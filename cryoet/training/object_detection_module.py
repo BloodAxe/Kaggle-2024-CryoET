@@ -167,7 +167,7 @@ class ObjectDetectionModel(L.LightningModule):
             all_scores[study_name] = scores
             all_offsets[study_name] = offsets
 
-            self.log_heatmaps(study_name, scores)
+            # self.log_heatmaps(study_name, scores)
 
         # By this point, all_scores and all_offsets are gathered and we can distribute postprocessing across nodes
         rank_local_studies = split_across_nodes(all_studies)
