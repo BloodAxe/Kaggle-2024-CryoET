@@ -10,7 +10,7 @@ import numpy as np
 import zarr
 from matplotlib.patches import Circle
 
-from .functional import normalize_volume_to_unit_range
+from .functional import normalize_volume_to_unit_range, normalize_volume_with_mean_std
 
 ANGSTROMS_IN_PIXEL = 10.012
 
@@ -416,7 +416,7 @@ class AnnotatedVolume:
         )
 
 
-def read_annotated_volume(root, study, mode, use_6_classes: bool, split="train"):
+def read_annotated_volume(root, study, mode, use_6_classes: bool, normalization: str, split="train"):
     volume_data, object_centers, object_labels, object_radii = get_volume_and_objects(
         root_dir=root,
         study_name=study,
@@ -425,11 +425,16 @@ def read_annotated_volume(root, study, mode, use_6_classes: bool, split="train")
         use_6_classes=use_6_classes,
     )
 
+    normalization_fn = {
+        "minmax": normalize_volume_to_unit_range,
+        "meanstd": normalize_volume_with_mean_std,
+    }[normalization]
+
     return AnnotatedVolume(
         study=study,
         split=split,
         mode=mode,
-        volume=normalize_volume_to_unit_range(volume_data),
+        volume=normalization_fn(volume_data),
         centers=object_centers,
         labels=object_labels,
         radius=object_radii,

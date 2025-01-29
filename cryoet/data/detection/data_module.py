@@ -137,7 +137,12 @@ class ObjectDetectionDataModule(L.LightningDataModule):
         for train_study in self.train_studies:
             for mode in self.train_modes:
                 sample = read_annotated_volume(
-                    root=self.root, study=train_study, mode=mode, split="train", use_6_classes=self.model_args.use_6_classes
+                    root=self.root,
+                    study=train_study,
+                    mode=mode,
+                    split="train",
+                    use_6_classes=self.model_args.use_6_classes,
+                    normalization=self.data_args.normalization,
                 )
                 train_samples.append(sample)
 
@@ -145,7 +150,12 @@ class ObjectDetectionDataModule(L.LightningDataModule):
         for study_name in self.valid_studies_original:
             for mode in self.valid_modes:
                 sample = read_annotated_volume(
-                    root=self.root, study=study_name, mode=mode, split="train", use_6_classes=self.model_args.use_6_classes
+                    root=self.root,
+                    study=study_name,
+                    mode=mode,
+                    split="train",
+                    use_6_classes=self.model_args.use_6_classes,
+                    normalization=self.data_args.normalization,
                 )
                 valid_samples.append(sample)
 

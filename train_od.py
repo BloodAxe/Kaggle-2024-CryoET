@@ -288,6 +288,8 @@ def create_model_from_args(model_args, training_args):
 def build_model_name_slug(data_args, model_args, training_args):
     num_classes = 6 if model_args.use_6_classes else 5
     model_name_slug = f"{model_args.model_name}_fold_{data_args.fold}_{num_classes}x{model_args.train_depth_window_size}x{model_args.train_spatial_window_size}x{model_args.train_spatial_window_size}"
+    if data_args.normalization != "minmax":
+        model_name_slug += f"_{data_args.normalization}"
     if data_args.use_sliding_crops:
         model_name_slug += "_sc"
     if data_args.use_random_crops:
