@@ -127,28 +127,39 @@ def trace_model_and_save(window_size: Tuple[int, int, int], model: nn.Module, tr
 
 def model_from_checkpoint(checkpoint_path: Path, **kwargs):
     checkpoint_path = Path(checkpoint_path)
-    checkpoint = torch.load(checkpoint_path, map_location="cpu", weights_only=True)
-
-    model_state_dict = checkpoint["state_dict"]
-    model_state_dict = {k.replace("model.", ""): v for k, v in model_state_dict.items() if k.startswith("model.")}
+    model_prefix = None
 
     if "hrnet" in checkpoint_path.stem:
         config = HRNetv2ForObjectDetectionConfig(**kwargs)
         model = HRNetv2ForObjectDetection(config)
+        state_dict_key = "state_dict"
+        model_prefix = "model."
     elif "dynunet" in checkpoint_path.stem:
         config = DynUNetForObjectDetectionConfig(**kwargs)
         model = DynUNetForObjectDetection(config)
+        state_dict_key = "state_dict"
+        model_prefix = "model."
     elif "segresnetv2" in checkpoint_path.stem:
         config = SegResNetForObjectDetectionV2Config(**kwargs)
         model = SegResNetForObjectDetectionV2(config)
-    elif "cfg_ch_48h_ce2c2" in checkpoint_path:
+        state_dict_key = "state_dict"
+        model_prefix = "model."
+    elif "weights-cryo-cfg-ch-48h-ce2c2" in str(checkpoint_path):
         model = MdlCh20dCe2c2_resnet34()
-    elif "weights-cryo-cfg-ch-48j2" in checkpoint_path:
+        state_dict_key = "model"
+    elif "weights-cryo-cfg-ch-48j2" in str(checkpoint_path):
         model = MdlCh20dCe2_resnet34()
-    elif "weights-cryo-cfg-ch-48k" in checkpoint_path:
+        state_dict_key = "model"
+    elif "weights-cryo-cfg-ch-48k" in str(checkpoint_path):
         model = MdlCh20dCe2_effnetb3()
+        state_dict_key = "model"
     else:
         raise ValueError(f"Unknown model type: {checkpoint_path.stem}")
+
+    checkpoint = torch.load(checkpoint_path, map_location="cpu", weights_only=True)
+    model_state_dict = checkpoint[state_dict_key] if state_dict_key is not None else checkpoint
+    if model_prefix is not None:
+        model_state_dict = {k.replace(model_prefix, ""): v for k, v in model_state_dict.items() if k.startswith(model_prefix)}
 
     model.load_state_dict(model_state_dict, strict=True)
     return model
@@ -156,7 +167,7 @@ def model_from_checkpoint(checkpoint_path: Path, **kwargs):
 
 def infer_fold(checkpoint_name):
     for i in range(5):
-        if f"fold_{i}" in checkpoint_name:
+        if f"fold_{i}" in checkpoint_name or f"fold-{i}" in checkpoint_name:
             return i
 
     raise ValueError(f"Could not infer fold from checkpoint name: {checkpoint_name}")

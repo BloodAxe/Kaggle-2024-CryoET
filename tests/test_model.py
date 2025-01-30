@@ -30,17 +30,6 @@ def test_check_points_inside_bboxes():
     print(mask)
 
 
-def test_chris_models():
-    model = model_from_checkpoint(
-        "../models/weights-cryo-cfg-ch-48h-ce2c2/models/cfg_ch_48h_ce2c2/fold-1/checkpoint_last_seed151584.pth"
-    )
-    data = torch.randn(1, 1, 192, 128, 128)
-
-    outputs = model(data)
-    assert len(outputs) == 2
-    print(outputs[0].shape, outputs[1].shape)
-
-
 def test_gaussian_blur_3d():
 
     data = torch.randn(1, 6, 128, 128, 128)

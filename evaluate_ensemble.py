@@ -56,6 +56,7 @@ def main(
     valid_depth_tiles=1,
     valid_spatial_tiles=6,
     iou_threshold=0.85,
+    min_score_threshold=0.05,
     pre_nms_top_k=16536,
     use_single_label_per_anchor=False,
     validate_on_x_flips=False,
@@ -124,7 +125,7 @@ def main(
                     use_single_label_per_anchor=use_single_label_per_anchor,
                     iou_threshold=iou_threshold,
                     pre_nms_top_k=pre_nms_top_k,
-                    min_score_threshold=0.05,
+                    min_score_threshold=min_score_threshold,
                 ),
                 output_strides=output_strides,
                 device=device,
@@ -222,7 +223,9 @@ def evaluate_models_on_fold(
     solution = defaultdict(list)
 
     for study_name in valid_studies:
-        sample = read_annotated_volume(root=data_path, study=study_name, mode="denoised", split="train", use_6_classes=False)
+        sample = read_annotated_volume(
+            root=data_path, study=study_name, mode="denoised", split="train", use_6_classes=False, normalization="minmax"
+        )
 
         x_options = [False, True] if validate_on_x_flips else [False]
         y_options = [False, True] if validate_on_y_flips else [False]
@@ -314,7 +317,7 @@ def compute_optimal_thresholds(class_names, solution, submission):
     }
 
     score_details = []
-    score_thresholds = np.linspace(0.05, 0.9, num=171, dtype=np.float32)
+    score_thresholds = np.linspace(0.01, 0.9, num=171, dtype=np.float32)
     for score_threshold in score_thresholds:
         keep_mask = submission["score"] >= score_threshold
         submission_filtered = submission[keep_mask]

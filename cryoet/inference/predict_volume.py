@@ -148,11 +148,15 @@ def predict_scores_offsets_from_volume(
         tile_volume = tile_volume.to(device=device, non_blocking=True)
 
         for model in models:
-            logits, offsets = model(tile_volume)
-            probas = [x.sigmoid() for x in logits]
+            probas, offsets = model(tile_volume)
+
+            if torch.is_tensor(probas):
+                probas = [probas]
+            if torch.is_tensor(offsets):
+                offsets = [offsets]
 
             if container is None:
-                num_classes = infer_num_classes_from_logits(logits)
+                num_classes = infer_num_classes_from_logits(probas)
                 print("Num classes", num_classes)
 
                 container = AccumulatedObjectDetectionPredictionContainer.from_shape(
