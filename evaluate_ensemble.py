@@ -4,6 +4,7 @@ from collections import defaultdict
 from pathlib import Path
 from typing import List
 
+import cv2
 import matplotlib.pyplot as plt
 import numpy as np
 import pandas as pd
@@ -18,6 +19,7 @@ from cryoet.inference.predict_volume import (
     postprocess_scores_offsets_into_submission,
 )
 from cryoet.metric import score_submission
+from cryoet.training.visualization import render_heatmap
 
 
 @dataclasses.dataclass
@@ -54,7 +56,7 @@ def main(
     valid_depth_window_size=192,
     valid_spatial_window_size=128,
     valid_depth_tiles=1,
-    valid_spatial_tiles=6,
+    valid_spatial_tiles=8,
     iou_threshold=0.85,
     min_score_threshold=0.05,
     pre_nms_top_k=16536,
@@ -106,6 +108,7 @@ def main(
                 checkpoints=checkpoints,
                 fold=fold,
                 data_path=data_path,
+                output_dir=output_dir,
                 validate_on_x_flips=validate_on_x_flips,
                 validate_on_y_flips=validate_on_y_flips,
                 validate_on_z_flips=validate_on_z_flips,
@@ -193,10 +196,20 @@ def main(
     f.show()
 
 
+def save_scores_heatmap(scores, output_dir, study_name):
+    if isinstance(scores, list):
+        scores = scores[0]
+
+    heatmap_image = render_heatmap(scores)
+    heatmap_image = cv2.cvtColor(heatmap_image, cv2.COLOR_RGB2BGR)
+    cv2.imwrite(output_dir / f"{study_name}.png", heatmap_image)
+
+
 def evaluate_models_on_fold(
     checkpoints,
     fold,
     data_path: Path,
+    output_dir: Path,
     validate_on_x_flips,
     validate_on_y_flips,
     validate_on_z_flips,
@@ -270,6 +283,8 @@ def evaluate_models_on_fold(
                             use_y_flip_tta=prediction_params.use_y_flip_tta,
                             use_x_flip_tta=prediction_params.use_x_flip_tta,
                         )
+
+                        save_scores_heatmap(scores, output_dir, maybe_flipped_sample.study)
                         pred_scores.append(scores)
                         pred_offsets.append(offsets)
 
