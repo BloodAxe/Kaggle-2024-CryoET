@@ -20,6 +20,15 @@ def check_model_can_be_cast_to_fp16(model: torch.nn.Module):
             if p_lt_min > 0 or p_gt_max > 0:
                 print(f"Parameter {name} has {p_lt_min:.2%} values below {finfo.min} and {p_gt_max:.2%} values above {finfo.max}")
 
+            p_fp16 = p.half().float()
+            p_diff = (p - p_fp16).abs()
+            p_diff_max = p_diff.max().item()
+            p_diff_mean = p_diff.mean().item()
+            p_diff_rel = p_diff / p.abs().clamp(min=1e-6)
+            p_diff_rel_mean = p_diff_rel.mean().item()
+            p_diff_rel_max = p_diff_rel.max().item()
+            print(f"Parameter {name} has relative max rounding error {100 * p_diff_rel_max:.2f}%")
+
 
 @torch.no_grad()
 def trace_and_save(checkpoint_path, traced_checkpoint_path, **kwargs):
