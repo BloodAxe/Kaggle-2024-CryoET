@@ -257,7 +257,7 @@ class SegResNetForObjectDetectionV2(nn.Module):
             strides.append(self.head2.stride)
 
         if is_tracing or torch.jit.is_tracing() or torch.jit.is_scripting():
-            return logits, offsets
+            return [x.sigmoid() for x in logits], offsets
 
         loss = None
         loss_dict = None

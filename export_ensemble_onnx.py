@@ -18,8 +18,8 @@ class Ensemble(nn.Module):
         all_offsets = []
 
         for model in self.models:
-            (logits,), (offsets,) = model(volume, is_tracing=True)
-            all_scores.append(logits.sigmoid())
+            (scores,), (offsets,) = model(volume, is_tracing=True)
+            all_scores.append(scores)
             all_offsets.append(offsets)
 
         scores = torch.mean(torch.stack(all_scores, dim=0), dim=0)

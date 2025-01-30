@@ -2,7 +2,9 @@ import numpy as np
 import timm.models.maxxvit
 import torch
 from pytorch_toolbelt.utils import count_parameters
+from torch import Tensor
 
+from cryoet.data.functional import normalize_volume_to_unit_range
 from cryoet.ensembling import model_from_checkpoint
 from cryoet.modelling.detection.dynunet import DynUNetForObjectDetectionConfig, DynUNetForObjectDetection
 from cryoet.modelling.detection.functional import convert_2d_to_3d, gaussian_blur_3d
@@ -28,6 +30,33 @@ def test_check_points_inside_bboxes():
 
     mask = check_points_inside_bboxes(points, true_centers, true_sigmas)
     print(mask)
+
+
+def test_monai_transforms():
+    import monai.transforms as mt
+
+    data = torch.randn(1, 6, 128, 128, 128)
+
+    def mean_std_renormalization(volume: Tensor):
+        """
+        Renormalize the volume to have zero mean and unit variance.
+        :param volume: Tensor of shape (B, C, D, H, W)
+        """
+        mean = volume.mean(dim=(1, 2, 3, 4), keepdim=True)
+        std = volume.std(dim=(1, 2, 3, 4), keepdim=True)
+        volume = (volume - mean) / std
+        return volume
+
+    data_minmax = normalize_volume_to_unit_range(data)
+    data_meanstd = mean_std_renormalization(data_minmax)
+
+    output = mt.NormalizeIntensity()(data)
+
+    mean_diff = torch.abs(data_meanstd - output).mean()
+    print(mean_diff.item())
+
+    max_diff = torch.abs(data_meanstd - output).max()
+    print(max_diff.item())
 
 
 def test_gaussian_blur_3d():
