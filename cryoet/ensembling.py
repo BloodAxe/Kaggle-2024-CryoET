@@ -7,6 +7,7 @@ import os
 from torch import nn
 from pytorch_toolbelt.utils import get_non_wrapped_model
 
+from cryoet.modelling.ch_models.adaptors import MdlCh20dCe2c2_resnet34, MdlCh20dCe2_resnet34, MdlCh20dCe2_effnetb3
 from cryoet.modelling.detection.dynunet import DynUNetForObjectDetectionConfig, DynUNetForObjectDetection
 from cryoet.modelling.detection.litehrnet import HRNetv2ForObjectDetectionConfig, HRNetv2ForObjectDetection
 from cryoet.modelling.detection.segresnet_object_detection_v2 import (
@@ -140,6 +141,12 @@ def model_from_checkpoint(checkpoint_path: Path, **kwargs):
     elif "segresnetv2" in checkpoint_path.stem:
         config = SegResNetForObjectDetectionV2Config(**kwargs)
         model = SegResNetForObjectDetectionV2(config)
+    elif "cfg_ch_48h_ce2c2" in checkpoint_path:
+        model = MdlCh20dCe2c2_resnet34()
+    elif "weights-cryo-cfg-ch-48j2" in checkpoint_path:
+        model = MdlCh20dCe2_resnet34()
+    elif "weights-cryo-cfg-ch-48k" in checkpoint_path:
+        model = MdlCh20dCe2_effnetb3()
     else:
         raise ValueError(f"Unknown model type: {checkpoint_path.stem}")
 

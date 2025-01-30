@@ -3,6 +3,7 @@ import timm.models.maxxvit
 import torch
 from pytorch_toolbelt.utils import count_parameters
 
+from cryoet.ensembling import model_from_checkpoint
 from cryoet.modelling.detection.dynunet import DynUNetForObjectDetectionConfig, DynUNetForObjectDetection
 from cryoet.modelling.detection.functional import convert_2d_to_3d, gaussian_blur_3d
 from cryoet.modelling.detection.maxvit_unet25d import MaxVitUnet25d, MaxVitUnet25dConfig
@@ -27,6 +28,17 @@ def test_check_points_inside_bboxes():
 
     mask = check_points_inside_bboxes(points, true_centers, true_sigmas)
     print(mask)
+
+
+def test_chris_models():
+    model = model_from_checkpoint(
+        "../models/weights-cryo-cfg-ch-48h-ce2c2/models/cfg_ch_48h_ce2c2/fold-1/checkpoint_last_seed151584.pth"
+    )
+    data = torch.randn(1, 1, 192, 128, 128)
+
+    outputs = model(data)
+    assert len(outputs) == 2
+    print(outputs[0].shape, outputs[1].shape)
 
 
 def test_gaussian_blur_3d():

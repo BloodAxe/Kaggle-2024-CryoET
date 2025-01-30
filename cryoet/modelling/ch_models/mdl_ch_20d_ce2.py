@@ -5,6 +5,7 @@ from collections.abc import Sequence
 from pydoc import locate
 from typing import Any
 
+import einops
 import torch
 from torch import nn
 
@@ -24,6 +25,7 @@ import torch.nn.functional as F
 from torch import nn
 from torch.nn.parameter import Parameter
 from torch.distributions import Beta
+
 # import timm
 
 
@@ -37,8 +39,6 @@ from torch.distributions import Beta
 # WITHOUT WARRANTIES OR CONDITIONS OF ANY KIND, either express or implied.
 # See the License for the specific language governing permissions and
 # limitations under the License.
-
-
 
 
 class FlexUNetEncoderRegister:
@@ -291,9 +291,7 @@ class FlexibleUNet(nn.Module):
         super().__init__()
 
         if backbone not in FLEXUNET_BACKBONE.register_dict:
-            raise ValueError(
-                f"invalid model_name {backbone} found, must be one of {FLEXUNET_BACKBONE.register_dict.keys()}."
-            )
+            raise ValueError(f"invalid model_name {backbone} found, must be one of {FLEXUNET_BACKBONE.register_dict.keys()}.")
 
         if spatial_dims not in (2, 3):
             raise ValueError("spatial_dims can only be 2 or 3.")
@@ -333,19 +331,27 @@ class FlexibleUNet(nn.Module):
             align_corners=None,
             is_pad=is_pad,
         )
-        self.segmentation_heads = nn.ModuleList([SegmentationHead(
-            spatial_dims=spatial_dims,
-            in_channels=decoder_channel,
-            out_channels=out_channels,
-            kernel_size=3,
-            act=None,
-        ) for decoder_channel in decoder_channels[:-2]] + [SegmentationHead(
-            spatial_dims=spatial_dims,
-            in_channels=decoder_channels[-2],
-            out_channels=out_channels + 1,
-            kernel_size=3,
-            act=None,
-        )])
+        self.segmentation_heads = nn.ModuleList(
+            [
+                SegmentationHead(
+                    spatial_dims=spatial_dims,
+                    in_channels=decoder_channel,
+                    out_channels=out_channels,
+                    kernel_size=3,
+                    act=None,
+                )
+                for decoder_channel in decoder_channels[:-2]
+            ]
+            + [
+                SegmentationHead(
+                    spatial_dims=spatial_dims,
+                    in_channels=decoder_channels[-2],
+                    out_channels=out_channels + 1,
+                    kernel_size=3,
+                    act=None,
+                )
+            ]
+        )
 
     def forward(self, inputs: torch.Tensor):
         """
@@ -370,16 +376,19 @@ class FlexibleUNet(nn.Module):
 
 FlexUNet = FlexibleUNet
 
+
 def count_parameters(model):
     return sum(p.numel() for p in model.parameters() if p.requires_grad)
 
+
 def human_format(num):
-    num = float('{:.3g}'.format(num))
+    num = float("{:.3g}".format(num))
     magnitude = 0
     while abs(num) >= 1000:
         magnitude += 1
         num /= 1000.0
-    return '{}{}'.format('{:f}'.format(num).rstrip('0').rstrip('.'), ['', 'K', 'M', 'B', 'T'][magnitude])
+    return "{}{}".format("{:f}".format(num).rstrip("0").rstrip("."), ["", "K", "M", "B", "T"][magnitude])
+
 
 import torch
 from torch import nn
@@ -388,27 +397,27 @@ from torch.nn.parameter import Parameter
 from torch.distributions import Beta
 
 
-
 class DenseCrossEntropy(nn.Module):
     def __init__(self, class_weights=None):
         super(DenseCrossEntropy, self).__init__()
 
         self.class_weights = class_weights
-    
+
     def forward(self, x, target):
         x = x.float()
         target = target.float()
         logprobs = torch.nn.functional.log_softmax(x, dim=1, dtype=torch.float)
 
         loss = -logprobs * target
-        
-        class_losses = loss.mean((0,2,3,4))
+
+        class_losses = loss.mean((0, 2, 3, 4))
         if self.class_weights is not None:
-            loss = (class_losses * self.class_weights.to(class_losses.device)).sum() #/ class_weights.sum() 
+            loss = (class_losses * self.class_weights.to(class_losses.device)).sum()  # / class_weights.sum()
         else:
-            
+
             loss = class_losses.sum()
         return loss, class_losses
+
 
 class Mixup(nn.Module):
     def __init__(self, mix_beta, mixadd=False):
@@ -423,27 +432,29 @@ class Mixup(nn.Module):
         n_dims = len(X.shape)
         perm = torch.randperm(bs)
         coeffs = self.beta_distribution.rsample(torch.Size((bs,))).to(X.device)
-        X_coeffs = coeffs.view((-1,) + (1,)*(X.ndim-1))
-        Y_coeffs = coeffs.view((-1,) + (1,)*(Y.ndim-1))
-        
-        X = X_coeffs * X + (1-X_coeffs) * X[perm]
+        X_coeffs = coeffs.view((-1,) + (1,) * (X.ndim - 1))
+        Y_coeffs = coeffs.view((-1,) + (1,) * (Y.ndim - 1))
+
+        X = X_coeffs * X + (1 - X_coeffs) * X[perm]
 
         if self.mixadd:
             Y = (Y + Y[perm]).clip(0, 1)
         else:
             Y = Y_coeffs * Y + (1 - Y_coeffs) * Y[perm]
-                
+
         if Z:
             return X, Y, Z
 
         return X, Y
-    
+
+
 def to_ce_target(y):
     # bs, c, h, w, d
     y_bg = 1 - y.sum(1, keepdim=True).clamp(0, 1)
-    y = torch.cat([y,y_bg], 1)
+    y = torch.cat([y, y_bg], 1)
     y = y / y.sum(1, keepdim=True)
     return y
+
 
 class Net(nn.Module):
 
@@ -453,68 +464,65 @@ class Net(nn.Module):
         self.cfg = cfg
         self.n_classes = cfg.n_classes
         self.classes = cfg.classes
-        
+
         self.backbone = FlexibleUNet(**cfg.backbone_args)
 
-
         self.mixup = Mixup(cfg.mixup_beta)
-        
-        print(f'Net parameters: {human_format(count_parameters(self))}')
+
+        print(f"Net parameters: {human_format(count_parameters(self))}")
         self.return_logits = cfg.return_logits
         self.lvl_weights = torch.from_numpy(cfg.lvl_weights)
-        self.loss_fn = DenseCrossEntropy(class_weights=torch.from_numpy(cfg.class_weights))  
-           
+        self.loss_fn = DenseCrossEntropy(class_weights=torch.from_numpy(cfg.class_weights))
+
     def forward(self, batch):
 
-        x = batch['input']
+        x = batch["input"]
         if "target" in batch.keys():
             y = batch["target"]
         if self.training:
             if torch.rand(1)[0] < self.cfg.mixup_p:
-                x, y = self.mixup(x,y)
+                x, y = self.mixup(x, y)
                 if torch.rand(1)[0] < self.cfg.mixup2_p:
-                    x, y = self.mixup(x,y)
+                    x, y = self.mixup(x, y)
         out = self.backbone(x)
-        
-        
 
         outputs = {}
 
         if "target" in batch.keys():
-            ys = [F.adaptive_max_pool3d(y, item.shape[-3:])  for item in out]
+            ys = [F.adaptive_max_pool3d(y, item.shape[-3:]) for item in out]
             # aux_losses = torch.stack([nn.BCEWithLogitsLoss(pos_weight=torch.ones([self.n_classes]).to(x.device)*2**i)(out[i].permute(0,2,3,4,1), ys[i].permute(0,2,3,4,1)) for i in range(len(out)-1)])
             # lvl_weights = self.lvl_weights.to(aux_losses.device)
             # aux_loss = (aux_losses * lvl_weights[:-1]).sum() / lvl_weights[:-1].sum()
             ce_loss, _ = self.loss_fn(out[-1], to_ce_target(ys[-1]))
             # loss = lvl_weights[-1] * ce_loss + aux_loss
             loss = ce_loss
-            outputs['loss'] = loss
+            outputs["loss"] = loss
             # outputs['ce_loss'] = ce_loss
             # outputs.update({f'loss_lvl{i}': aux_losses[i] for i in range(aux_losses.shape[0])})
         if not self.training:
             if self.return_logits:
                 outputs["logits"] = out[-1]
-                if 'location' in batch:
-                    outputs["location"] = batch['location']
+                if "location" in batch:
+                    outputs["location"] = batch["location"]
 
         return outputs
-    
+
+
 class TestNet(nn.Module):
 
     def __init__(self, backbone_args):
-        super(TestNet, self).__init__() 
-        
+        super(TestNet, self).__init__()
+
         self.backbone = FlexibleUNet(**backbone_args)
-        
-        
+
     def forward(self, x):
-        #x shape is bs, c, h, w, d
+        # x shape is bs, c, h, w, d
         out = self.backbone(x)
-        #out shape is bs, 7, h//2, w//2, d//2
-        logits = out[-1] # for heatmap do softmax + reorder classes .softmax(1)[:,[0,2,3,4,5,1]]
+        # out shape is bs, 7, h//2, w//2, d//2
+        logits = out[-1]  # for heatmap do softmax + reorder classes .softmax(1)[:,[0,2,3,4,5,1]]
         return logits
-    
-    
+
+
 # import torch
 # import monai.transforms as mt
 # import zarr
@@ -525,7 +533,7 @@ class TestNet(nn.Module):
 #     img = transforms({'image':img})['image']
 #     return img
 
-# backbone_args = dict(spatial_dims=3,    
+# backbone_args = dict(spatial_dims=3,
 #                          in_channels=1,
 #                          out_channels=6,
 #                          backbone='resnet34',
