@@ -29,7 +29,7 @@ class Ensemble(nn.Module):
 
 def main(*checkpoints, output_onnx: str, depth=192, width_height=128, batch_size=None, opset=None, **kwargs):
     models = [model_from_checkpoint(checkpoint, **kwargs) for checkpoint in checkpoints]
-    ensemble = Ensemble(models).cuda().eval().half()
+    ensemble = Ensemble(models).eval().half().cuda()
 
     output_onnx = Path(output_onnx)
     output_onnx.parent.mkdir(parents=True, exist_ok=True)
