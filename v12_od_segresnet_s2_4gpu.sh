@@ -12,7 +12,6 @@ do
   --fold=$FOLD \
   --learning_rate=5e-5 \
   --max_grad_norm=3 \
-  --num_crops_per_study=768 \
   --ddp_find_unused_parameters=True \
   --model_name=segresnetv2 \
   --num_train_epochs=75 \
