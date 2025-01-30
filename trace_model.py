@@ -42,12 +42,19 @@ def trace_and_save(checkpoint_path, traced_checkpoint_path, **kwargs):
     torch.jit.save(traced_model, str(traced_checkpoint_path))
 
 
-def main(*checkpoints, **kwargs):
+def main(*checkpoints, num_classes=6, use_stride2=True, use_stride4=False, **kwargs):
     for checkpoint in checkpoints:
         checkpoint_path = Path(checkpoint)
         traced_checkpoint_path = checkpoint_path.with_suffix(".jit")
 
-        trace_and_save(checkpoint_path, traced_checkpoint_path, **kwargs)
+        trace_and_save(
+            checkpoint_path,
+            traced_checkpoint_path,
+            num_classes=num_classes,
+            use_stride2=use_stride2,
+            use_stride4=use_stride4,
+            **kwargs,
+        )
 
 
 if __name__ == "__main__":
