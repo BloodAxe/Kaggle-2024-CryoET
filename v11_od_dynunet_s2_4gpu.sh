@@ -8,7 +8,7 @@ do
   --dataloader_pin_memory=True \
   --ddp_find_unused_parameters=True \
   --early_stopping=25 \
-  --fold=$FOLD \
+  --fold=1 \
   --learning_rate=3e-4 \
   --max_grad_norm=3 \
   --ddp_find_unused_parameters=True \
@@ -17,7 +17,7 @@ do
   --per_device_train_batch_size=6 \
   --random_erase_prob=0.2 \
   --copy_paste_prob=0.25 \
-  --copy_paste_limit=5 \
+  --copy_paste_limit=1 \
   --mixup_prob=0.25 \
   --scale_limit=0.15 \
   --use_6_classes=True \
@@ -31,7 +31,7 @@ do
   --weight_decay=0.0001 \
   --x_rotation_limit=45 \
   --x_rotation_limit=45 \
-  --seed=$FOLD \
+  --seed=11 \
   --interpolation_mode=random \
   --validate_on_x_flips=True \
   --validate_on_y_flips=True \

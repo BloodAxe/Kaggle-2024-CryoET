@@ -11,21 +11,25 @@ class FakeObjectDetectionAdapter(nn.Module):
         super().__init__()
 
     def mean_std_renormalization(self, volume: Tensor):
-        mean = volume.mean(dim=(2, 3, 4), keepdim=True)
-        std = volume.std(dim=(2, 3, 4), keepdim=True)
+        """
+        Renormalize the volume to have zero mean and unit variance.
+        :param volume: Tensor of shape (B, C, D, H, W)
+        """
+        mean = volume.mean(dim=(1, 2, 3, 4), keepdim=True)
+        std = volume.std(dim=(1, 2, 3, 4), keepdim=True)
         volume = (volume - mean) / std
         return volume
 
     def forward(self, volume):
         volume = self.mean_std_renormalization(volume)  # Adapt to different normalization
-        volume = einops.rearrange(volume, "B C D H W -> B C H W D")  # .transpose(2,1,0) but more clear what is happening
+        volume = einops.rearrange(volume, "B C D H W -> B C W H D")  # .transpose(2,1,0) but more clear what is happening
 
         logits = self.forward_backbone(volume)
 
         probas = logits.softmax(1)  # 7 classes [Background, then 6 classes] ?
         probas = probas[:, [0, 2, 3, 4, 5, 1]]  # Reorder classes
 
-        probas = einops.rearrange(probas, "B C H W D -> B C D H W")
+        probas = einops.rearrange(probas, "B C W H D -> B C D H W")
         fake_offsets = torch.zeros_like(probas[:, 0:3])
         return probas, fake_offsets
 
