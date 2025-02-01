@@ -166,7 +166,7 @@ def model_from_checkpoint(checkpoint_path: Path, **kwargs):
 
 
 def infer_fold(checkpoint_name):
-    for i in range(5):
+    for i in range(7):
         if f"fold_{i}" in checkpoint_name or f"fold-{i}" in checkpoint_name:
             return i
 
