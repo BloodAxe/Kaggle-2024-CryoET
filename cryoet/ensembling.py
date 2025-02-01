@@ -137,7 +137,7 @@ def jit_model_from_checkpoint(
     checkpoint_path = str(checkpoint_path)
     if checkpoint_path.endswith(".jit"):
         traced_model = torch.jit.load(checkpoint_path, map_location=torch_device)
-    elif checkpoint_path.endswith(".pt") or checkpoint_path.endswith(".ckpt"):
+    elif checkpoint_path.endswith(".pt") or checkpoint_path.endswith(".ckpt") or checkpoint_path.endswith(".pth"):
         model = model_from_checkpoint(
             checkpoint_path, num_classes=num_classes, use_stride2=use_stride2, use_stride4=use_stride4, **kwargs
         )
