@@ -15,10 +15,12 @@ class FakeObjectDetectionAdapter(nn.Module):
         Renormalize the volume to have zero mean and unit variance.
         :param volume: Tensor of shape (B, C, D, H, W)
         """
+        volume_dtype = volume.dtype
+        volume = volume.float()
         mean = volume.mean(dim=(1, 2, 3, 4), keepdim=True)
         std = volume.std(dim=(1, 2, 3, 4), keepdim=True)
         volume = (volume - mean) / std
-        return volume
+        return volume.to(volume_dtype)
 
     def forward(self, volume):
         volume = self.mean_std_renormalization(volume)  # Adapt to different normalization
