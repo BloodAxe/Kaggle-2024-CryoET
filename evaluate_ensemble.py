@@ -13,7 +13,7 @@ from dotenv import load_dotenv
 
 from cryoet.data.cross_validation import split_data_into_folds
 from cryoet.data.parsers import CLASS_LABEL_TO_CLASS_NAME, read_annotated_volume, TARGET_5_CLASSES
-from cryoet.ensembling import infer_fold
+from cryoet.ensembling import infer_fold, jit_model_from_checkpoint
 from cryoet.inference.predict_volume import (
     predict_scores_offsets_from_volume,
     postprocess_scores_offsets_into_submission,
@@ -56,7 +56,7 @@ def main(
     valid_depth_window_size=192,
     valid_spatial_window_size=128,
     valid_depth_tiles=1,
-    valid_spatial_tiles=8,
+    valid_spatial_tiles=9,
     iou_threshold=0.85,
     min_score_threshold=0.05,
     use_weighted_average=True,
@@ -65,7 +65,7 @@ def main(
     validate_on_x_flips=False,
     validate_on_y_flips=False,
     validate_on_z_flips=False,
-    validate_on_rot90=False,
+    validate_on_rot90=True,
     device="cuda",
 ):
     function_args = locals()
@@ -221,7 +221,7 @@ def evaluate_models_on_fold(
     device="cuda",
     torch_dtype=torch.float16,
 ):
-    models = [torch.jit.load(checkpoint, map_location=device).to(torch_dtype) for checkpoint in checkpoints]
+    models = [jit_model_from_checkpoint(checkpoint, torch_device=device, torch_dtype=torch_dtype) for checkpoint in checkpoints]
 
     _, valid_studies = split_data_into_folds(data_path / "train" / "static" / "ExperimentRuns")[fold]
 
