@@ -20,7 +20,7 @@ class FakeObjectDetectionAdapter(nn.Module):
         mean = volume.mean(dim=(1, 2, 3, 4), keepdim=True)
         std = volume.std(dim=(1, 2, 3, 4), keepdim=True)
         volume = (volume - mean) / std
-        return volume.to(volume_dtype)
+        return volume.half()
 
     def forward(self, volume):
         volume = self.mean_std_renormalization(volume)  # Adapt to different normalization
