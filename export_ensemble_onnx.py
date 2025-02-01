@@ -27,8 +27,22 @@ class Ensemble(nn.Module):
         return scores, offsets
 
 
-def main(*checkpoints, output_onnx: str, depth=192, width_height=128, batch_size=None, opset=None, **kwargs):
-    models = [model_from_checkpoint(checkpoint, **kwargs) for checkpoint in checkpoints]
+def main(
+    *checkpoints,
+    output_onnx: str,
+    depth=192,
+    width_height=128,
+    num_classes=6,
+    use_stride2=True,
+    use_stride4=False,
+    batch_size=None,
+    opset=None,
+    **kwargs,
+):
+    models = [
+        model_from_checkpoint(checkpoint, num_classes=num_classes, use_stride2=use_stride2, use_stride4=use_stride4, **kwargs)
+        for checkpoint in checkpoints
+    ]
     ensemble = Ensemble(models).eval().half().cuda()
 
     output_onnx = Path(output_onnx)
