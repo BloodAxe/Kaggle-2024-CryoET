@@ -136,18 +136,18 @@ def jit_model_from_checkpoint(
 ):
     checkpoint_path = str(checkpoint_path)
     if checkpoint_path.endswith(".jit"):
-        traced_model = torch.jit.load(checkpoint_path, map_location=torch_device)
+        traced_model = torch.jit.load(checkpoint_path, map_location=torch_device).to(torch_dtype)
     elif checkpoint_path.endswith(".pt") or checkpoint_path.endswith(".ckpt") or checkpoint_path.endswith(".pth"):
         model = model_from_checkpoint(
             checkpoint_path, num_classes=num_classes, use_stride2=use_stride2, use_stride4=use_stride4, **kwargs
         )
-        model = model.to(torch_device).eval()
+        model = model.to(device=torch_device, dtype=torch_dtype).eval()
         example_input = torch.randn(1, 1, 192, 128, 128).to(torch_device).to(torch_dtype)
         traced_model = torch.jit.trace(model, example_input)
     else:
         raise ValueError(f"Unknown checkpoint extension: {checkpoint_path}")
 
-    return traced_model.to(torch_dtype)
+    return traced_model
 
 
 def model_from_checkpoint(checkpoint_path: Path | str, **kwargs):
