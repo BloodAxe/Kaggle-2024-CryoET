@@ -169,13 +169,13 @@ def model_from_checkpoint(checkpoint_path: Path | str, **kwargs):
         model = SegResNetForObjectDetectionV2(config)
         state_dict_key = "state_dict"
         model_prefix = "model."
-    elif "weights-cryo-cfg-ch-48h-ce2c2" in str(checkpoint_path):
+    elif "weights-cryo-cfg-ch-48h-ce2c2" in str(checkpoint_path) or "cfg_ch_48h_ce2c2_bf2_ek" in str(checkpoint_path):
         model = MdlCh20dCe2c2_resnet34()
         state_dict_key = "model"
-    elif "weights-cryo-cfg-ch-48j2" in str(checkpoint_path):
+    elif "weights-cryo-cfg-ch-48j2" in str(checkpoint_path) or "cfg_ch_48j2_bf162_ek" in str(checkpoint_path):
         model = MdlCh20dCe2_resnet34()
         state_dict_key = "model"
-    elif "weights-cryo-cfg-ch-48k" in str(checkpoint_path):
+    elif "weights-cryo-cfg-ch-48k" in str(checkpoint_path) or "cfg_ch_48k_bf162_ek" in str(checkpoint_path):
         model = MdlCh20dCe2_effnetb3()
         state_dict_key = "model"
     else:
@@ -192,7 +192,7 @@ def model_from_checkpoint(checkpoint_path: Path | str, **kwargs):
 
 def infer_fold(checkpoint_name):
     for i in range(7):
-        if f"fold_{i}" in checkpoint_name or f"fold-{i}" in checkpoint_name:
+        if f"fold_{i}" in checkpoint_name or f"fold-{i}" in checkpoint_name or f"fold{i}" in checkpoint_name:
             return i
 
     raise ValueError(f"Could not infer fold from checkpoint name: {checkpoint_name}")
