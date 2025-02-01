@@ -32,6 +32,10 @@ class FakeObjectDetectionAdapter(nn.Module):
         probas = probas[:, [0, 2, 3, 4, 5, 1]]  # Reorder classes
 
         probas = einops.rearrange(probas, "B C W H D -> B C D H W")
+
+        probas = torch.nn.functional.interpolate(probas, scale_factor=2, mode="trilinear")
+        probas = torch.nn.functional.interpolate(probas, scale_factor=0.5, mode="trilinear")
+
         fake_offsets = torch.zeros_like(probas[:, 0:3])
         return probas, fake_offsets
 
