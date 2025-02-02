@@ -104,10 +104,12 @@ def main(
     for fold in folds:
         print(f"Evaluating fold {fold}")
         checkpoints = models_per_fold[fold]
+        _, valid_studies = split_data_into_folds(data_path / "train" / "static" / "ExperimentRuns")[fold]
+
         per_class_scores, score_thresholds, best_threshold_per_class, best_score_per_class, averaged_score = (
             evaluate_models_on_fold(
                 checkpoints=checkpoints,
-                fold=fold,
+                valid_studies=valid_studies,
                 data_path=data_path,
                 output_dir=output_dir,
                 validate_on_x_flips=validate_on_x_flips,
@@ -169,8 +171,6 @@ def main(
     summary_file.write(f"Curve averaged thresholds {np.array2string(curve_averaged_thresholds, separator=', ', precision=3)}\n")
     summary_file.write(f"CV score:                 {np.mean(oof_averaged_score):.4f} std: {np.std(oof_averaged_score):.4f}\n")
 
-    summary_file.close()
-
     num_folds = len(folds)
     f, ax = plt.subplots(1, num_folds + 1, figsize=(5 * (num_folds + 1), 5))
 
@@ -196,6 +196,47 @@ def main(
     )
     f.show()
 
+    # Now, do the risky thing - use whole train set to find the best thresholds
+    train_studies, valid_studies = split_data_into_folds(data_path / "train" / "static" / "ExperimentRuns")[0]
+    all_studies = train_studies + valid_studies
+
+    per_class_scores, score_thresholds, best_threshold_per_class, best_score_per_class, averaged_score = evaluate_models_on_fold(
+        checkpoints=checkpoints,
+        valid_studies=all_studies,
+        data_path=data_path,
+        output_dir=output_dir,
+        validate_on_x_flips=validate_on_x_flips,
+        validate_on_y_flips=validate_on_y_flips,
+        validate_on_z_flips=validate_on_z_flips,
+        validate_on_rot90=validate_on_rot90,
+        prediction_params=PredictionParams(
+            valid_depth_window_size=valid_depth_window_size,
+            valid_spatial_window_size=valid_spatial_window_size,
+            valid_depth_tiles=valid_depth_tiles,
+            valid_spatial_tiles=valid_spatial_tiles,
+            use_weighted_average=use_weighted_average,
+            use_z_flip_tta=False,
+            use_y_flip_tta=False,
+            use_x_flip_tta=False,
+        ),
+        postprocess_hparams=PostprocessingParams(
+            use_centernet_nms=True,
+            use_single_label_per_anchor=use_single_label_per_anchor,
+            iou_threshold=iou_threshold,
+            pre_nms_top_k=pre_nms_top_k,
+            min_score_threshold=min_score_threshold,
+        ),
+        output_strides=output_strides,
+        device=device,
+        torch_dtype=torch_dtype,
+    )
+
+    print("Curve averaged thresholds ", np.array2string(curve_averaged_thresholds, separator=", ", precision=3))
+    summary_file.write(f"Whole train eval results\n")
+    summary_file.write(f"Thresholds      {np.array2string(best_threshold_per_class, separator=', ', precision=3)}\n")
+    summary_file.write(f"Scores          {np.array2string(best_score_per_class, separator=', ', precision=3)}\n")
+    summary_file.write(f"Averaged score: {averaged_score:.4f}\n")
+
 
 def save_scores_heatmap(scores, output_dir, study_name):
     if isinstance(scores, list):
@@ -208,7 +249,7 @@ def save_scores_heatmap(scores, output_dir, study_name):
 
 def evaluate_models_on_fold(
     checkpoints,
-    fold,
+    valid_studies,
     data_path: Path,
     output_dir: Path,
     validate_on_x_flips,
@@ -222,8 +263,6 @@ def evaluate_models_on_fold(
     torch_dtype=torch.float16,
 ):
     models = [jit_model_from_checkpoint(checkpoint, torch_device=device, torch_dtype=torch_dtype) for checkpoint in checkpoints]
-
-    _, valid_studies = split_data_into_folds(data_path / "train" / "static" / "ExperimentRuns")[fold]
 
     window_size = (
         prediction_params.valid_depth_window_size,
