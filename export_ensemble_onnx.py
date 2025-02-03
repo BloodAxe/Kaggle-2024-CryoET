@@ -71,7 +71,7 @@ def main(
             args=dummy_input,
             f=output_onnx,
             do_constant_folding=do_constant_folding,
-            verbose=True,
+            verbose=False,
             verify=True,
             dynamic_axes={"volume": {0: "batch"}} if batch_size is None else None,
             opset_version=opset,
