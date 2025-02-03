@@ -1,16 +1,18 @@
 import numpy as np
 from matplotlib import pyplot as plt
 from typing import List, Tuple, Union, Any, Iterable, Optional
-import torch 
+import torch
+
 
 def as_tuple_of_3(value) -> Tuple:
     if isinstance(value, int):
         result = value, value, value
     else:
-        a,b,c = value
-        result = a,b,c
+        a, b, c = value
+        result = a, b, c
 
     return result
+
 
 def compute_better_tiles_1d(length: int, window_size: int, num_tiles: int):
     """
@@ -46,14 +48,24 @@ def compute_better_tiles_with_num_tiles(
                     x_slice,
                 )
 
+
 def get_slices_ek(img_shape, roi_size, num_tiles):
-    bs , c, *image_size = img_shape
+    bs, c, *image_size = img_shape
     slices = compute_better_tiles_with_num_tiles(image_size, roi_size, num_tiles)
     slices = [s for s in slices]
-    all_slices = [(slice(i,i+1),slice(0,c),) + s for i in range(bs) for s in slices]
+    all_slices = [
+        (
+            slice(i, i + 1),
+            slice(0, c),
+        )
+        + s
+        for i in range(bs)
+        for s in slices
+    ]
     return all_slices
 
-def compute_weight_matrix(shape, sigma=15):
+
+def compute_weight_matrix(shape, sigma=10):
     """
     :param scores_volume: Tensor of shape (C, D, H, W)
     :return: Tensor of shape (D, H, W)
@@ -75,12 +87,13 @@ def compute_weight_matrix(shape, sigma=15):
     weight = torch.exp(-distances / (sigma**2))
 
     # I just like the look of heatmap
-    return weight**3
+    return weight
 
-def get_counts(slices, original_shape, weight_matrix=True, window_size=(192,128,128)):
-    counts = torch.zeros(original_shape, dtype=torch.float, device='cpu')
+
+def get_counts(slices, original_shape, weight_matrix=True, window_size=(192, 128, 128)):
+    counts = torch.zeros(original_shape, dtype=torch.float, device="cpu")
     if weight_matrix:
-        w = compute_weight_matrix(window_size)[None,None]
+        w = compute_weight_matrix(window_size)[None, None]
     else:
         w = 1
     # print(w.shape)
@@ -88,13 +101,16 @@ def get_counts(slices, original_shape, weight_matrix=True, window_size=(192,128,
         counts[slices[i]] += w
     return counts
 
-ORIGINAL_SHAPE = (1,1,192,630,630)
-WINDOW_SIZE = (192,128,128)
 
-c = get_counts(get_slices_ek(ORIGINAL_SHAPE, WINDOW_SIZE, (1,9,9)), ORIGINAL_SHAPE, weight_matrix=True , window_size=WINDOW_SIZE)
+ORIGINAL_SHAPE = (1, 1, 192, 630, 630)
+WINDOW_SIZE = (96, 96, 96)
 
-fix, ax = plt.subplots(1,3,figsize=(30,10))
-ax[0].imshow(c[0,0].cpu().numpy().sum(0))
-ax[1].imshow(c[0,0].cpu().numpy().sum(1).T)
-ax[2].imshow(c[0,0].cpu().numpy().sum(2))
+c = get_counts(
+    get_slices_ek(ORIGINAL_SHAPE, WINDOW_SIZE, (4, 12, 11)), ORIGINAL_SHAPE, weight_matrix=True, window_size=WINDOW_SIZE
+)
+
+fix, ax = plt.subplots(1, 3, figsize=(30, 10))
+ax[0].imshow(c[0, 0].cpu().numpy().sum(0))
+ax[1].imshow(c[0, 0].cpu().numpy().sum(1).T)
+ax[2].imshow(c[0, 0].cpu().numpy().sum(2))
 plt.show()

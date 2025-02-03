@@ -30,8 +30,8 @@ class Ensemble(nn.Module):
 def main(
     *checkpoints,
     output_onnx: str,
-    depth=192,
-    width_height=128,
+    valid_depth_window_size=192,
+    valid_spatial_window_size=128,
     num_classes=6,
     use_stride2=True,
     use_stride4=False,
@@ -52,7 +52,14 @@ def main(
         dummy_input_batch_size = 1
         if batch_size is not None:
             dummy_input_batch_size = batch_size
-        dummy_input = torch.randn(dummy_input_batch_size or 1, 1, depth, width_height, width_height, device="cuda").half()
+        dummy_input = torch.randn(
+            dummy_input_batch_size or 1,
+            1,
+            valid_depth_window_size,
+            valid_spatial_window_size,
+            valid_spatial_window_size,
+            device="cuda",
+        ).half()
 
         torch.onnx.export(
             model=ensemble,
