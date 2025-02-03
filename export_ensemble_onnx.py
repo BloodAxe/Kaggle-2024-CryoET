@@ -78,8 +78,12 @@ def main(
             output_names=["scores", "offsets"],
         )
 
+        print("Model exported to ONNX")
+
         try:
             import onnxsim
+
+            print("Running ONNX simplification")
 
             simplified_model, success = onnxsim.simplify(model=onnx.load(output_onnx))
             if not success:
