@@ -36,6 +36,8 @@ class FakeObjectDetectionAdapter(nn.Module):
         probas = torch.nn.functional.interpolate(probas, scale_factor=0.5, mode="trilinear")
 
         fake_offsets = torch.zeros_like(probas[:, 0:3])
+        if is_tracing:
+            return [probas, fake_offsets]
         return probas, fake_offsets
 
     def forward_backbone(self, volume):
