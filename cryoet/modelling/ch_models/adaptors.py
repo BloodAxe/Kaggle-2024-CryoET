@@ -21,7 +21,7 @@ class FakeObjectDetectionAdapter(nn.Module):
         volume = (volume - mean) / std
         return volume
 
-    def forward(self, volume):
+    def forward(self, volume, is_tracing=False):
         volume = self.mean_std_renormalization(volume)  # Adapt to different normalization
         volume = einops.rearrange(volume, "B C D H W -> B C W H D")  # .transpose(2,1,0) but more clear what is happening
 
