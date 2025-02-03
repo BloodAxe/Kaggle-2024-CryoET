@@ -71,7 +71,7 @@ def main(
             args=dummy_input,
             f=output_onnx,
             do_constant_folding=do_constant_folding,
-            verbose=False,
+            verbose=True,
             verify=True,
             dynamic_axes={"volume": {0: "batch"}} if batch_size is None else None,
             opset_version=opset,
@@ -90,7 +90,7 @@ def main(
             if not success:
                 print("Failed to simplify model")
             else:
-                onnx.save(simplified_model, output_onnx)
+                onnx.save(simplified_model, output_onnx.with_suffix(".simplified.onnx"))
                 print(f"Simplified model saved to {output_onnx}")
 
         except ImportError:
