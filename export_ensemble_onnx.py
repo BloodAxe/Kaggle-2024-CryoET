@@ -52,14 +52,18 @@ def main(
         dummy_input_batch_size = 1
         if batch_size is not None:
             dummy_input_batch_size = batch_size
-        dummy_input = torch.randn(
-            dummy_input_batch_size or 1,
-            1,
-            valid_depth_window_size,
-            valid_spatial_window_size,
-            valid_spatial_window_size,
-            device="cuda",
-        ).half()
+
+        dummy_input = (
+            torch.randn(
+                dummy_input_batch_size or 1,
+                1,
+                valid_depth_window_size,
+                valid_spatial_window_size,
+                valid_spatial_window_size,
+            )
+            .half()
+            .cuda()
+        )
 
         torch.onnx.export(
             model=ensemble,
