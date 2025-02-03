@@ -32,8 +32,8 @@ class FakeObjectDetectionAdapter(nn.Module):
 
         probas = einops.rearrange(probas, "B C W H D -> B C D H W")
 
-        probas = torch.nn.functional.interpolate(probas, scale_factor=2, mode="trilinear")
-        probas = torch.nn.functional.interpolate(probas, scale_factor=0.5, mode="trilinear")
+        # probas = torch.nn.functional.interpolate(probas, scale_factor=2, mode="trilinear")
+        # probas = torch.nn.functional.interpolate(probas, scale_factor=0.5, mode="trilinear")
 
         fake_offsets = torch.zeros_like(probas[:, 0:3])
         if is_tracing:
