@@ -108,12 +108,19 @@ def main(
         print("MSE scores diff", torch.abs(true_scores - jit_scores).max())
         print("MSE offsets diff", torch.abs(true_offsets - jit_offsets).max())
 
-        ort_session = ort.InferenceSession(str(output_onnx))
+        ort_session = ort.InferenceSession(output_onnx)
         ort_scores, ort_offsets = ort_session.run(None, {"volume": dummy_input.cpu().numpy()})
 
         print("ONNX Sanity check")
-        print("ORT scores diff", torch.abs(true_scores - torch.tensor(ort_scores)).max())
-        print("ORT offsets diff", torch.abs(true_offsets - torch.tensor(ort_offsets)).max())
+        print("ORT scores diff", torch.abs(true_scores.cpu() - torch.tensor(ort_scores)).max())
+        print("ORT offsets diff", torch.abs(true_offsets.cpu() - torch.tensor(ort_offsets)).max())
+
+        ort_session = ort.InferenceSession(output_onnx.with_suffix(".simplified.onnx"))
+        ort_scores, ort_offsets = ort_session.run(None, {"volume": dummy_input.cpu().numpy()})
+
+        print("ONNX Sanity check")
+        print("ORT scores diff", torch.abs(true_scores.cpu() - torch.tensor(ort_scores)).max())
+        print("ORT offsets diff", torch.abs(true_offsets.cpu() - torch.tensor(ort_offsets)).max())
 
     print(f"Exported ensemble to {output_onnx}")
     print("Models in ensemble:")
