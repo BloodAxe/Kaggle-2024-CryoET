@@ -43,7 +43,10 @@ def main(
         model_from_checkpoint(checkpoint, num_classes=num_classes, use_stride2=use_stride2, use_stride4=use_stride4, **kwargs)
         for checkpoint in checkpoints
     ]
-    ensemble = Ensemble(models).eval().half().cuda()
+    torch_dtype = torch.float16
+    torch_device = "cpu"
+
+    ensemble = Ensemble(models).eval().to(device=torch_device, dtype=torch_dtype)
 
     output_onnx = Path(output_onnx)
     output_onnx.parent.mkdir(parents=True, exist_ok=True)
@@ -53,17 +56,13 @@ def main(
         if batch_size is not None:
             dummy_input_batch_size = batch_size
 
-        dummy_input = (
-            torch.randn(
-                dummy_input_batch_size or 1,
-                1,
-                valid_depth_window_size,
-                valid_spatial_window_size,
-                valid_spatial_window_size,
-            )
-            .half()
-            .cuda()
-        )
+        dummy_input = torch.randn(
+            dummy_input_batch_size or 1,
+            1,
+            valid_depth_window_size,
+            valid_spatial_window_size,
+            valid_spatial_window_size,
+        ).to(device=torch_device, dtype=torch_dtype)
 
         torch.onnx.export(
             model=ensemble,
