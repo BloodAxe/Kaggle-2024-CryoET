@@ -44,7 +44,7 @@ def main(
         for checkpoint in checkpoints
     ]
     torch_dtype = torch.float16
-    torch_device = "cpu"
+    torch_device = "cuda"
 
     ensemble = Ensemble(models).eval().to(device=torch_device, dtype=torch_dtype)
 
