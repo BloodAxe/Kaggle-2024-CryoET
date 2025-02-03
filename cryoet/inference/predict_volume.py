@@ -83,6 +83,7 @@ def postprocess_scores_offsets_into_submission(
     scores,
     study_name,
     use_centernet_nms,
+    use_gaussian_smoothing: bool,
     use_single_label_per_anchor,
     pre_nms_top_k: int,
 ):
@@ -93,6 +94,7 @@ def postprocess_scores_offsets_into_submission(
         class_sigmas=TARGET_SIGMAS,
         min_score=score_thresholds,
         iou_threshold=iou_threshold,
+        class_map_gaussian_smoothing_kernel=3 if use_gaussian_smoothing else 0,
         use_centernet_nms=use_centernet_nms,
         use_single_label_per_anchor=use_single_label_per_anchor,
         pre_nms_top_k=pre_nms_top_k,

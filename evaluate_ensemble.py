@@ -29,7 +29,6 @@ class PredictionParams:
     valid_depth_tiles: int
     valid_spatial_tiles: int
     use_weighted_average: bool
-
     use_z_flip_tta: bool
     use_y_flip_tta: bool
     use_x_flip_tta: bool
@@ -39,6 +38,7 @@ class PredictionParams:
 class PostprocessingParams:
     use_centernet_nms: bool
     use_single_label_per_anchor: bool
+    use_gaussian_smoothing: bool
 
     iou_threshold: float
     pre_nms_top_k: int
@@ -65,6 +65,7 @@ def main(
     validate_on_x_flips=False,
     validate_on_y_flips=False,
     validate_on_z_flips=False,
+    use_gaussian_smoothing=False,
     validate_on_rot90=True,
     device="cuda",
 ):
@@ -132,6 +133,7 @@ def main(
                     iou_threshold=iou_threshold,
                     pre_nms_top_k=pre_nms_top_k,
                     min_score_threshold=min_score_threshold,
+                    use_gaussian_smoothing=use_gaussian_smoothing,
                 ),
                 output_strides=output_strides,
                 device=device,
@@ -222,6 +224,7 @@ def main(
         postprocess_hparams=PostprocessingParams(
             use_centernet_nms=True,
             use_single_label_per_anchor=use_single_label_per_anchor,
+            use_gaussian_smoothing=use_gaussian_smoothing,
             iou_threshold=iou_threshold,
             pre_nms_top_k=pre_nms_top_k,
             min_score_threshold=min_score_threshold,
@@ -365,6 +368,7 @@ def postprocess_into_submission(
             score_thresholds=postprocess_hparams.min_score_threshold,
             pre_nms_top_k=postprocess_hparams.pre_nms_top_k,
             use_centernet_nms=postprocess_hparams.use_centernet_nms,
+            use_gaussian_smoothing=postprocess_hparams.use_gaussian_smoothing,
             use_single_label_per_anchor=postprocess_hparams.use_single_label_per_anchor,
         )
         submissions.append(submission_for_sample)
