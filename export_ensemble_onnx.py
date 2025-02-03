@@ -1,6 +1,7 @@
 from pathlib import Path
 from typing import List
 
+import onnxruntime as ort
 import onnx
 import torch
 from torch import nn
@@ -99,6 +100,20 @@ def main(
         traced = torch.jit.trace(ensemble, dummy_input)
         traced.save(output_onnx.with_suffix(".jit"))
         print(f"Traced model saved to {output_onnx.with_suffix('.jit')}")
+
+        true_scores, true_offsets = ensemble(dummy_input)
+        jit_scores, jit_offsets = traced(dummy_input)
+
+        print("Jit Sanity check")
+        print("MSE scores diff", torch.abs(true_scores - jit_scores).max())
+        print("MSE offsets diff", torch.abs(true_offsets - jit_offsets).max())
+
+        ort_session = ort.InferenceSession(str(output_onnx))
+        ort_scores, ort_offsets = ort_session.run(None, {"volume": dummy_input.cpu().numpy()})
+
+        print("ONNX Sanity check")
+        print("ORT scores diff", torch.abs(true_scores - torch.tensor(ort_scores)).max())
+        print("ORT offsets diff", torch.abs(true_offsets - torch.tensor(ort_offsets)).max())
 
     print(f"Exported ensemble to {output_onnx}")
     print("Models in ensemble:")
