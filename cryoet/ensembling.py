@@ -132,6 +132,7 @@ def jit_model_from_checkpoint(
     num_classes=6,
     use_stride2=True,
     use_stride4=False,
+    window_size=(192, 128, 128),
     **kwargs,
 ):
     checkpoint_path = str(checkpoint_path)
@@ -142,7 +143,7 @@ def jit_model_from_checkpoint(
             checkpoint_path, num_classes=num_classes, use_stride2=use_stride2, use_stride4=use_stride4, **kwargs
         )
         model = model.to(device=torch_device, dtype=torch_dtype).eval()
-        example_input = torch.randn(1, 1, 192, 128, 128).to(device=torch_device, dtype=torch_dtype)
+        example_input = torch.randn(1, 1, *window_size).to(device=torch_device, dtype=torch_dtype)
         traced_model = torch.jit.trace(model, example_input)
     else:
         raise ValueError(f"Unknown checkpoint extension: {checkpoint_path}")

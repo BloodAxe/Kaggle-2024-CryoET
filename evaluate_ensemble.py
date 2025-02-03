@@ -262,7 +262,19 @@ def evaluate_models_on_fold(
     device="cuda",
     torch_dtype=torch.float16,
 ):
-    models = [jit_model_from_checkpoint(checkpoint, torch_device=device, torch_dtype=torch_dtype) for checkpoint in checkpoints]
+    models = [
+        jit_model_from_checkpoint(
+            checkpoint,
+            torch_device=device,
+            torch_dtype=torch_dtype,
+            window_size=(
+                prediction_params.valid_depth_window_size,
+                prediction_params.valid_spatial_window_size,
+                prediction_params.valid_spatial_window_size,
+            ),
+        )
+        for checkpoint in checkpoints
+    ]
 
     window_size = (
         prediction_params.valid_depth_window_size,

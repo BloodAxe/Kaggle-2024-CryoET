@@ -6,6 +6,7 @@ from torch import Tensor
 
 from cryoet.data.functional import normalize_volume_to_unit_range
 from cryoet.ensembling import model_from_checkpoint
+from cryoet.modelling.ch_models.adaptors import MdlCh20dCe2_resnet34, MdlCh20dCe2c2_resnet34, MdlCh20dCe2_effnetb3
 from cryoet.modelling.detection.dynunet import DynUNetForObjectDetectionConfig, DynUNetForObjectDetection
 from cryoet.modelling.detection.functional import convert_2d_to_3d, gaussian_blur_3d
 from cryoet.modelling.detection.maxvit_unet25d import MaxVitUnet25d, MaxVitUnet25dConfig
@@ -17,6 +18,49 @@ from cryoet.modelling.detection.task_aligned_assigner import check_points_inside
 from cryoet.modelling.detection.unet3d_detection import UNet3DForObjectDetectionConfig, UNet3DForObjectDetection
 
 from cryoet.modelling.detection.unetr import SwinUNETRForObjectDetectionConfig, SwinUNETRForObjectDetection
+
+
+@torch.no_grad()
+def test_MdlCh20dCe2_resnet34():
+    input = torch.randn((1, 1, 96, 96, 96))
+    m1 = MdlCh20dCe2_resnet34().eval()
+    output = m1(input)
+    assert output[0].shape == (1, 6, input.size(2) // 2, input.size(3) // 2, input.size(4) // 2)
+    assert output[1].shape == (1, 3, input.size(2) // 2, input.size(3) // 2, input.size(4) // 2)
+
+    traced_model = torch.jit.trace(m1, input)
+    output = traced_model(input)
+    assert output[0].shape == (1, 6, input.size(2) // 2, input.size(3) // 2, input.size(4) // 2)
+    assert output[1].shape == (1, 3, input.size(2) // 2, input.size(3) // 2, input.size(4) // 2)
+
+
+@torch.no_grad()
+def test_MdlCh20dCe2c2_resnet34():
+    input = torch.randn((1, 1, 96, 96, 96))
+    m2 = MdlCh20dCe2c2_resnet34().eval()
+    output = m2(input)
+    assert output[0].shape == (1, 6, input.size(2) // 2, input.size(3) // 2, input.size(4) // 2)
+    assert output[1].shape == (1, 3, input.size(2) // 2, input.size(3) // 2, input.size(4) // 2)
+
+    traced_model = torch.jit.trace(m2, input)
+    output = traced_model(input)
+    assert output[0].shape == (1, 6, input.size(2) // 2, input.size(3) // 2, input.size(4) // 2)
+    assert output[1].shape == (1, 3, input.size(2) // 2, input.size(3) // 2, input.size(4) // 2)
+
+
+@torch.no_grad()
+def test_MdlCh20dCe2_effnetb3():
+    input = torch.randn((1, 1, 96, 96, 96))
+    m3 = MdlCh20dCe2_effnetb3().eval()
+    output = m3(input)
+    print(output[0].shape, output[1].shape)
+    assert output[0].shape == (1, 6, input.size(2) // 2, input.size(3) // 2, input.size(4) // 2)
+    assert output[1].shape == (1, 3, input.size(2) // 2, input.size(3) // 2, input.size(4) // 2)
+
+    traced_model = torch.jit.trace(m3, input)
+    output = traced_model(input)
+    assert output[0].shape == (1, 6, input.size(2) // 2, input.size(3) // 2, input.size(4) // 2)
+    assert output[1].shape == (1, 3, input.size(2) // 2, input.size(3) // 2, input.size(4) // 2)
 
 
 def test_check_points_inside_bboxes():
