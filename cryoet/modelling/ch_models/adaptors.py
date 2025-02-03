@@ -49,19 +49,19 @@ class FakeObjectDetectionAdapter(nn.Module):
 class MdlCh20dCe2_resnet34(FakeObjectDetectionAdapter):
     def __init__(self):
         super().__init__()
-        backbone_args = dict(spatial_dims=3, in_channels=1, out_channels=6, backbone="resnet34", pretrained=False)
+        backbone_args = dict(spatial_dims=3, in_channels=1, out_channels=6, backbone="resnet34", pretrained=False, is_pad=False)
         self.backbone = FlexibleUNet(**backbone_args)
 
 
 class MdlCh20dCe2c2_resnet34(FakeObjectDetectionAdapter):
     def __init__(self):
         super().__init__()
-        backbone_args = dict(spatial_dims=3, in_channels=1, out_channels=6, backbone="resnet34", pretrained=False)
+        backbone_args = dict(spatial_dims=3, in_channels=1, out_channels=6, backbone="resnet34", pretrained=False, is_pad=False)
         self.backbone = FlexibleUNet2c2(**backbone_args)
 
 
 class MdlCh20dCe2_effnetb3(FakeObjectDetectionAdapter):
     def __init__(self):
         super().__init__()
-        backbone_args = dict(spatial_dims=3, in_channels=1, out_channels=6, backbone="efficientnet-b3", pretrained=False)
+        backbone_args = dict(spatial_dims=3, in_channels=1, out_channels=6, backbone="efficientnet-b3", pretrained=False, is_pad=False)
         self.backbone = FlexibleUNet(**backbone_args)
