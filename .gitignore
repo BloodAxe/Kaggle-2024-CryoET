@@ -3,4 +3,4 @@ data/
 .env
 runs/
 pretrained/
-*/__pycache__/
+__pycache__/
