@@ -4,3 +4,4 @@ data/
 runs/
 pretrained/
 __pycache__/
+*.py[cod]
