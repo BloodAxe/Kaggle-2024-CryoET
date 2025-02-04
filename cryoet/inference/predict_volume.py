@@ -175,19 +175,34 @@ def predict_scores_offsets_from_volume(
 
             if use_z_flip_tta:
                 logits_flip, offsets_flip = model(z_flip_volume(tile_volume))
-                probas = [z_flip_volume(x.sigmoid()) for x in logits_flip]
+                if torch.is_tensor(logits_flip):
+                    logits_flip = [logits_flip]
+                if torch.is_tensor(offsets_flip):
+                    offsets_flip = [offsets_flip]
+
+                probas = [z_flip_volume(x) for x in logits_flip]
                 offsets = [z_flip_offsets(x) for x in offsets_flip]
                 container.accumulate_batch(probas, offsets, tile_offsets)
 
             if use_y_flip_tta:
                 logits_flip, offsets_flip = model(y_flip_volume(tile_volume))
-                probas = [y_flip_volume(x.sigmoid()) for x in logits_flip]
+                if torch.is_tensor(logits_flip):
+                    logits_flip = [logits_flip]
+                if torch.is_tensor(offsets_flip):
+                    offsets_flip = [offsets_flip]
+
+                probas = [y_flip_volume(x) for x in logits_flip]
                 offsets = [y_flip_offsets(x) for x in offsets_flip]
                 container.accumulate_batch(probas, offsets, tile_offsets)
 
             if use_x_flip_tta:
                 logits_flip, offsets_flip = model(x_flip_volume(tile_volume))
-                probas = [x_flip_volume(x.sigmoid()) for x in logits_flip]
+                if torch.is_tensor(logits_flip):
+                    logits_flip = [logits_flip]
+                if torch.is_tensor(offsets_flip):
+                    offsets_flip = [offsets_flip]
+
+                probas = [x_flip_volume(x) for x in logits_flip]
                 offsets = [x_flip_offsets(x) for x in offsets_flip]
                 container.accumulate_batch(probas, offsets, tile_offsets)
 
