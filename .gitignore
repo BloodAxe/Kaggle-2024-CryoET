@@ -6,3 +6,4 @@ pretrained/
 __pycache__/
 *.py[cod]
 */*.py[cod]
+*.pyc
