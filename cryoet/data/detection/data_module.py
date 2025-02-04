@@ -8,7 +8,7 @@ import torch
 from torch.nn.utils.rnn import pad_sequence
 from torch.utils.data import ConcatDataset, DataLoader, default_collate
 
-from cryoet.data.cross_validation import split_data_into_folds, get_ninja_split, split_data_into_folds_leave_one_out
+from cryoet.data.cross_validation import split_data_into_folds, get_ninja_split, split_data_into_folds_leave_one_out, split_data_into_fullfit
 from cryoet.data.parsers import read_annotated_volume, AnnotatedVolume, CLASS_LABEL_TO_CLASS_NAME
 from cryoet.training.args import DataArguments, MyTrainingArguments, ModelArguments
 from .instance_crop_dataset import InstanceCropDatasetForPointDetection
@@ -42,6 +42,7 @@ class ObjectDetectionDataModule(L.LightningDataModule):
             "ninja": get_ninja_split,
             "split_data_into_folds": split_data_into_folds,
             "split_data_into_folds_leave_one_out": split_data_into_folds_leave_one_out,
+            "split_data_into_fullfit": split_data_into_fullfit,
         }[data_args.split_strategy]
 
         splits = split_strategy(self.runs_dir)

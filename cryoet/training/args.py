@@ -198,6 +198,7 @@ class MyTrainingArguments(TrainingArguments):
 
     learning_rate: float = field(default=3e-4, metadata={"help": "Learning rate"})
     weight_decay: float = field(default=0.0001, metadata={"help": "Weight decay"})
+    num_cycles: float = field(default=0.5, metadata={"help": "default is half a cosine cycle i.e. from full to 0"})
 
     report_to: typing.Union[str, typing.List[str]] = field(default="tensorboard", metadata={"help": "Report to"})
 

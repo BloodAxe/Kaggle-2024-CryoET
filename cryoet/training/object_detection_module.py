@@ -377,7 +377,7 @@ class ObjectDetectionModel(L.LightningModule):
             optimizer,
             warmup_steps=warmup_steps,
             warmup_learning_rate=1e-7,
-            total_steps=self.trainer.estimated_stepping_batches,
+            total_steps=self.trainer.estimated_stepping_batches / (2 * self.train_args.num_cycles),
         )
         return {
             "optimizer": optimizer,
