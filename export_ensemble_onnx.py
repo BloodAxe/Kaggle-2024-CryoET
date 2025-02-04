@@ -23,8 +23,13 @@ class Ensemble(nn.Module):
             all_scores.append(scores)
             all_offsets.append(offsets)
 
-        scores = torch.mean(torch.stack(all_scores, dim=0), dim=0)
-        offsets = torch.mean(torch.stack(all_offsets, dim=0), dim=0)
+        if len(self.models):
+            scores = torch.mean(torch.stack(all_scores, dim=0), dim=0)
+            offsets = torch.mean(torch.stack(all_offsets, dim=0), dim=0)
+        else:
+            scores = all_scores[0]
+            offsets = all_offsets[0]
+
         return scores, offsets
 
 
