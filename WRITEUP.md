@@ -1,5 +1,11 @@
 
-_I would like to thank the Armed Forces of Ukraine, the Security Service of Ukraine, Defence Intelligence of Ukraine, and the State Emergency Service of Ukraine for providing safety and security to participate in this great competition, complete this work, and help science, technology, and business not to stop but to move forward._
+_
+Throughout the competition there were numerous missile strikes, bombings, and other acts of war that have taken the lives of many innocent people in Ukraine. 
+Rockets from russia hit within few kilometers from my home in Odesa. Each day Kaggle users from Ukraine facing the chance of not waking up. Just keep in this mind while you read this solution writeup.
+
+I would like to thank the Armed Forces of Ukraine, the Security Service of Ukraine, Defence Intelligence of Ukraine, and the State Emergency Service of Ukraine for providing safety and security to participate in this great competition, complete this work, and help science, technology, and business not to stop but to move forward.
+_
+
 
 ## Introduction
 
@@ -11,7 +17,8 @@ So if I decide to team up in the future, there will be less diversity in the fin
 
 ## Modeling approach 
 
-My final approach uses SegResNet and DynUnet backbones from Monai in combination with a custom point detection head. 
+*TLDR*: My final approach uses SegResNet and DynUnet backbones from Monai in combination with a custom point detection head. 
+
 Based on my experience creating YOLO-based object detection models, I implemented an anchor-free point detection model. 
 Likewise to box detection, model predict class probabilities map and offsets to the center object. 
 Unlike box detection, however there is no concept of bounding box and hence to use IoU between two points I used well-known object keypoint 
@@ -30,9 +37,9 @@ In my models, I predict class-map [B,C,D/2,H/2,W/2] and offsets map [B,3,D/2,H/2
 For the object detection approach, there is no need to predict a full-resolution feature maps. Predicting smaller feature maps has a massive impact on model throughput. I've got almost 50% speed increase when changing to stride 2 output from stride 1 (full resolution).
 
 I ablate on stride 1, stride 2, stride 4, and stride 2 & 4 outputs and found that:
-Stride 1 gives a slightly, slightly better (0.002) LB  score than stride 2
-Stride 4 also worked ok, but stride 2 was better in the F-beta score.
-Using stride 2 and 4 didn't bring any improvements over using only stride 2. An interesting observation when using the two-heads method: Large particles tend to migrate to stride 4 while small classes were present on the class-map with stride 2.
+* Stride 1 gives a slightly, slightly better (0.002) LB  score than stride 2
+* Stride 4 also worked ok, but stride 2 was better in the F-beta score.
+* Using stride 2 and 4 didn't bring any improvements over using only stride 2. An interesting observation when using the two-heads method: Large particles tend to migrate to stride 4 while small classes were present on the class-map with stride 2.
 
 In all my models I use stride 2 prediction maps.
 
@@ -111,3 +118,11 @@ The proces of going from individual checkpoints to TensorRT engine is multi-stag
 
 To combine results of my ensemble with ensemble of @christofhenkel we simply used weighted average of the predictions on the classmap level followed
 by postprocessing described above. I suggest you read @christofhenkel writeup for more details on his approach.
+
+## Things that didn't quite work (for me)
+
+* Mixup, Copy-Paste, Random-Erasing (CV higher, LB lower)
+* 2.5-D models
+* 3D version of HRNet and ConvNext
+* Gaussian noise, anisotropic scale jitter
+* Knowledge distillation
