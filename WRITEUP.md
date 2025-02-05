@@ -1,3 +1,6 @@
+
+_I would like to thank the Armed Forces of Ukraine, the Security Service of Ukraine, Defence Intelligence of Ukraine, and the State Emergency Service of Ukraine for providing safety and security to participate in this great competition, complete this work, and help science, technology, and business not to stop but to move forward._
+
 ## Introduction
 
 My baseline solution was a segmentation model built from the SegResNet backbone. 
@@ -71,7 +74,8 @@ Having an aggregated classmap of [C, D, H, W] shape and offsets map of [3, D, H,
 My final object ensemble is 5 models (folds) of OD SegResNet and 5 models of OD DynUnet (OD stands for Object Detection to differentiate them from segmentation-based models). 
 A 10 models in total. 
 
-### SegResNet 
+### SegResNet
+
 | fold         |    score |   AFRT |   BGT |   RBSM |   TRGLB |   VLP |
 |:-------------|---------:|-------:|------:|-------:|--------:|------:|
 | 0            | 0.8457   |  0.265 | 0.29  |  0.195 |   0.15  | 0.55  |
@@ -95,8 +99,8 @@ A 10 models in total.
 
 Final submission uses TensorRT for inference.
 
-Initially, I used `torch.jit` which was enough for start, but as the competition progressed I needed to speed up inference even more.
-Then I used `onnxruntime` with `CUDAExecutionProvider` which gave me nearly the same throughput as `torch.jit`.
+Initially, I used `torch.jit` which was enough for start, but as we teamed up with @deiter a more efficient approach was needed.
+I tried using `onnxruntime` with `CUDAExecutionProvider` which gave me nearly the same throughput as `torch.jit`.
 Finally, by enabling `TensorRTExecutionProvider` that leverages all the power of TensorRT I was able to achieve desired speedup of 200% compared to `torch.jit`
 
 The proces of going from individual checkpoints to TensorRT engine is multi-stage:
@@ -104,3 +108,4 @@ The proces of going from individual checkpoints to TensorRT engine is multi-stag
 1. [Offline] Convert individual checkpoints into a single ONNX model containing all models and averaging their predictions
 2. [Kaggle] Convert ONNX model into TensorRT engine (And save it to disk). This step happened on Kaggle using target GPU (T4) and allowed us to save 10 minutes of submission for creating TensorRT engine.
 3. [Kaggle] Actual inference notebook. I split all test data in two chunks and use 2xT4 GPUs to process them in parallel.
+
