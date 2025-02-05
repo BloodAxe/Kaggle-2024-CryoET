@@ -99,7 +99,7 @@ A 10 models in total.
 
 Final submission uses TensorRT for inference.
 
-Initially, I used `torch.jit` which was enough for start, but as we teamed up with @deiter a more efficient approach was needed.
+Initially, I used `torch.jit` which was enough for start, but as we teamed up with @christofhenkel a more efficient approach was needed.
 I tried using `onnxruntime` with `CUDAExecutionProvider` which gave me nearly the same throughput as `torch.jit`.
 Finally, by enabling `TensorRTExecutionProvider` that leverages all the power of TensorRT I was able to achieve desired speedup of 200% compared to `torch.jit`
 
@@ -109,5 +109,5 @@ The proces of going from individual checkpoints to TensorRT engine is multi-stag
 2. [Kaggle] Convert ONNX model into TensorRT engine (And save it to disk). This step happened on Kaggle using target GPU (T4) and allowed us to save 10 minutes of submission for creating TensorRT engine.
 3. [Kaggle] Actual inference notebook. I split all test data in two chunks and use 2xT4 GPUs to process them in parallel.
 
-To combine results of my ensemble with ensemble of @deiter we simply used weighted average of the predictions on the classmap level followed
-by postprocessing described above. I suggest you read @deiter's writeup for more details on his approach.
+To combine results of my ensemble with ensemble of @christofhenkel we simply used weighted average of the predictions on the classmap level followed
+by postprocessing described above. I suggest you read @christofhenkel writeup for more details on his approach.
