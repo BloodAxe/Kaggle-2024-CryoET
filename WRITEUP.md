@@ -106,8 +106,8 @@ Finally, by enabling `TensorRTExecutionProvider` that leverages all the power of
 The proces of going from individual checkpoints to TensorRT engine is multi-stage:
 
 1. [Offline] Convert individual checkpoints into a single ONNX model containing all models and averaging their predictions
-2. [Kaggle] Convert ONNX model into TensorRT engine (And save it to disk). This step happened on Kaggle using target GPU (T4) and allowed us to save 10 minutes of submission for creating TensorRT engine.
-3. [Kaggle] Actual inference notebook. I split all test data in two chunks and use 2xT4 GPUs to process them in parallel.
+2. [Kaggle] Convert ONNX model into TensorRT engine (And save it to disk). This step happens on Kaggle, using T4 GPU (a target GPU we use for inference) and it saved us 10 minutes of submission time for creating TensorRT engine.
+3. [Kaggle] Actual inference notebook. I split all test data in two chunks and use 2xT4 GPUs to process them in parallel. They two submission shards simply concatenated to form the final submission.
 
 To combine results of my ensemble with ensemble of @christofhenkel we simply used weighted average of the predictions on the classmap level followed
 by postprocessing described above. I suggest you read @christofhenkel writeup for more details on his approach.
