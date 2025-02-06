@@ -1,6 +1,9 @@
 lightning~=2.5
 transformers
-monai~=1.4
+monai @ git+https://github.com/BloodAxe/MONAI.git@33333bd1c61c9b7394fe313f7ede5fa389a6fb6c
 torch>=2.5
 zarr~=2.18
 einops
+onnx
+onnxsim~=0.4.36
+pytorch_toolbelt
