@@ -37,5 +37,5 @@ An example of inference kernel is provided in [scripts/kaggle_convert_onnx_to_te
 
 ## Inference kernel
 
-An example of inference kernel is provided in [scripts/kaggle_inference_without_iobinding.py](scripts/kaggle_inference_without_iobinding.py). 
+An example of inference kernel is provided in [scripts/kaggle_inference_with_iobinding.py](scripts/kaggle_inference_with_iobinding.py). 
 
