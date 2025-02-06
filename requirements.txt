@@ -1,0 +1,6 @@
+lightning~=2.5
+transformers
+monai~=1.4
+torch>=2.5
+zarr~=2.18
+einops
