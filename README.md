@@ -1,5 +1,10 @@
 # 1st place CryoET challenge solution
 
+This repo contains training code for OD part of our first place solution for CryoET challenge.
+Please check out solution writeups for more details:
+* https://www.kaggle.com/competitions/czii-cryo-et-object-identification/discussion/561440#3117046
+* https://www.kaggle.com/competitions/czii-cryo-et-object-identification/discussion/561510#3116985
+
 ## Getting started
 
 First things first - clone the repository and install the dependencies:
