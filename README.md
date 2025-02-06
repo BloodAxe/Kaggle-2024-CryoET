@@ -2,9 +2,15 @@
 
 ## Getting started
 
+First things first - clone the repository and install the dependencies:
+
 ```bash
 pip install -r requirements.txt
 ```
+
+If you want to use pretrained weights for SegResNet - download them from the following link: https://github.com/Project-MONAI/model-zoo/releases/download/hosting_storage_v1/wholeBody_ct_segmentation_v0.1.9.zip.
+Then, unzip the model checkpoint to `pretrained/wholeBody_ct_segmentation/models/model.pt`.
+If you don't want to use pretrained weights, simply remove the line `--pretrained_backbone_path=pretrained/wholeBody_ct_segmentation/models/model.pt \` from train script. 
 
 ## Training your own models
 
@@ -19,9 +25,17 @@ If you have different GPUs with different amount of VRAM you can scale the batch
 
 ## Exporting to ONNX
 
-COMING SOON
+Once you have trained your models, to build a single ONNX ensemble, use the following command:
 
+```bash 
+python export_ensemble_onnx.py --output_onnx=ensemble.onnx --batch_size=1 <AS MANY CHECKPOINTS AS YOU WANT>
+```
+
+## Converting ONNX to TensorRT
+
+An example of inference kernel is provided in [scripts/kaggle_convert_onnx_to_tensorrt.py](scripts/kaggle_convert_onnx_to_tensorrt.py). 
 
 ## Inference kernel
 
-COMING SOON
+An example of inference kernel is provided in [scripts/kaggle_inference_without_iobinding.py](scripts/kaggle_inference_without_iobinding.py). 
+
