@@ -9,3 +9,4 @@ onnxsim~=0.4.36
 pytorch_toolbelt>=0.8
 matplotlib>=3.9
 scikit-learn>=1.5
+python-dotenv~=1.0
